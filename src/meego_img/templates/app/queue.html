@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+
+{% block pagetitle %}IMG Queue{% endblock %}
+
+{% block title %}IMG Queue{% endblock %}
+
+{% block content %}
+
+{%if queue %}
+<table border="0">
+<th>Created on</th>
+<th>Email</th>
+<th>Status</th>
+<th>Type</th>
+<th>Id</th>
+<th>Log</th>
+    {% for obj in queue %}
+        <tr>
+                <td>{{obj.created|date:"H:i:s d.m.Y"}}</td>
+                <td>{{obj.email}}</td> <td>{{obj.status}} </td> 
+                <td>{{obj.type}} </td>
+                <td><a href="{% url img-app-job obj.task_id %}">{{obj.task_id}}</a></td>
+                           
+                {% ifnotequal obj.imagefile "" %}
+                <td><a href="{% url img-app-download obj.task_id %}">Download</a></td>                
+                {%endifnotequal%}  
+                {% if obj.error %}
+                <td><a href="{% url img-app-download obj.task_id %}">Download</a></td>
+                <td><b>Job {{obj.task_id}} has finished with errors, check the logfile for details.</b></td>                
+                {% endif%}
+        </tr>
+    {% endfor %}
+</table>
+{% endif %}
+<a href="{%url img-app-clear %}">Clear</a><br/>
+<a href="{%url img-app-submit %}">Return to upload</a>
+{% endblock %}

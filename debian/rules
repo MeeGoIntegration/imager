@@ -1,0 +1,50 @@
+#!/usr/bin/make -f
+
+PKGDIR = /var/www/django/img
+
+build:
+	dh_testdir
+
+clean:
+	dh_testdir
+	dh_testroot
+	dh_clean
+
+install:
+	dh_testdir
+	dh_testroot
+	dh_clean
+	dh_installdirs
+
+	# install in a raw way
+	mkdir -p debian/img/$(PKGDIR)
+	cp -a src/meego_img debian/img/$(PKGDIR)
+	mkdir -p debian/img/usr/share/img
+	cp -a kickstarter debian/img/usr/share/img/
+	mkdir -p debian/img-svc/usr/bin
+	cp -a src/meego_img/image_creator.py debian/img-svc/usr/bin/meego_image_creator
+	mkdir -p debian/img/etc/lighttpd/vhosts.d
+	mkdir -p debian/img/var/www/django/run
+	cp -a debian/img-lighttpd.conf debian/img/etc/lighttpd/vhosts.d/
+
+binary-indep: install
+	dh_testdir
+	dh_testroot
+	dh_installchangelogs
+	dh_installdocs
+	dh_installinit -- start 20 2 3 4 5 . stop 20 1 .
+#	dh_installinit --start 20 2 3 4 5 . stop 20 1 .
+	dh_link
+	dh_compress
+	dh_fixperms
+	dh_pysupport
+	dh_installdeb
+	dh_gencontrol
+	dh_md5sums
+	dh_builddeb
+
+binary-arch: install
+
+binary: binary-indep binary-arch
+.PHONY: build clean binary-indep binary-arch binary install
+

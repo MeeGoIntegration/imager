@@ -1,0 +1,16 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+	<title>IMG - Log viewer</title>  
+</head>
+
+<body onload="document.getElementById('textarea').scrollTop=document.getElementById('textarea').scrollHeight;">		
+<h1> Log Viewer</h1>
+	      <textarea id="textarea" rows="50" style="width: 80%;">
+            {{job}}
+        </textarea><br/>
+        <a href="{%url img-app-queue %}">Back to queue</a>
+</body>
+</html>

@@ -1,0 +1,9 @@
+#!/bin/bash
+
+set -e
+
+PROJECTDIR=/var/www/django/img
+
+$PROJECTDIR/meego_img/manage.py sqlclear app
+
+#DEBHELPER#

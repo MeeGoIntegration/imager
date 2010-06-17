@@ -1,0 +1,34 @@
+MeeGo-IMG : Image Me Get
+
+A service to get MeeGo images given a kickstart file.
+
+
+buildout structure:
+ http://www.buildout.org/
+ http://jacobian.org/writing/django-apps-with-buildout/
+
+
+Installation
+
+(depends on python-setuptools)
+run:
+python ./bootstrap.py
+bin/buildout
+bin/django runserver
+
+Install kickstarter (git://gitorious.org/meego-developer-tools/kickstarter.git)
+Install meego-image-creator (git://gitorious.org/meego-developer-tools/image-creator.git)
+Install pykickstart (http://git.fedorahosted.org/git/pykickstart.git)
+
+Also install packages python-yaml, python-cheetah, yum in the system.
+
+Setup:
+
+Install rabbitmq-server
+
+rabbitmqctl add_user img imgpwd
+rabbitmqctl add_vhost imgvhost
+rabbitmqctl set_permissions -p imgvhost img "" ".*" ".*"
+
+Run:
+bin/django syncdb

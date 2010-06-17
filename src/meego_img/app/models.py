@@ -1,0 +1,37 @@
+#~ Copyright (C) 2010 Nokia Corporation and/or its subsidiary(-ies).
+#~ Contact: Ramez Hanna <ramez.hanna@nokia.com>
+#~ This program is free software: you can redistribute it and/or modify
+#~ it under the terms of the GNU General Public License as published by
+#~ the Free Software Foundation, either version 3 of the License, or
+#~ (at your option) any later version.
+
+#~ This program is distributed in the hope that it will be useful,
+#~ but WITHOUT ANY WARRANTY; without even the implied warranty of
+#~ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#~ GNU General Public License for more details.
+
+#~ You should have received a copy of the GNU General Public License
+#~ along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+from django.db import models
+import os
+
+# Create your models here.
+class ImageJob(models.Model):    
+    email = models.CharField(max_length=40)
+    filename = models.CharField(max_length=40)
+    logfile = models.CharField(max_length=50)
+    task_id = models.CharField(max_length=30)
+    imagefile = models.CharField(max_length=50)    
+    created = models.DateTimeField(auto_now_add=True)
+    error = models.CharField(max_length=500)
+    type = models.CharField(max_length=10)
+    status = models.CharField(max_length=30)
+    def delete(self, *args, **kwargs): 
+        if self.logfile:
+            if os.path.exists(self.logfile):
+                os.remove(self.logfile)
+                os.remove(self.logfile.replace("-log", ""))
+                print "Removed %s"%self.logfile
+        super(ImageJob, self).delete(*args, **kwargs)
+        

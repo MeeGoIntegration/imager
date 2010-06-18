@@ -20,7 +20,8 @@ Install kickstarter (git://gitorious.org/meego-developer-tools/kickstarter.git)
 Install meego-image-creator (git://gitorious.org/meego-developer-tools/image-creator.git)
 Install pykickstart (http://git.fedorahosted.org/git/pykickstart.git)
 
-Also install packages python-yaml, python-cheetah, yum in the system.
+Also install packages python-json, python-multiprocessing, python-yaml, python-cheetah, yum in the system. Also note that recommended python 
+version is 2.6.x.
 
 Setup:
 
@@ -32,3 +33,7 @@ rabbitmqctl set_permissions -p imgvhost img "" ".*" ".*"
 
 Run:
 bin/django syncdb
+
+Running the creator service:
+cd src/meego_img/
+python image_creator.py

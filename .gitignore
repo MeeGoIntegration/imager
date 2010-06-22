@@ -12,7 +12,6 @@ parts
 src/*.egg-info
 .eric4project/
 celerybeat-schedule
-client.py
 debian/compat
 debian/copyright
 debian/files

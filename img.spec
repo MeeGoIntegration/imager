@@ -9,14 +9,14 @@ Source0: img-%{version}.tar.gz
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
 BuildRequires: python,python-setuptools
-Requires: python >= 2.6.5
-Requires: python-sqlite, lighttpd, yum, python-django, python-flup, python-yaml, python-json
- 
+Requires: python >= 2.6.0
+Requires: lighttpd, lighttpd-fastcgi,PyYAML, python-sqlite,Django,python-flup
 %description
 An image creator and a django frontend for MeeGo.
 %package -n img-svc
 #Requires(pre): %insserv_prereq %fillup_prereq
-Requires: rabbitmq-server, python-sqlite, lighttpd, yum, python-django, mic2, pykickstart, python-amqplib, python-yaml, python-json, bzip2, sudo
+Requires: rabbitmq-server, yum, mic2, pykickstart, bzip2, sudo
+Requires: python >= 2.6.0
 Group: Applications/Engineering
 Summary: Image Me Give, service package
 %description -n img-svc
@@ -29,10 +29,10 @@ Image Me Give, service package
 %install
 rm -rf %{buildroot}
 mkdir -p %{buildroot}%{_initddir}
-install -D -m 755 debian/img-svc.init %{buildroot}%{_initddir}/img-svc
+install -D -m 755 rpm/img-svc.init %{buildroot}%{_initddir}/img-svc
 mkdir -p %{buildroot}%{_sbindir}
 ln -sf %{_initrddir}/img-svc %{buildroot}%{_sbindir}/rcimg-svc
-install -D -m 755 debian/img.init %{buildroot}%{_initddir}/img
+install -D -m 755 rpm/img.init %{buildroot}%{_initddir}/img
 ln -sf %{_initrddir}/img %{buildroot}%{_sbindir}/rcimg
 mkdir -p %{buildroot}/var/www/django/img
 cp -a src/meego_img %{buildroot}/var/www/django/img
@@ -47,7 +47,7 @@ cp -a debian/img-lighttpd.conf %{buildroot}/etc/lighttpd/vhosts.d/
 rm -rf %{buildroot}
 %post -n img
 PROJECTDIR=/var/www/django/img
-$PROJECTDIR/meego_img/manage.py syncdb
+$PROJECTDIR/meego_img/manage.py syncdb --noinput
 %postun -n img
 PROJECTDIR=/var/www/django/img
 $PROJECTDIR/meego_img/manage.py sqlclear app

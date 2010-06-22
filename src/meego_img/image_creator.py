@@ -28,7 +28,7 @@ from amqplib import client_0_8 as amqp
 
 # SETTINGS
 
-base_url = "http://localhost/images/"
+base_url = "http://212.149.247.53:8001/images/"
 base_dir = "/var/www/images"
 amqp_host = "localhost:5672"
 amqp_user = "img"

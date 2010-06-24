@@ -29,10 +29,10 @@ Image Me Give, service package
 %install
 rm -rf %{buildroot}
 mkdir -p %{buildroot}%{_initddir}
-install -D -m 755 rpm/img-svc.init %{buildroot}%{_initddir}/img-svc
+install -D -m 755 rpm/img-svc.init %{buildroot}/etc/init.d/img-svc
 mkdir -p %{buildroot}%{_sbindir}
 ln -sf %{_initrddir}/img-svc %{buildroot}%{_sbindir}/rcimg-svc
-install -D -m 755 rpm/img.init %{buildroot}%{_initddir}/img
+install -D -m 755 rpm/img.init %{buildroot}/etc/init.d/img
 ln -sf %{_initrddir}/img %{buildroot}%{_sbindir}/rcimg
 mkdir -p %{buildroot}/var/www/django/img
 cp -a src/meego_img %{buildroot}/var/www/django/img
@@ -55,13 +55,13 @@ $PROJECTDIR/meego_img/manage.py sqlclear app
 %files
 %defattr(-,root,root,-)
 %{_sbindir}/rcimg
-%{_initddir}/img
+/etc/init.d/img
 /var/www/django/img/*
 /usr/share/img/kickstarter/*
 /etc/lighttpd/vhosts.d/img-lighttpd.conf
 %files -n img-svc
 %defattr(-,root,root,-)
 %{_sbindir}/rcimg-svc
-%{_initddir}/img-svc
+/etc/init.d/img-svc
 /usr/bin/meego_image_creator
 /usr/bin/meego_image_client

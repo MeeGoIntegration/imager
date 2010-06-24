@@ -39,7 +39,8 @@ cp -a src/meego_img %{buildroot}/var/www/django/img
 mkdir -p %{buildroot}/usr/share/img
 cp -a kickstarter %{buildroot}/usr/share/img/
 mkdir -p %{buildroot}/usr/bin
-cp -a src/meego_img/image_creator.py %{buildroot}/usr/bin/meego_image_creator
+install -D -m 755 src/meego_img/image_creator.py %{buildroot}/usr/bin/meego_image_creator
+install -D -m 755 src/meego_img/client.py %{buildroot}/usr/bin/meego_image_client
 mkdir -p %{buildroot}/etc/lighttpd/vhosts.d
 mkdir -p %{buildroot}/var/www/django/run
 cp -a debian/img-lighttpd.conf %{buildroot}/etc/lighttpd/vhosts.d/
@@ -63,3 +64,4 @@ $PROJECTDIR/meego_img/manage.py sqlclear app
 %{_sbindir}/rcimg-svc
 %{_initddir}/img-svc
 /usr/bin/meego_image_creator
+/usr/bin/meego_image_client

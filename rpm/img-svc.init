@@ -10,7 +10,7 @@
 #                    in a very specific way with manage.py. This must be done
 #                    for each DJango web server that has to run.
 ### END INIT INFO
-set -e
+
 . /etc/init.d/functions
 PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
 DESC="Image Me Give service"

@@ -20,13 +20,12 @@
 export PYTHONPATH=/var/www/django/trunk/:/var/www/django/
 DJANGO_SITES="img"
 SITES_PATH=/var/www/django
-RUNFILES_PATH=$SITES_PATH/run
+RUNFILES_PATH=/var/run
 HOST=127.0.0.1
 PORT_START=3033
 RUN_AS=www-data
 #### DO NOT CHANGE ANYTHING AFTER THIS LINE!
 
-set -e
 . /etc/init.d/functions
 PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
 DESC="FastCGI servers"
@@ -46,8 +45,9 @@ d_start()
         if [ -f $RUNFILES_PATH/$SITE.pid ]; then
             echo -n " already running"
         else
-            daemon --pidfile $RUNFILES_PATH/$SITE.pid /usr/bin/python2.6 $SITES_PATH/$SITE/meego_img/manage.py runfcgi method=threaded  host=$HOST port=$PORT pidfile=$RUNFILES_PATH/$SITE.pid 
-            chmod 400 $RUNFILES_PATH/$SITE.pid
+            daemon --pidfile $RUNFILES_PATH/img.pid /usr/bin/python2.6 $SITES_PATH/img/meego_img/manage.py runfcgi method=threaded  host=$HOST port=$PORT pidfile=$RUNFILES_PATH/img.pid 
+            touch $RUNFILES_PATH/img.pid
+            chmod 400 $RUNFILES_PATH/img.pid
         fi
     done
 }

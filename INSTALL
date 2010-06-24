@@ -1,0 +1,25 @@
+WEB SERVER INSTALL FROM RPM:
+
+Install rabbitmq-server
+
+rabbitmqctl add_user img imgpwd
+rabbitmqctl add_vhost imgvhost
+rabbitmqctl set_permissions -p imgvhost img "" ".*" ".*"
+
+Make sure that the modules are loaded like this and on this order:
+
+server.modules              = (
+
+            "mod_access",
+
+            "mod_alias",
+
+            "mod_compress",
+
+            "mod_rewrite",
+
+            "mod_fastcgi",
+
+            "mod_accesslog",
+
+And then just start the IMG service.

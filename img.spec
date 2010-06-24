@@ -15,7 +15,7 @@ Requires: lighttpd, lighttpd-fastcgi,PyYAML, python-sqlite,Django,python-flup
 An image creator and a django frontend for MeeGo.
 %package -n img-svc
 #Requires(pre): %insserv_prereq %fillup_prereq
-Requires: rabbitmq-server, yum, mic2, pykickstart, bzip2, sudo
+Requires: rabbitmq-server, yum, mic2, pykickstart, bzip2, sudo, python-cheetah
 Requires: python >= 2.6.0
 Group: Applications/Engineering
 Summary: Image Me Give, service package

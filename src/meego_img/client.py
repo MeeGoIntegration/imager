@@ -25,14 +25,6 @@ amqp_user = "img"
 amqp_pwd = "imgpwd"
 amqp_vhost = "imgvhost"
 
-def error_callback(msg):
-    print "Received error message: %s"%msg.body
-    chan.basic_ack(msg.delivery_tag)
-    
-def result_callback(msg):
-    print "Result message received: %s"%msg.body
-    chan.basic_ack(msg.delivery_tag)
-
 def sync_send(fname):
     conn = amqp.Connection(host=amqp_host, userid=amqp_user, password=amqp_pwd, virtual_host=amqp_vhost, insist=False)
     chan = conn.channel()
@@ -72,79 +64,65 @@ def async_send(fname):
     chan.close()
     conn.close()
     print "Message sent, use id %s as the id for polling the results."%id
-    
+
+def check_message(id, message, chan):
+    data = json.loads(message.body)
+    if data["id"] == id:
+        if message.delivery_info["routing_key"] == "res":
+            pass
+            #chan.basic_ack(message.delivery_tag)    
+        elif message.delivery_info["routing_key"] == "status":
+            print "Image build status: %s"%data["status"]
+            #chan.basic_ack(message.delivery_tag)
+        elif message.delivery_info["routing_key"] == "err":
+            print "Image build was erroneuos with the following error: %s\nDownload the logfile from here: %s"%(data["error"], data["url"])
+            #chan.basic_ack(message.delivery_tag)
+        elif message.delivery_info["routing_key"] == "link":
+            print "Image build was successfull!\nDownload the image from here: %s"%data["url"]
+            #chan.basic_ack(message.delivery_tag)
+    else:
+        pass
+        # No reject available so just requeue it.
+        chan.basic_publish(message, exchange=message.delivery_info["exchange"], routing_key=message.delivery_info["routing_key"])
+        
 def poll(id):
     conn = amqp.Connection(host=amqp_host, userid=amqp_user, password=amqp_pwd, virtual_host=amqp_vhost, insist=False)
     chan = conn.channel()
-    result_msg = chan.basic_get("result_queue", no_ack=True)
-    error_msg = chan.basic_get("error_queue", no_ack=True)
-    status_msg = chan.basic_get("status_queue", no_ack=True)
-    link_msg = chan.basic_get("link_queue", no_ack=True)
-    if result_msg:
-        result_data = json.loads(result_msg.body)
-        if result_data["id"] == id:
-            print "Got a message from result queue: \nLogfile name: %s"%result_data["logfile"]
-            chan.basic_ack(result_msg.delivery_tag)
-        else:
-            print "Got a message from result queue, but not for this ID. Please repoll!"
-            chan.basic_reject(result_msg.delivery_tag, requeue=True)
-    if error_msg:
-        error_data = json.loads(error_msg.body)
-        if error_data["id"] == id:
-            print "Got a message from error queue: \nError that occurred: %s\nDownload the log from: %s\n"%(error_data["error"], error_data["imagefile"])
-            chan.basic_ack(error_msg.delivery_tag)
-        else:
-            print "Got a message from error queue, but not for this ID. Please repoll!"
-            chan.basic_reject(error_msg.delivery_tag, requeue=True)
-    if status_msg:
-        status_data = json.loads(status_msg.body)
-        if status_data["id"] == id:
-            print "Got a message from result queue: \nStatus of build is: %s"%status_data["status"]
-            chan.basic_ack(status_msg.delivery_tag)
-        else:
-            print "Got a message from result queue, but not for this ID. Please repoll!"
-            chan.basic_reject(status_msg.delivery_tag, requeue=True)
-    if link_msg:
-        link_data = json.loads(link_msg.body)
-        if link_data["id"] == id:
-            print "Got a message from link queue, your download can be found here: %s"%link_data["imagefile"]
-            chan.basic_ack(link_msg.delivery_tag)
-        else:
-            print "Got a message from link queue, but not for this ID. Please repoll!"
-            chan.basic_reject(link_msg.delivery_tag, requeue=True)
+    queues = ["result_queue","error_queue", "status_queue", "link_queue"]
+    for queue in queues:
+        message = chan.basic_get(queue=queue, no_ack=True)
+        if message:
+            check_message(id, message, chan)
     chan.close()
     conn.close()
 if __name__ == '__main__':
     import sys
     
-    usage="usage: %prog -p|--poll <message_id> -a|--async -s|--sync <kickstarter_template.yaml>"
+    usage="usage: %prog -p|--poll <message_id> --a|--async  <kickstarter_template.yaml>"
     description = """
-%prog Sends a message either asynchronously (poll for result later) or 
-synchronously (wait for the result) to the IMGer service, 
-using <kickstarter_template.yaml> as the template.
+%prog Sends a message either asynchronously (poll for result later) to 
+the IMGer service, using <kickstarter_template.yaml> as the template.
 """
     parser = OptionParser(usage=usage, description=description)
 
     parser.add_option("-a", "--async", dest="async", action="store_true",
                       help="Asynchronous operation")
-    parser.add_option("-s", "--sync", dest="sync", action="store_true",
-                      help="Synchronous operation")
     parser.add_option("-p", "--poll", dest="poll", action="store", 
                       help="Poll for results with an id")
 
     (options, args) = parser.parse_args()
-    if len(args) != 1:
-        parser.error("Missing <kickstarter_template.yaml> to parse")
-    else:
-        path=args[0]
-
-    if not options.async and not options.sync:
-        parser.error("Missing --async or --sync")
-    if options.sync and os.path.isfile(path):
-        sync_send(path)
-    else:
-        print "<kickstarter_template.yaml> must be a file"
-    if options.async and os.path.isfile(path):
-        async_send(path)
-    else:
-        print "<kickstarter_template.yaml> must be a file"
+    path=None
+    if not options.poll:        
+        if len(args) != 1:
+            parser.error("Missing <kickstarter_template.yaml> to parse")
+        else:
+            path=args[0]
+    if options.poll:
+        poll(options.poll)
+    if not options.async and not options.poll:
+        parser.error("Missing --async or --poll")
+    if not options.poll:        
+        if options.async and os.path.isfile(path):
+            async_send(path)
+        else:
+            print "<kickstarter_template.yaml> must be a file"

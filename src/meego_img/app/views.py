@@ -112,8 +112,8 @@ def queue(request):
     if msg:
         data = json.loads(msg.body)
         print data
-        if "imagefile" in data:
-            file = data["imagefile"]
+        if "url" in data:
+            file = data["url"]
             id = data["id"]
             job = get_or_none(ImageJob, task_id=id)
             if job:

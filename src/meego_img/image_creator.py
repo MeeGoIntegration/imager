@@ -23,7 +23,7 @@ import shutil
 import re
 import time
 from threading import Thread
-from multiprocessing import Process, Queue
+from multiprocessing import Process, Queue, Pool
 from amqplib import client_0_8 as amqp
 
 # SETTINGS
@@ -34,7 +34,7 @@ amqp_host = "localhost:5672"
 amqp_user = "img"
 amqp_pwd = "imgpwd"
 amqp_vhost = "imgvhost"
-
+num_workers = 2
 # END SETTINGS
 
 conn = amqp.Connection(host=amqp_host, userid=amqp_user, password=amqp_pwd, virtual_host=amqp_vhost, insist=False)
@@ -58,12 +58,9 @@ chan.queue_bind(queue="error_queue", exchange="django_result_exchange", routing_
 chan.queue_bind(queue="status_queue", exchange="django_result_exchange", routing_key="status")
 
 def mic2(id, type, email, ksfile):
-    print "MIC2 function"    
     dir = "%s/%s"%(base_dir, id)
-    print dir
     os.mkdir(dir, 0775)    
-    tmp = NamedTemporaryFile(dir=dir, delete=False)
-    print tmp.name
+    tmp = NamedTemporaryFile(dir=dir, delete=False)    
     tmpname = tmp.name
     logfile_name = tmp.name+"-log"
     tmp.write(ksfile)    
@@ -84,38 +81,34 @@ def mic2(id, type, email, ksfile):
         logfile.write("%s\n"%err)        
         logfile.close()
         print err
-        error = json.dumps({"error":"Command failed %s"%err, 'id':str(id), 'imagefile':base_url+id})
+        error = json.dumps({"error":"Command failed %s"%err, 'id':str(id), 'url':base_url+id})
         errmsg = amqp.Message(error)
         chan.basic_publish(errmsg, exchange="django_result_exchange", routing_key="err")
         return       
     file = base_url+"%s"%id
-    print str(file)
-    print str(id)
-    data = json.dumps({"imagefile":str(file), "id":str(id)})
+    data = json.dumps({"url":str(file), "id":str(id)})
     imagemsg = amqp.Message(data)
     chan.basic_publish(imagemsg, exchange="django_result_exchange", routing_key="link")
-    chan.close()
-    conn.close()
-        
+    
+job_pool = Pool(num_workers)
 def mic2_callback(msg):  
-    print "AT MIC2 CALLBACK"       
-    job = json.loads(msg.body)
-    print job
+    job = json.loads(msg.body)    
     email = job["email"]
     id = job["id"]    
     type = job['imagetype']
-    ksfile = job['ksfile']
-    Process(target=mic2, args=(id, type, email, ksfile)).start()
+    ksfile = job['ksfile']    
+    args=(id, type, email, ksfile)
+    job_pool.apply_async(mic2, args=args)        
     #chan.basic_ack(msg.delivery_tag)
     
         
  
 def kickstarter_callback(msg):
     kickstarter = json.loads(msg.body)    
-    print kickstarter
     config = kickstarter["config"]
     email = kickstarter["email"]    
     id = kickstarter['id']
+    imagetype = kickstarter['imagetype']
     configtemp = NamedTemporaryFile(delete=False)
     configtemp.write(config)  
     configtemp.close()    
@@ -124,7 +117,7 @@ def kickstarter_callback(msg):
         sub.check_call(['/usr/bin/python','/usr/share/img/kickstarter/kickstarter.py', '-c', configtemp.name, '-r', '/usr/share/img/kickstarter/repos.yaml', '-o', out_dir], stdout=sub.PIPE, stderr=sub.PIPE)                
         kickstart_file = open(out_dir+'/'+os.listdir(out_dir)[0])
         ksfile = kickstart_file.read()        
-        data = json.dumps({'email':email, 'id':id, 'imagetype':kickstarter['imagetype'], 'ksfile':ksfile})
+        data = json.dumps({'email':email, 'id':id, 'imagetype':imagetype, 'ksfile':ksfile})
         msg2 = amqp.Message(data)        
         chan.basic_publish(msg2, exchange="image_exchange", routing_key="img")        
     except CalledProcessError as err:       

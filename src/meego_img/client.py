@@ -20,7 +20,7 @@ from optparse import OptionParser
 import os
 import json
 
-amqp_host = "localhost:5672"
+amqp_host = "212.149.247.53:5672"
 amqp_user = "img"
 amqp_pwd = "imgpwd"
 amqp_vhost = "imgvhost"
@@ -103,6 +103,6 @@ the IMGer service, using <kickstarter_template.yaml> as the template.
         parser.error("Missing --async or --poll")
     if not options.poll:        
         if options.async and os.path.isfile(path):
-            async_send(path,poll.type)
+            async_send(path,options.type)
         else:
             print "<kickstarter_template.yaml> must be a file"

@@ -25,7 +25,7 @@ amqp_user = "img"
 amqp_pwd = "imgpwd"
 amqp_vhost = "imgvhost"
 
-def sync_send(fname):
+def async_send(fname, imagetype=None):
     conn = amqp.Connection(host=amqp_host, userid=amqp_user, password=amqp_pwd, virtual_host=amqp_vhost, insist=False)
     chan = conn.channel()
     # Read configurations.yaml
@@ -33,29 +33,7 @@ def sync_send(fname):
     config = file.read()
     id = str(uuid1())
     # Format message as python list
-    params = {'config':config, 'email':"test@test.org", 'imagetype':'raw', 'id':id}
-    data = json.dumps(params)
-    
-    msg = amqp.Message(data, message_id=id)
-    # Send this message to image exchange, use routing key ks (goes to kickstarter process)
-    chan.basic_publish(msg,exchange="image_exchange",routing_key="ks")
-    
-    chan.basic_consume(queue='error_queue', no_ack=True, callback=error_callback)
-    chan.basic_consume(queue='result_queue', no_ack=True, callback=result_callback)
-    while True:
-        chan.wait()
-    chan.close()
-    conn.close()
-    
-def async_send(fname):
-    conn = amqp.Connection(host=amqp_host, userid=amqp_user, password=amqp_pwd, virtual_host=amqp_vhost, insist=False)
-    chan = conn.channel()
-    # Read configurations.yaml
-    file = open(fname)
-    config = file.read()
-    id = str(uuid1())
-    # Format message as python list
-    params = {'config':config, 'email':"test@test.org", 'imagetype':'raw', 'id':id}
+    params = {'config':config, 'email':"test@test.org", 'imagetype':imagetype if imagetype else 'raw', 'id':id}
     data = json.dumps(params)
     
     msg = amqp.Message(data, message_id=id)
@@ -98,7 +76,7 @@ def poll(id):
 if __name__ == '__main__':
     import sys
     
-    usage="usage: %prog -p|--poll <message_id> --a|--async  <kickstarter_template.yaml>"
+    usage="usage: %prog -p|--poll <message_id> -t|--type <imagetype> -a|--async  <kickstarter_template.yaml>"
     description = """
 %prog Sends a message either asynchronously (poll for result later) to 
 the IMGer service, using <kickstarter_template.yaml> as the template.
@@ -108,6 +86,8 @@ the IMGer service, using <kickstarter_template.yaml> as the template.
     parser.add_option("-a", "--async", dest="async", action="store_true",
                       help="Asynchronous operation")
     parser.add_option("-p", "--poll", dest="poll", action="store", 
+                      help="Poll for results with an id")
+    parser.add_option("-t", "--type", dest="type", action="store", 
                       help="Poll for results with an id")
 
     (options, args) = parser.parse_args()
@@ -123,6 +103,6 @@ the IMGer service, using <kickstarter_template.yaml> as the template.
         parser.error("Missing --async or --poll")
     if not options.poll:        
         if options.async and os.path.isfile(path):
-            async_send(path)
+            async_send(path,poll.type)
         else:
             print "<kickstarter_template.yaml> must be a file"

@@ -20,7 +20,7 @@ from optparse import OptionParser
 import os
 import json
 
-amqp_host = "212.149.247.53:5672"
+amqp_host = "localhost:5672"
 amqp_user = "img"
 amqp_pwd = "imgpwd"
 amqp_vhost = "imgvhost"
@@ -78,7 +78,7 @@ if __name__ == '__main__':
     
     usage="usage: %prog -p|--poll <message_id> -t|--type <imagetype> -a|--async  <kickstarter_template.yaml>"
     description = """
-%prog Sends a message either asynchronously (poll for result later) to 
+%prog Sends a message asynchronously (poll for result later) to 
 the IMGer service, using <kickstarter_template.yaml> as the template.
 """
     parser = OptionParser(usage=usage, description=description)

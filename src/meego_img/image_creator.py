@@ -25,7 +25,7 @@ import time
 from threading import Thread
 from multiprocessing import Process, Queue, Pool
 from amqplib import client_0_8 as amqp
-
+from worker import ImageWorker
 # SETTINGS
 
 base_url = "http://212.149.247.53:8001/images/"
@@ -73,7 +73,8 @@ def mic2(id, type, email, ksfile):
         data = json.dumps({"status":"BUILDING", "id":str(id)})
         statusmsg = amqp.Message(data)
         chan.basic_publish(statusmsg, exchange="django_result_exchange", routing_key="status")        
-        sub.check_call(['/usr/bin/sudo','/usr/bin/mic-image-creator', '-d', '-v','--config='+tmpname,'--format='+(type if type else 'raw'),'--cache=/tmp/mycache/', '--outdir='+dir], shell=False, stdout=logfile, stderr=logfile, bufsize=-1)        
+        worker = ImageWorker(id, tmpname, type, logfile, dir)
+        worker.build()
         logfile.close()
     except CalledProcessError as err:
         logfile = open(logfile_name,'a')

@@ -23,7 +23,7 @@ from uuid import *
 from amqplib import client_0_8 as amqp
 from tempfile import TemporaryFile, NamedTemporaryFile, mkdtemp
 from django.core.servers.basehttp import FileWrapper
-
+from imgsettings import *
 
 import os
 import sys
@@ -42,7 +42,7 @@ def submit(request):
             print request.POST
             email = request.POST['email']
             imagetype = request.POST['imagetype']
-            conn = amqp.Connection(host="localhost:5672", userid="img", password="imgpwd", virtual_host="imgvhost", insist=False)
+            conn = amqp.Connection(host=amqp_host, userid=amqp_user, password=amqp_pwd, virtual_host=amqp_vhost, insist=False)
             chan = conn.channel() 
             if 'overlay' in request.POST and not 'ksfile' in request.FILES:
                 overlay = request.POST['overlay']
@@ -103,7 +103,7 @@ def get_or_none(model, **kwargs):
         return None
 
 def queue(request):
-    conn = amqp.Connection(host="localhost:5672", userid="img", password="imgpwd", virtual_host="imgvhost", insist=False)
+    conn = amqp.Connection(host=amqp_host, userid=amqp_user, password=amqp_pwd, virtual_host=amqp_vhost, insist=False)
     chan = conn.channel()
     msg = chan.basic_get("link_queue")
     file = ""
@@ -161,7 +161,7 @@ def download(request, msgid):
     return response
     
 def job(request, msgid): 
-    conn = amqp.Connection(host="localhost:5672", userid="img", password="imgpwd", virtual_host="imgvhost", insist=False)
+    conn = amqp.Connection(host=amqp_host, userid=amqp_user, password=amqp_pwd, virtual_host=amqp_vhost, insist=False)
     chan = conn.channel()  
     imgjob = ImageJob.objects.get(task_id__exact=msgid)
     msg = chan.basic_get("result_queue")

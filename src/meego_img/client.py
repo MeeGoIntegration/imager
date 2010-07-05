@@ -19,11 +19,7 @@ from uuid import uuid1
 from optparse import OptionParser
 import os
 import json
-
-amqp_host = "localhost:5672"
-amqp_user = "img"
-amqp_pwd = "imgpwd"
-amqp_vhost = "imgvhost"
+from imgsettings import *
 
 def async_send(fname, imagetype=None):
     conn = amqp.Connection(host=amqp_host, userid=amqp_user, password=amqp_pwd, virtual_host=amqp_vhost, insist=False)

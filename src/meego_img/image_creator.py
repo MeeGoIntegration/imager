@@ -23,28 +23,18 @@ import shutil
 import re
 import time
 from threading import Thread
-from multiprocessing import Process, Queue, Pool
+#from multiprocessing import Process, Queue, Pool
 from amqplib import client_0_8 as amqp
 from worker import ImageWorker
 # SETTINGS
-
-base_url = "http://212.149.247.53:8001/images/"
-base_dir = "/var/www/images"
-amqp_host = "localhost:5672"
-amqp_user = "img"
-amqp_pwd = "imgpwd"
-amqp_vhost = "imgvhost"
-num_workers = 2
+from imgsettings import *
 # END SETTINGS
 
 conn = amqp.Connection(host=amqp_host, userid=amqp_user, password=amqp_pwd, virtual_host=amqp_vhost, insist=False)
 chan = conn.channel()
 
 chan.queue_declare(queue="image_queue", durable=True, exclusive=False, auto_delete=False)
-chan.queue_declare(queue="link_queue", durable=False, exclusive=False, auto_delete=False)
-chan.queue_declare(queue="result_queue", durable=False, exclusive=False, auto_delete=False)
 chan.queue_declare(queue="kickstarter_queue", durable=True, exclusive=False, auto_delete=False)
-chan.queue_declare(queue="error_queue", durable=False, exclusive=False, auto_delete=False)
 chan.queue_declare(queue="status_queue", durable=False, exclusive=False, auto_delete=False)
 
 chan.exchange_declare(exchange="image_exchange", type="direct", durable=True, auto_delete=False,)
@@ -52,9 +42,6 @@ chan.exchange_declare(exchange="django_result_exchange", type="direct", durable=
 
 chan.queue_bind(queue="image_queue", exchange="image_exchange", routing_key="img")
 chan.queue_bind(queue="kickstarter_queue", exchange="image_exchange", routing_key="ks")
-chan.queue_bind(queue="link_queue", exchange="django_result_exchange", routing_key="link")
-chan.queue_bind(queue="result_queue", exchange="django_result_exchange", routing_key="res")
-chan.queue_bind(queue="error_queue", exchange="django_result_exchange", routing_key="err")
 chan.queue_bind(queue="status_queue", exchange="django_result_exchange", routing_key="status")
 
 def mic2(id, type, email, ksfile):

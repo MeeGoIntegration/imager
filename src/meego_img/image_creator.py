@@ -51,47 +51,38 @@ def mic2(id, type, email, ksfile):
     tmpname = tmp.name
     logfile_name = tmp.name+"-log"
     tmp.write(ksfile)    
-    tmp.close()
-    data2 = json.dumps({'logfile':logfile_name, 'id':id})
-    ret = amqp.Message(data2)
-    chan.basic_publish(ret, exchange="django_result_exchange", routing_key="res")
-    try:
-        logfile = open(logfile_name,'w')
-        data = json.dumps({"status":"BUILDING", "id":str(id)})
-        statusmsg = amqp.Message(data)
-        chan.basic_publish(statusmsg, exchange="django_result_exchange", routing_key="status")        
-        worker = ImageWorker(id, tmpname, type, logfile, dir)
-        worker.build()
-        logfile.close()
-    except CalledProcessError as err:
-        logfile = open(logfile_name,'a')
-        logfile.write("IMG FAILED MISERABLY IN CREATING THE IMAGE!\n")
-        logfile.write("%s\n"%err)        
-        logfile.close()
-        print err
-        error = json.dumps({"error":"Command failed %s"%err, 'id':str(id), 'url':base_url+id})
-        errmsg = amqp.Message(error)
-        chan.basic_publish(errmsg, exchange="django_result_exchange", routing_key="err")
-        return       
+    tmp.close()    
+    logfile = open(logfile_name,'w')
+    data = json.dumps({"status":"BUILDING", "id":str(id)})
+    statusmsg = amqp.Message(data)
+    chan.basic_publish(statusmsg, exchange="django_result_exchange", routing_key="status")  
+    print "worker"
+    worker = ImageWorker(id, tmpname, type, logfile, dir)
+    worker.build()
+    logfile.close()
     file = base_url+"%s"%id
-    data = json.dumps({"url":str(file), "id":str(id)})
+    data = json.dumps({"status":"IN WORKER","url":str(file), "id":str(id)})
     imagemsg = amqp.Message(data)
-    chan.basic_publish(imagemsg, exchange="django_result_exchange", routing_key="link")
+    chan.basic_publish(imagemsg, exchange="django_result_exchange", routing_key="status")
     
-job_pool = Pool(num_workers)
+#job_pool = Pool(num_workers)
 def mic2_callback(msg):  
+    print "mic2"
     job = json.loads(msg.body)    
     email = job["email"]
     id = job["id"]    
     type = job['imagetype']
     ksfile = job['ksfile']    
-    args=(id, type, email, ksfile)
-    job_pool.apply_async(mic2, args=args)        
+    mic2(id, type, email, ksfile)
+    print "mic2 end"
+    #job_pool.apply_async(mic2, args=args)        
+    
     #chan.basic_ack(msg.delivery_tag)
     
         
  
 def kickstarter_callback(msg):
+    print "ks"
     kickstarter = json.loads(msg.body)    
     config = kickstarter["config"]
     email = kickstarter["email"]    
@@ -115,6 +106,7 @@ def kickstarter_callback(msg):
     shutil.rmtree(out_dir) 
     os.remove(configtemp.name)
     configtemp.close()    
+    print "ks end"
     
 chan.basic_consume(queue='image_queue', no_ack=True, callback=mic2_callback)
 chan.basic_consume(queue='kickstarter_queue', no_ack=True, callback=kickstarter_callback)

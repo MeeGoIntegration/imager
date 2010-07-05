@@ -37,23 +37,17 @@ def async_send(fname, imagetype=None):
     chan.basic_publish(msg,exchange="image_exchange",routing_key="ks")
     chan.close()
     conn.close()
-    print "Message sent, use id %s as the id for polling the results."%id
+    print "Message sent, use the following id for polling the results.\n%s"%id
 
 def check_message(id, message, chan):
     data = json.loads(message.body)
     if data["id"] == id:
-        if message.delivery_info["routing_key"] == "res":
-            pass
-            #chan.basic_ack(message.delivery_tag)    
-        elif message.delivery_info["routing_key"] == "status":
+        if "status" in data:
             print "Image build status: %s"%data["status"]
-            #chan.basic_ack(message.delivery_tag)
-        elif message.delivery_info["routing_key"] == "err":
-            print "Image build was erroneuos with the following error: %s\nDownload the logfile from here: %s"%(data["error"], data["url"])
-            #chan.basic_ack(message.delivery_tag)
-        elif message.delivery_info["routing_key"] == "link":
-            print "Image build was successfull!\nDownload the image from here: %s"%data["url"]
-            #chan.basic_ack(message.delivery_tag)
+            if "url" in data:
+                print "Image url available in: %s"%data["url"]
+            if "error" in data:
+                print "Image build %s was erroneuos: %s"%(data["id"], data["error"])        
     else:
         pass
         # No reject available so just requeue it.
@@ -62,11 +56,9 @@ def check_message(id, message, chan):
 def poll(id):
     conn = amqp.Connection(host=amqp_host, userid=amqp_user, password=amqp_pwd, virtual_host=amqp_vhost, insist=False)
     chan = conn.channel()
-    queues = ["result_queue","error_queue", "status_queue", "link_queue"]
-    for queue in queues:
-        message = chan.basic_get(queue=queue, no_ack=True)
-        if message:
-            check_message(id, message, chan)
+    message = chan.basic_get(queue="status_queue", no_ack=True)
+    if message:
+        check_message(id, message, chan)
     chan.close()
     conn.close()
 if __name__ == '__main__':

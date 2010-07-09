@@ -23,8 +23,8 @@ from uuid import *
 from amqplib import client_0_8 as amqp
 from tempfile import TemporaryFile, NamedTemporaryFile, mkdtemp
 from django.core.servers.basehttp import FileWrapper
-from imgsettings import *
-
+from settings import *
+import urllib2
 import os
 import sys
 import json
@@ -42,7 +42,7 @@ def submit(request):
             print request.POST
             email = request.POST['email']
             imagetype = request.POST['imagetype']
-            conn = amqp.Connection(host=amqp_host, userid=amqp_user, password=amqp_pwd, virtual_host=amqp_vhost, insist=False)
+            conn = amqp.Connection(host=BROKER_HOST, userid=BROKER_USER, password=BROKER_PASSWORD, virtual_host=BROKER_VHOST, insist=False)
             chan = conn.channel() 
             if 'overlay' in request.POST and not 'ksfile' in request.FILES:
                 overlay = request.POST['overlay']
@@ -103,49 +103,28 @@ def get_or_none(model, **kwargs):
         return None
 
 def queue(request):
-    conn = amqp.Connection(host=amqp_host, userid=amqp_user, password=amqp_pwd, virtual_host=amqp_vhost, insist=False)
+    conn = amqp.Connection(host=BROKER_HOST, userid=BROKER_USER, password=BROKER_PASSWORD, virtual_host=BROKER_VHOST, insist=False)
     chan = conn.channel()
-    msg = chan.basic_get("link_queue")
+    msg = chan.basic_get("status_queue")
     file = ""
     id = ""
     error = ""
     if msg:
         data = json.loads(msg.body)
         print data
-        if "url" in data:
-            file = data["url"]
-            id = data["id"]
-            job = get_or_none(ImageJob, task_id=id)
-            if job:
-                job.imagefile = file
-                job.status = "DONE"
-                job.save()
+        job = get_or_none(ImageJob, task_id__exact=data['id'])
+        if job:
+            print "Matched %s job with %s"%(job.task_id, data['id'])
+            if "status" in data:
+                job.status = data['status']
+            if "url" in data:
+                job.imagefile = data['url']
+            if "error" in data:
+                job.error = data['error']
+            if "log" in data:
+                job.logfile = data['log']
+            job.save()
             chan.basic_ack(msg.delivery_tag)
-    statusmsg = chan.basic_get("status_queue")
-    if statusmsg:
-        data = json.loads(statusmsg.body)
-        print data
-        if "status" in data:
-                status = data["status"]
-                id = data['id']
-                job = get_or_none(ImageJob, task_id=id)
-                if job:
-                    job.status = status
-                    job.save()
-                chan.basic_ack(statusmsg.delivery_tag)
-    errmsg = chan.basic_get("error_queue")
-    if errmsg:
-        errdata = json.loads(errmsg.body)
-        print errdata
-        if "error" and "id" in errdata:
-            error = errdata["error"]
-            id = errdata["id"]
-            job = get_or_none(ImageJob, task_id=id)
-            if job:
-                job.error = error
-                job.status = "ERROR"
-                job.save()
-            chan.basic_ack(errmsg.delivery_tag)
     chan.close()
     conn.close()
     return render_to_response('app/queue.html', {'queue':ImageJob.objects.all(), 'error':error})
@@ -161,25 +140,22 @@ def download(request, msgid):
     return response
     
 def job(request, msgid): 
-    conn = amqp.Connection(host=amqp_host, userid=amqp_user, password=amqp_pwd, virtual_host=amqp_vhost, insist=False)
+    conn = amqp.Connection(host=BROKER_HOST, userid=BROKER_USER, password=BROKER_PASSWORD, virtual_host=BROKER_VHOST, insist=False)
     chan = conn.channel()  
     imgjob = ImageJob.objects.get(task_id__exact=msgid)
-    msg = chan.basic_get("result_queue")
+    msg = chan.basic_get("status_queue")
+    res = ''
     if msg:
         data = json.loads(msg.body)
         print data        
         if (imgjob.task_id==data['id']):
-            print "matched: %s to %s with %s file" %(imgjob.task_id, data['id'], data['logfile'])
-            imgjob.logfile = data['logfile']
-            imgjob.save() 
-            chan.basic_ack(msg.delivery_tag)
-            
-    if os.path.exists(imgjob.logfile):
-        file = open(imgjob.logfile, 'r')
-        res = file.read()
-        file.close()
-    else:
-        res = "No log open yet, please refresh this page"        
+            if 'log' in data:
+                print "matched: %s to %s with %s file" %(imgjob.task_id, data['id'], data['log'])
+                imgjob.logfile = data['log']
+                imgjob.save() 
+                chan.basic_ack(msg.delivery_tag)
+    if imgjob.logfile:
+        res = urllib2.urlopen(imgjob.logfile).read()    
     chan.close()
     conn.close()
     return render_to_response('app/job_details.html', {'job':res})

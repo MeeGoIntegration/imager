@@ -5,16 +5,22 @@ Maintainer: Ramez Hanna <ramez.hanna@nokia.com>
 Build-Depends: debhelper (>= 7), python (>=2.6), python-support (>= 0.5.0), python-setuptools, python-amqplib, python-yaml
 Standards-Version: 3.8.4
 
-Package: img
+Package: img-www
 Architecture: all
-Depends: ${python:Depends}, ${misc:Depends}, ${python:Versions}, python-sqlite, lighttpd, yum, python-django, python-flup, python-yaml, python-json
+Depends: ${python:Depends}, ${misc:Depends}, ${python:Versions}, python-sqlite, lighttpd, yum, python-django, python-flup, python-yaml, img-core
 Description: A image creation service for MeeGo related products
  img is a image creation service for MeeGo related products.
 
-Package: img-svc
+Package: img-core
 Architecture: all
-Depends: ${python:Depends}, ${misc:Depends}, ${python:Versions}, rabbitmq-server, python-sqlite, lighttpd, yum, python-django, mic2, pykickstart, python-amqplib, python-yaml, python-json, bzip2, sudo
+Depends: ${python:Depends}, ${misc:Depends}, ${python:Versions}, rabbitmq-server, python-sqlite, yum,  mic2, pykickstart, python-amqplib, python-yaml, bzip2, sudo
 Description: A image creation service for MeeGo related products
  img is a image creation service for MeeGo related products.
  Service component for IMG.
 
+Package: img-control
+Architecture: all
+Depends: ${python:Depends}, ${misc:Depends}, ${python:Versions}, python-amqplib, python-yaml, bzip2, sudo, img-core
+Description: A image creation service for MeeGo related products
+ img is a image creation service for MeeGo related products.
+ Service component for IMG.

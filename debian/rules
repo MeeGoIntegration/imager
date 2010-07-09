@@ -17,15 +17,19 @@ install:
 	dh_installdirs
 
 	# install in a raw way
-	mkdir -p debian/img/$(PKGDIR)
-	cp -a src/meego_img debian/img/$(PKGDIR)
-	mkdir -p debian/img/usr/share/img
-	cp -a kickstarter debian/img/usr/share/img/
-	mkdir -p debian/img-svc/usr/bin
-	cp -a src/meego_img/image_creator.py debian/img-svc/usr/bin/meego_image_creator
-	mkdir -p debian/img/etc/lighttpd/vhosts.d
-	mkdir -p debian/img/var/www/django/run
-	cp -a debian/img-lighttpd.conf debian/img/etc/lighttpd/vhosts.d/
+	mkdir -p debian/img-www/$(PKGDIR)
+	cp -a src/meego_img debian/img-www/$(PKGDIR)
+	mkdir -p debian/img-core/usr/share/img
+	cp -a kickstarter debian/img-core/usr/share/img/
+	mkdir -p debian/img-core/usr/bin
+	mkdir -p debian/img-control/usr/bin
+	cp -a src/meego_img/image_creator.py debian/img-core/usr/bin/meego_image_creator
+	cp -a src/meego_img/client.py debian/img-control/usr/bin/meego_image_client
+	mkdir -p debian/img-www/etc/lighttpd/vhosts.d
+	mkdir -p debian/img-www/var/www/django/run
+	cp -a debian/img-lighttpd.conf debian/img-www/etc/lighttpd/vhosts.d/
+	mkdir -p debian/img-core/usr/share/doc/img-core
+	cp -a README INSTALL debian/img-core/usr/share/doc/img-core/
 
 binary-indep: install
 	dh_testdir

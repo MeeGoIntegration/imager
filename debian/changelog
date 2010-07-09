@@ -1,3 +1,15 @@
+img (0.0.2) unstable; urgency=low
+
+  * KVM integration added
+
+ -- Ramez Hanna <ramez.hanna@nokia.com>  Fri, 09 Jul 2010 14:32:59 +0300
+
+img (0.0.1-2) unstable; urgency=low
+
+  * W25 release
+
+ -- Ramez Hanna <ramez.hanna@nokia.com>  Thu, 08 Jul 2010 10:57:03 +0300
+
 img (0.0.1-1) unstable; urgency=low
 
   * Initial release.

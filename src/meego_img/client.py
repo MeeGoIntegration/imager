@@ -47,7 +47,9 @@ def check_message(id, message, chan):
             if "url" in data:
                 print "Image url available in: %s"%data["url"]
             if "error" in data:
-                print "Image build %s was erroneuos: %s"%(data["id"], data["error"])        
+                print "Image build %s was erroneuos: %s"%(data["id"], data["error"])
+            if "log" in data:
+                print "Log available here: %s"%data['log']
     else:
         pass
         # No reject available so just requeue it.

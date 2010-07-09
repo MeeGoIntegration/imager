@@ -17,7 +17,7 @@
 import json
 import subprocess as sub
 from subprocess import CalledProcessError
-import os
+import os,  sys
 from tempfile import TemporaryFile, NamedTemporaryFile, mkdtemp
 import shutil
 import re
@@ -28,6 +28,7 @@ from threading import Thread
 from multiprocessing import Process, Queue
 from amqplib import client_0_8 as amqp
 from imgsettings import *
+
 
 class ImageWorker(object):
     def _getport(self):
@@ -44,72 +45,88 @@ class ImageWorker(object):
         self._port = self._getport()
         self._kvmimage = '/tmp/overlay-%s-port-%s'%(self._id, self._port)
         self._cacheimage = '/tmp/cache-image'#%self._id
-        self._sshargs = ['/usr/bin/ssh','-o','UserKnownHostsFile=/dev/null','-o','StrictHostKeyChecking=no','-p%s'%self._port, '-lroot', '-i/usr/share/img/id_rsa', '127.0.0.1']        
-        self._scpksargs = [ '/usr/bin/scp', '-o','UserKnownHostsFile=/dev/null','-o','StrictHostKeyChecking=no','-P%s'%self._port, '-i/usr/share/img/id_rsa', self._tmpname, "root@127.0.0.1:"+self._dir+"/"]
-        self._imagecreate = ['/usr/bin/qemu-img', 'create', '-b','/usr/share/img/base.img', '-f','qcow', "%s"%self._kvmimage]        
+        self._sshargs = ['/usr/bin/ssh','-o','ConnectTimeout=60', '-o', 'ConnectionAttempts=4','-o','UserKnownHostsFile=/dev/null','-o','StrictHostKeyChecking=no','-p%s'%self._port, '-lroot', '-i/usr/share/img/id_rsa', '127.0.0.1']        
+        self._scpksargs = [ '/usr/bin/scp', '-o','UserKnownHostsFile=/dev/null','-o','StrictHostKeyChecking=no','-P%s'%self._port, '-i/usr/share/img/id_rsa']
+        self._imagecreate = ['/usr/bin/qemu-img', 'create', '-b','/usr/share/img/base.img','-o','preallocation=metadata', '-o', 'cluster_size=2M', '-f','qcow2', "%s"%self._kvmimage]        
         self._cachecreate = ['/usr/bin/qemu-img', 'create', '-f','raw', self._cacheimage, '3G']
-        self._kvmargs = ['/usr/bin/sudo','/usr/bin/kvm']
+        self._kvmargs = ['/usr/bin/sudo','/usr/bin/kvm']        
         self._kvmargs.append('-nographic')
         self._kvmargs.append('-net')
-        self._kvmargs.append('nic')        
+        self._kvmargs.append('nic,model=virtio')        
         self._kvmargs.append('-net')
         self._kvmargs.append('user,hostfwd=tcp:127.0.0.1:%s-:22'%self._port)        
         self._kvmargs.append('-daemonize')
         self._kvmargs.append('-drive')
-        self._kvmargs.append(str('file='+self._kvmimage+',index=0,media=disk'))
+        self._kvmargs.append(str('file='+self._kvmimage+',index=0,if=virtio,boot=on'))#,index=0,media=disk'))
         #self._kvmargs.append('-drive')
         #self._kvmargs.append(str('file='+self._cacheimage+',index=1,media=disk'))
         print self._kvmargs
         
-        self._micargs = ['/usr/bin/mic-image-creator', '-d', '-v']
+        self._micargs = ['mic-image-creator', '-d', '-v']
         self._micargs.append('--config='+self._tmpname)
         self._micargs.append('--format='+self._type)
         self._micargs.append('--cache=/tmp/mycache')#+guest_mount_cache)
         self._micargs.append('--outdir='+dir)
         
         self._loopargs = []
-        
+    def _update_status(self, datadict):
+        data = json.dumps(datadict)
+        msg = amqp.Message(data)
+        self._amqp_chan.basic_publish(msg, exchange="django_result_exchange", routing_key="status") 
     def build(self):        
         try:
-            #data = json.dumps({'status':"VIRTUAL MACHINE, IMAGE CREATION", "url":base_url+self._id, 'id':self._id})
-            #msg = amqp.Message(data)
-            #self._amqp_chan.basic_publish(msg, exchange="django_result_exchange", routing_key="status") 
-            #sub.check_call(self._imagecreate, shell=False, stdin=sub.PIPE, stdout=sub.PIPE, stderr=sub.PIPE, bufsize=-1)                        
-            #data["status"] = "VIRTUAL MACHINE, RUNNING VM"
-            #print data
-            #msg = amqp.Message(data)
-            #self._amqp_chan.basic_publish(msg, exchange="django_result_exchange", routing_key="status")
-#            self._kvmproc = sub.Popen(self._kvmargs, shell=False, stdin=sub.PIPE, stdout=sub.PIPE, stderr=sub.PIPE, bufsize=-1)
-#            time.sleep(90)                        
-            #data["status"] = "VIRTUAL MACHINE, RUNNING MIC2"
-            #msg = amqp.Message(data)
-            #self._amqp_chan.basic_publish(msg, exchange="django_result_exchange", routing_key="status")
-#            sshargs = copy.copy(self._sshargs)
-#            for arg in self._micargs:
-#                sshargs.append(arg)
-#            mkdirargs = ['mkdir', '-p', '-v', self._dir]
-#            mksshargs = copy.copy(self._sshargs)
-#            for mkarg in mkdirargs:
-#                mksshargs.append(mkarg)            
-#            sub.check_call(mksshargs, shell=False, stdin=sub.PIPE, bufsize=-1)
-#            print mksshargs
-#            print self._scpksargs
-#            sub.check_call(self._scpksargs, shell=False, stdin=sub.PIPE, bufsize=-1)
-            sub.check_call(self._micargs, shell=False, stdin=sub.PIPE, stdout=self._logfile, stderr=self._logfile, bufsize=-1)    
-            #self._kvmproc.kill()
-            #os.kill(self._kvmproc.pid, 1)
-        except CalledProcessError as err:
-            print "error"
-            error = json.dumps({'status':"ERROR","error":"%s"%err, 'id':str(self._id), 'url':base_url+self._id})
-            errmsg = amqp.Message(error)
-            self._amqp_chan.basic_publish(errmsg, exchange="django_result_exchange", routing_key="status")
+            datadict = {'status':"VIRTUAL MACHINE, IMAGE CREATION", "url":base_url+self._id, 'id':self._id}
+            self._update_status(datadict)
+            sub.check_call(self._imagecreate, shell=False, stdin=sub.PIPE, stdout=sub.PIPE, stderr=sub.PIPE)            
+            print datadict+" blaa"            
+            self._update_status(datadict)
+            self._kvmproc = sub.Popen(self._kvmargs, shell=False, stdin=sub.PIPE, stdout=sub.PIPE, stderr=sub.PIPE)
+            datadict["status"] = "VIRTUAL MACHINE, WAITING FOR VM"
+            self._update_status(datadict)
+            time.sleep(15)                        
+            datadict["status"] = "VIRTUAL MACHINE, RUNNING MIC2"
+            self._update_status(datadict)
+            sshargs = copy.copy(self._sshargs)
+            for arg in self._micargs:
+                sshargs.append(arg)
+            mkdirargs = ['mkdir', '-p', self._dir]
+            mksshargs = copy.copy(self._sshargs)
+            for mkarg in mkdirargs:
+                mksshargs.append(mkarg)            
+            sub.check_call(mksshargs, shell=False, stdin=sub.PIPE, stdout=sub.PIPE, stderr=sub.PIPE)
+            print mksshargs
+            print self._scpksargs
+            print sshargs            
+            toargs = [self._tmpname, "root@127.0.0.1:"+self._dir+"/"]
+            scptoargs = copy.copy(self._scpksargs)
+            for arg in toargs:
+                scptoargs.append(arg)
+            print scptoargs
+            sub.check_call(scptoargs, shell=False, stdout=sub.PIPE, stderr=sub.PIPE, stdin=sub.PIPE)            
+            sub.check_call(sshargs, shell=False, stdin=sub.PIPE, stdout=self._logfile, stderr=self._logfile, bufsize=-1)  
+            fromargs = ['-r',"root@127.0.0.1:"+self._dir+'/*', self._dir+'/']
+            scpfromargs = copy.copy(self._scpksargs)
+            for arg in fromargs:
+                scpfromargs.append(arg)
+            datadict["status"] = "VIRTUAL MACHINE, COPYING IMAGE"
+            self._update_status(datadict)
+            sub.check_call(scpfromargs, shell=False, stdout=sub.PIPE, stderr=sub.PIPE, stdin=sub.PIPE)            
             
-            #self._kvmproc.kill()
-            #os.kill(self._kvmproc.pid, 1)
+        except CalledProcessError as err:
+            print "error %s"%err
+            error = {'status':"ERROR","error":"%s"%err, 'id':str(self._id), 'url':base_url+self._id}
+            self._update_status(error)
+            haltargs = copy.copy(self._sshargs)
+            haltargs.append('halt')
+            print haltargs
+            sub.check_call(haltargs, shell=False, stdout=sub.PIPE, stderr=sub.PIPE, stdin=sub.PIPE)
+            os.remove(self._kvmimage)
             return       
-        #self._kvmproc.kill()
-        #os.kill(self._kvmproc.pid, 1)
-        data = json.dumps({'status':"DONE", "url":base_url+self._id, 'id':self._id})
-        msg = amqp.Message(data)
-        self._amqp_chan.basic_publish(msg, exchange="django_result_exchange", routing_key="status")
+        haltargs = copy.copy(self._sshargs)
+        haltargs.append('halt')
+        print haltargs
+        sub.check_call(haltargs, shell=False, stdout=sub.PIPE, stderr=sub.PIPE, stdin=sub.PIPE)
+        os.remove(self._kvmimage)
+        data = {'status':"DONE", "url":base_url+self._id, 'id':self._id}
+        self._update_status(data)
         

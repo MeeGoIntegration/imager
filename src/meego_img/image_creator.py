@@ -17,19 +17,24 @@
 import json
 import subprocess as sub
 from subprocess import CalledProcessError
-import os
+import os, sys
 from tempfile import TemporaryFile, NamedTemporaryFile, mkdtemp
 import shutil
 import re
 import time
 from threading import Thread
-#from multiprocessing import Process, Queue, Pool
+from multiprocessing import Process, Queue, Pool
 from amqplib import client_0_8 as amqp
 from worker import ImageWorker
 # SETTINGS
 from imgsettings import *
 # END SETTINGS
 
+# if not root...kick out
+if not os.geteuid()==0:
+    sys.exit("\nOnly root can run this script\n")
+if not os.path.exists('/dev/kvm'):
+    sys.exit("\nYou must enable KVM kernel module\n")
 conn = amqp.Connection(host=amqp_host, userid=amqp_user, password=amqp_pwd, virtual_host=amqp_vhost, insist=False)
 chan = conn.channel()
 
@@ -52,20 +57,18 @@ def mic2(id, type, email, ksfile):
     logfile_name = tmp.name+"-log"
     tmp.write(ksfile)    
     tmp.close()    
+    file = base_url+"%s"%id    
     logfile = open(logfile_name,'w')
-    data = json.dumps({"status":"BUILDING", "id":str(id)})
+    logurl = base_url+id+'/'+os.path.split(logfile.name)[-1]
+    data = json.dumps({"status":"BUILDING", "id":str(id), 'url':str(file), 'log':logurl})
     statusmsg = amqp.Message(data)
     chan.basic_publish(statusmsg, exchange="django_result_exchange", routing_key="status")  
     print "worker"
-    worker = ImageWorker(id, tmpname, type, logfile, dir)
+    worker = ImageWorker(id, tmpname, type, logfile, dir)    
     worker.build()
     logfile.close()
-    file = base_url+"%s"%id
-    data = json.dumps({"status":"IN WORKER","url":str(file), "id":str(id)})
-    imagemsg = amqp.Message(data)
-    chan.basic_publish(imagemsg, exchange="django_result_exchange", routing_key="status")
     
-#job_pool = Pool(num_workers)
+job_pool = Pool(num_workers)
 def mic2_callback(msg):  
     print "mic2"
     job = json.loads(msg.body)    
@@ -73,9 +76,8 @@ def mic2_callback(msg):
     id = job["id"]    
     type = job['imagetype']
     ksfile = job['ksfile']    
-    mic2(id, type, email, ksfile)
-    print "mic2 end"
-    #job_pool.apply_async(mic2, args=args)        
+    args = (id, type, email, ksfile)    
+    job_pool.apply_async(mic2, args=args)        
     
     #chan.basic_ack(msg.delivery_tag)
     

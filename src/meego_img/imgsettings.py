@@ -1,4 +1,4 @@
-base_url = "http://212.149.247.53:8001/images/"
+base_url = "http://192.168.11.2/images/"
 base_dir = "/var/www/images"
 amqp_host = "localhost:5672"
 amqp_user = "img"

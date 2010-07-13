@@ -35,10 +35,10 @@ Image Me Give, control client package.
 %install
 rm -rf %{buildroot}
 mkdir -p %{buildroot}%{_initddir}
-install -D -m 755 rpm/img-svc.init %{buildroot}/etc/init.d/img-svc
+install -D -m 755 rpm/img-core.init %{buildroot}/etc/init.d/img-svc
 mkdir -p %{buildroot}%{_sbindir}
 ln -sf %{_initrddir}/img-svc %{buildroot}%{_sbindir}/rcimg-svc
-install -D -m 755 rpm/img.init %{buildroot}/etc/init.d/img
+install -D -m 755 rpm/img-www.init %{buildroot}/etc/init.d/img
 ln -sf %{_initrddir}/img %{buildroot}%{_sbindir}/rcimg
 mkdir -p %{buildroot}/var/www/django/img
 cp -a src/meego_img %{buildroot}/var/www/django/img

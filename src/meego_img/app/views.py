@@ -67,7 +67,6 @@ def submit(request):
                 imgjob = ImageJob()
                 imgjob.task_id = msg.message_id
                 imgjob.email = email
-                imgjob.status = "IN QUEUE"
                 imgjob.type = imagetype
                 imgjob.save()
                 #chan.queue_purge("result_queue")
@@ -80,7 +79,6 @@ def submit(request):
                 imgjob = ImageJob()                
                 imgjob.task_id = msg.message_id
                 imgjob.email = email
-                imgjob.status = "IN QUEUE"
                 imgjob.type = imagetype
                 imgjob.save()                
                 chan.basic_publish(msg, exchange="image_exchange", routing_key="img")

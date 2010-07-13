@@ -65,26 +65,30 @@ class ImageWorker(object):
         self._micargs = ['mic-image-creator', '-d', '-v']
         self._micargs.append('--config='+self._tmpname)
         self._micargs.append('--format='+self._type)
-        self._micargs.append('--cache=/tmp/mycache')#+guest_mount_cache)
+        self._micargs.append('--cache=/var/mycache')#+guest_mount_cache)
         self._micargs.append('--outdir='+dir)
         
         self._loopargs = []
     def _update_status(self, datadict):
         data = json.dumps(datadict)
+        print data
         msg = amqp.Message(data)
         self._amqp_chan.basic_publish(msg, exchange="django_result_exchange", routing_key="status") 
     def build(self):        
+        print "build"
         try:
+            print "try b"
             datadict = {'status':"VIRTUAL MACHINE, IMAGE CREATION", "url":base_url+self._id, 'id':self._id}
             self._update_status(datadict)
             sub.check_call(self._imagecreate, shell=False, stdin=sub.PIPE, stdout=sub.PIPE, stderr=sub.PIPE)            
-            print datadict+" blaa"            
+            print "daa"
             self._update_status(datadict)
             self._kvmproc = sub.Popen(self._kvmargs, shell=False, stdin=sub.PIPE, stdout=sub.PIPE, stderr=sub.PIPE)
             datadict["status"] = "VIRTUAL MACHINE, WAITING FOR VM"
             self._update_status(datadict)
             time.sleep(15)                        
             datadict["status"] = "VIRTUAL MACHINE, RUNNING MIC2"
+            print datadict
             self._update_status(datadict)
             sshargs = copy.copy(self._sshargs)
             for arg in self._micargs:

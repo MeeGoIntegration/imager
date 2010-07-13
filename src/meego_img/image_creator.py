@@ -76,7 +76,10 @@ def mic2_callback(msg):
     id = job["id"]    
     type = job['imagetype']
     ksfile = job['ksfile']    
-    args = (id, type, email, ksfile)    
+    args = (id, type, email, ksfile)        
+    data = json.dumps({"status":"IN QUEUE", "id":str(id), 'url':str(file)})
+    statusmsg = amqp.Message(data)
+    chan.basic_publish(statusmsg, exchange="django_result_exchange", routing_key="status")  
     job_pool.apply_async(mic2, args=args)        
     
     #chan.basic_ack(msg.delivery_tag)

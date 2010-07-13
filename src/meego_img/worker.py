@@ -33,10 +33,10 @@ from imgsettings import *
 class ImageWorker(object):
     def _getport(self):
         return random.randint(49152, 65535)
-    def __init__(self, id, tmpname, type, logfile, dir, port=2222):
+    def __init__(self, conn, chan, id, tmpname, type, logfile, dir, port=2222):
         print "init"
-        self._amqp_conn = amqp.Connection(host=amqp_host, userid=amqp_user, password=amqp_pwd, virtual_host=amqp_vhost, insist=False)
-        self._amqp_chan = self._amqp_conn.channel()
+        self._amqp_conn = conn
+        self._amqp_chan = chan
         self._tmpname = tmpname
         self._type = type
         self._logfile = logfile

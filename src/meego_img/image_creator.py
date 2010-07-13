@@ -64,7 +64,7 @@ def mic2(id, type, email, ksfile):
     statusmsg = amqp.Message(data)
     chan.basic_publish(statusmsg, exchange="django_result_exchange", routing_key="status")  
     print "worker"
-    worker = ImageWorker(id, tmpname, type, logfile, dir)    
+    worker = ImageWorker(conn, chan, id, tmpname, type, logfile, dir)    
     worker.build()
     logfile.close()
     

@@ -33,7 +33,7 @@ from imgsettings import *
 class ImageWorker(object):
     def _getport(self):
         return random.randint(49152, 65535)
-    def __init__(self, conn, chan, id, tmpname, type, logfile, dir, port=2222):
+    def __init__(self, id, tmpname, type, logfile, dir, port=2222, conn=None, chan=None):
         print "init"
         self._amqp_conn = conn
         self._amqp_chan = chan
@@ -73,7 +73,8 @@ class ImageWorker(object):
         data = json.dumps(datadict)
         print data
         msg = amqp.Message(data)
-        self._amqp_chan.basic_publish(msg, exchange="django_result_exchange", routing_key="status") 
+        if self._amqp_chan:
+            self._amqp_chan.basic_publish(msg, exchange="django_result_exchange", routing_key="status") 
     def build(self):        
         print "build"
         try:

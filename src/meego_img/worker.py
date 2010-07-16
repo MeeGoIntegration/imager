@@ -33,7 +33,7 @@ from imgsettings import *
 class ImageWorker(object):
     def _getport(self):
         return random.randint(49152, 65535)
-    def __init__(self, id, tmpname, type, logfile, dir, port=2222, conn=None, chan=None):
+    def __init__(self, id, tmpname, type, logfile, dir, port=2222, conn=None, chan=None, work_item=None):
         print "init"
         self._amqp_conn = conn
         self._amqp_chan = chan
@@ -42,7 +42,9 @@ class ImageWorker(object):
         self._logfile = logfile
         self._dir = dir
         self._id = id
+        self._image =None
         self._port = self._getport()
+        self._work_item = work_item
         self._kvmimage = '/tmp/overlay-%s-port-%s'%(self._id, self._port)
         self._cacheimage = '/tmp/cache-image'#%self._id
         self._sshargs = ['/usr/bin/ssh','-o','ConnectTimeout=60', '-o', 'ConnectionAttempts=4','-o','UserKnownHostsFile=/dev/null','-o','StrictHostKeyChecking=no','-p%s'%self._port, '-lroot', '-i/usr/share/img/id_rsa', '127.0.0.1']        
@@ -75,6 +77,19 @@ class ImageWorker(object):
         msg = amqp.Message(data)
         if self._amqp_chan:
             self._amqp_chan.basic_publish(msg, exchange="django_result_exchange", routing_key="status") 
+        if self._work_item:
+            if "status" in datadict:
+                fields = self._work_item.fields()
+                fields["Status"] = datadict["status"]+"\n"
+                self._work_item.set_fields(fields)
+            if "url" in datadict:
+                self._work_item.set_field("URL", datadict['url'])
+            if "error" in datadict:
+                self._work_item.set_field("Error", datadict['error'])
+                self._work_item.set_result(None)
+            if "image" in datadict:
+                self._work_item.set_field("Image", datadict['image'])
+                self._work_item.set_result(True)
     def build(self):        
         print "build"
         try:
@@ -116,7 +131,14 @@ class ImageWorker(object):
             datadict["status"] = "VIRTUAL MACHINE, COPYING IMAGE"
             self._update_status(datadict)
             sub.check_call(scpfromargs, shell=False, stdout=sub.PIPE, stderr=sub.PIPE, stdin=sub.PIPE)            
-            
+            for file in os.listdir(self._dir):
+                if os.path.isdir(self._dir+'/'+self._id+'/'+file):
+                    for cont in os.listdir(self._dir+'/'+self._id+'/'+file):
+                        if not cont.endswith('.xml'):
+                            self._image = base_url+self._id+'/'+cont
+            if self._image:
+                datadict["image"] = self._image
+                self._update_status(datadict)
         except CalledProcessError as err:
             print "error %s"%err
             error = {'status':"ERROR","error":"%s"%err, 'id':str(self._id), 'url':base_url+self._id}

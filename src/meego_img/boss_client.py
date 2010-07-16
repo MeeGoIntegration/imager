@@ -19,7 +19,8 @@ pdef = {
     "fields" : {
         "kickstart" : open(sys.argv[1]).read(), 
         "email": 'aleksi.suomalainen@nomovok.com', 
-        "id":str(uuid1())
+        "id":str(uuid1()), 
+        "type":'raw'
         }
     }
 

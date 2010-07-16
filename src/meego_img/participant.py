@@ -24,16 +24,12 @@ from imgsettings import *
 import os, sys
 from tempfile import TemporaryFile, NamedTemporaryFile, mkdtemp
 
-num_workers = 2
-job_pool = Pool(num_workers)
+
 
     
 class MICParticipant(Participant):
-    def mic2(self, id, type, email, kickstart):
-        print id
-        print type
-        print email
-        print kickstart
+    __job_pool = None
+    def mic2(self, id, type, email, kickstart, wi):
         dir = "%s/%s"%(base_dir, id)
         os.mkdir(dir, 0775)    
         tmp = NamedTemporaryFile(dir=dir, delete=False)    
@@ -44,22 +40,23 @@ class MICParticipant(Participant):
         file = base_url+"%s"%id    
         logfile = open(logfile_name,'w')
         logurl = base_url+id+'/'+os.path.split(logfile.name)[-1]
-        worker = ImageWorker(id, tmpname, type, logfile, dir)    
+        worker = ImageWorker(id, tmpname, type, logfile, dir, work_item=wi)    
         worker.build()
         logfile.close()
-
+        
     def consume(self):
         wi = self.workitem
         email = wi.lookup('email')
         kickstart = wi.lookup('kickstart')
         id = wi.lookup('id')
+        type = wi.lookup('type')
         print "Workitem: "
         print json.dumps(wi.to_h())
-        args = (id, 'raw', email, kickstart)
-        self.mic2(id, 'raw', email, kickstart)
-        #job_pool.apply_async(self.mic2, args)
+        args = (id, type, email, kickstart)
+        #self.__job_pool = Pool(2)
+        self.mic2(id, type, email, kickstart, wi)
+        #self.__job_pool.apply_async(mic2, args)
         
-
 if __name__ == "__main__":
     print "Started a python participant"
     p = MICParticipant(ruote_queue="mic", amqp_vhost="ruote-test")

@@ -12,7 +12,8 @@ pdef = {
     "definition": """
         Ruote.process_definition :name => 'test' do
           sequence do
-            mic            
+            mic
+            workitem_dumper
           end
         end
       """,

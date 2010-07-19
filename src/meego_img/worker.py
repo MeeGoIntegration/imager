@@ -150,13 +150,13 @@ class ImageWorker(object):
             haltargs = copy.copy(self._sshargs)
             haltargs.append('halt')
             print haltargs
-            #sub.check_call(haltargs, shell=False, stdout=sub.PIPE, stderr=sub.PIPE, stdin=sub.PIPE)
+            sub.check_call(haltargs, shell=False, stdout=sub.PIPE, stderr=sub.PIPE, stdin=sub.PIPE)
             os.remove(self._kvmimage)
             return       
         haltargs = copy.copy(self._sshargs)
         haltargs.append('halt')
         print haltargs
-        #sub.check_call(haltargs, shell=False, stdout=sub.PIPE, stderr=sub.PIPE, stdin=sub.PIPE)
+        sub.check_call(haltargs, shell=False, stdout=sub.PIPE, stderr=sub.PIPE, stdin=sub.PIPE)
         os.remove(self._kvmimage)
         data = {'status':"DONE", "url":base_url+self._id, 'id':self._id}
         self._update_status(data)

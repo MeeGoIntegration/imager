@@ -132,10 +132,14 @@ class ImageWorker(object):
             self._update_status(datadict)
             sub.check_call(scpfromargs, shell=False, stdout=sub.PIPE, stderr=sub.PIPE, stdin=sub.PIPE)            
             for file in os.listdir(self._dir):
-                if os.path.isdir(self._dir+'/'+self._id+'/'+file):
-                    for cont in os.listdir(self._dir+'/'+self._id+'/'+file):
+                print file
+                if os.path.isdir(self._dir+'/'+file):
+                    for cont in os.listdir(self._dir+'/'+file):
+                        print cont
                         if not cont.endswith('.xml'):
-                            self._image = base_url+self._id+'/'+cont
+                            print base_url+self._id+'/'+file+'/'+cont
+                            self._image = base_url+self._id+'/'+file+'/'+cont
+            print self._image
             if self._image:
                 datadict["image"] = self._image
                 self._update_status(datadict)
@@ -146,13 +150,13 @@ class ImageWorker(object):
             haltargs = copy.copy(self._sshargs)
             haltargs.append('halt')
             print haltargs
-            sub.check_call(haltargs, shell=False, stdout=sub.PIPE, stderr=sub.PIPE, stdin=sub.PIPE)
+            #sub.check_call(haltargs, shell=False, stdout=sub.PIPE, stderr=sub.PIPE, stdin=sub.PIPE)
             os.remove(self._kvmimage)
             return       
         haltargs = copy.copy(self._sshargs)
         haltargs.append('halt')
         print haltargs
-        sub.check_call(haltargs, shell=False, stdout=sub.PIPE, stderr=sub.PIPE, stdin=sub.PIPE)
+        #sub.check_call(haltargs, shell=False, stdout=sub.PIPE, stderr=sub.PIPE, stdin=sub.PIPE)
         os.remove(self._kvmimage)
         data = {'status':"DONE", "url":base_url+self._id, 'id':self._id}
         self._update_status(data)

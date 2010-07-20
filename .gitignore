@@ -26,7 +26,7 @@ debian/img.postinst.debhelper
 debian/img.postrm.debhelper
 debian/img.prerm.debhelper
 debian/img.substvars
-debian/img/
+debian/img*
 debian/source/
 img.e4p
 mycache/

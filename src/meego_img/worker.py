@@ -28,7 +28,13 @@ from threading import Thread
 from multiprocessing import Process, Queue
 from amqplib import client_0_8 as amqp
 from imgsettings import *
+import ConfigParser
 
+config = ConfigParser.ConfigParser()
+config.read('/etc/imger/img.conf')
+base_url = config.get('worker', 'base_url')
+base_dir = config.get('worker', 'base_dir')
+post = config.get('worker', 'post_creation')
 
 class ImageWorker(object):
     def _getport(self):

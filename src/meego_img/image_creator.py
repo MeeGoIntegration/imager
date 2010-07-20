@@ -26,9 +26,16 @@ from threading import Thread
 from multiprocessing import Process, Queue, Pool
 from amqplib import client_0_8 as amqp
 from worker import ImageWorker
-# SETTINGS
-from imgsettings import *
-# END SETTINGS
+
+import ConfigParser
+
+config = ConfigParser.ConfigParser()
+config.read('/etc/imger/img.conf')
+
+amqp_host = config.get('amqp', 'amqp_host')
+amqp_user = config.get('amqp', 'amqp_user')
+amqp_pwd = config.get('amqp', 'amqp_pwd')
+amqp_vhost = config.get('amqp', 'amqp_pwd')
 
 # if not root...kick out
 if not os.geteuid()==0:

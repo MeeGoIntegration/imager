@@ -20,12 +20,23 @@ from  RuoteAMQP.participant import Participant
 from worker import ImageWorker
 import json
 from multiprocessing import Process, Queue, Pool
-from imgsettings import *
+import ConfigParser
+
+config = ConfigParser.ConfigParser()
+config.read('/etc/imger/img.conf')
+base_url = config.get('worker', 'base_url')
+base_dir = config.get('worker', 'base_dir')
+post = config.get('worker', 'post_creation')
+
 import os, sys
 from tempfile import TemporaryFile, NamedTemporaryFile, mkdtemp
 
 
-
+# if not root...kick out
+if not os.geteuid()==0:
+    sys.exit("\nOnly root can run this script\n")
+if not os.path.exists('/dev/kvm'):
+    sys.exit("\nYou must enable KVM kernel module\n")
     
 class MICParticipant(Participant):
     __job_pool = None

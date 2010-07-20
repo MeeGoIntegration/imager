@@ -27,7 +27,7 @@ import copy
 from threading import Thread
 from multiprocessing import Process, Queue
 from amqplib import client_0_8 as amqp
-from imgsettings import *
+
 import ConfigParser
 
 config = ConfigParser.ConfigParser()
@@ -75,18 +75,19 @@ class ImageWorker(object):
         self._micargs.append('--format='+self._type)
         self._micargs.append('--cache=/var/mycache')#+guest_mount_cache)
         self._micargs.append('--outdir='+dir)
+        self._micargs.append('--prefix=imger')
+        self._micargs.append('--suffix='+self._id)
         
         self._loopargs = []
     def _update_status(self, datadict):
-        data = json.dumps(datadict)
-        print data
+        data = json.dumps(datadict)        
         msg = amqp.Message(data)
         if self._amqp_chan:
             self._amqp_chan.basic_publish(msg, exchange="django_result_exchange", routing_key="status") 
         if self._work_item:
             if "status" in datadict:
                 fields = self._work_item.fields()
-                fields["Status"] = datadict["status"]+"\n"
+                fields["Status"] = datadict["status"]
                 self._work_item.set_fields(fields)
             if "url" in datadict:
                 self._work_item.set_field("URL", datadict['url'])
@@ -96,14 +97,11 @@ class ImageWorker(object):
             if "image" in datadict:
                 self._work_item.set_field("Image", datadict['image'])
                 self._work_item.set_result(True)
-    def build(self):        
-        print "build"
-        try:
-            print "try b"
+    def build(self):                
+        try:           
             datadict = {'status':"VIRTUAL MACHINE, IMAGE CREATION", "url":base_url+self._id, 'id':self._id}
             self._update_status(datadict)
-            sub.check_call(self._imagecreate, shell=False, stdin=sub.PIPE, stdout=sub.PIPE, stderr=sub.PIPE)            
-            print "daa"
+            sub.check_call(self._imagecreate, shell=False, stdin=sub.PIPE, stdout=sub.PIPE, stderr=sub.PIPE)                        
             self._update_status(datadict)
             self._kvmproc = sub.Popen(self._kvmargs, shell=False, stdin=sub.PIPE, stdout=sub.PIPE, stderr=sub.PIPE)
             datadict["status"] = "VIRTUAL MACHINE, WAITING FOR VM"
@@ -137,18 +135,23 @@ class ImageWorker(object):
             datadict["status"] = "VIRTUAL MACHINE, COPYING IMAGE"
             self._update_status(datadict)
             sub.check_call(scpfromargs, shell=False, stdout=sub.PIPE, stderr=sub.PIPE, stdin=sub.PIPE)            
-            for file in os.listdir(self._dir):
-                print file
+            for file in os.listdir(self._dir):                
                 if os.path.isdir(self._dir+'/'+file):
-                    for cont in os.listdir(self._dir+'/'+file):
-                        print cont
-                        if not cont.endswith('.xml'):
-                            print base_url+self._id+'/'+file+'/'+cont
+                    for cont in os.listdir(self._dir+'/'+file):                        
+                        if not cont.endswith('.xml'):                            
                             self._image = base_url+self._id+'/'+file+'/'+cont
-            print self._image
             if self._image:
                 datadict["image"] = self._image
                 self._update_status(datadict)
+            if self._type == 'fiasco':
+                postsshargs = copy.copy(self._sshargs)
+                postscpargs = copy.copy(self._scpksargs)
+                post_toargs = [post, "root@127.0.0.1:"+post]
+                for arg in post_toargs:
+                    postscpargs.append(arg)
+                sub.check_call(postscpargs, shell=False, stdout=sub.PIPE, stderr=sub.PIPE, stdin=sub.PIPE)
+                postsshargs.append(post)
+                sub.check_call(postsshargs, shell=False, stdout=sub.PIPE, stderr=sub.PIPE, stdin=sub.PIPE)
         except CalledProcessError as err:
             print "error %s"%err
             error = {'status':"ERROR","error":"%s"%err, 'id':str(self._id), 'url':base_url+self._id}

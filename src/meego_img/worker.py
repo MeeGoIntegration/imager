@@ -24,8 +24,6 @@ import re
 import time
 import random
 import copy
-from threading import Thread
-from multiprocessing import Process, Queue
 from amqplib import client_0_8 as amqp
 
 import ConfigParser

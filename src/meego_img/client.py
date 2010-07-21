@@ -19,7 +19,16 @@ from uuid import uuid1
 from optparse import OptionParser
 import os
 import json
-from imgsettings import *
+
+import ConfigParser
+
+config = ConfigParser.ConfigParser()
+config.read('/etc/imger/img.conf')
+
+amqp_host = config.get('amqp', 'amqp_host')
+amqp_user = config.get('amqp', 'amqp_user')
+amqp_pwd = config.get('amqp', 'amqp_pwd')
+amqp_vhost = config.get('amqp', 'amqp_vhost')
 
 def async_send(fname, imagetype=None):
     conn = amqp.Connection(host=amqp_host, userid=amqp_user, password=amqp_pwd, virtual_host=amqp_vhost, insist=False)
@@ -29,12 +38,12 @@ def async_send(fname, imagetype=None):
     config = file.read()
     id = str(uuid1())
     # Format message as python list
-    params = {'config':config, 'email':"test@test.org", 'imagetype':imagetype if imagetype else 'raw', 'id':id}
+    params = {'ksfile':config, 'email':"test@test.org", 'imagetype':imagetype if imagetype else 'raw', 'id':id}
     data = json.dumps(params)
     
     msg = amqp.Message(data, message_id=id)
     # Send this message to image exchange, use routing key ks (goes to kickstarter process)
-    chan.basic_publish(msg,exchange="image_exchange",routing_key="ks")
+    chan.basic_publish(msg,exchange="image_exchange",routing_key="img")
     chan.close()
     conn.close()
     print "Message sent, use the following id for polling the results.\n%s"%id
@@ -66,10 +75,10 @@ def poll(id):
 if __name__ == '__main__':
     import sys
     
-    usage="usage: %prog -p|--poll <message_id> -t|--type <imagetype> -a|--async  <kickstarter_template.yaml>"
+    usage="usage: %prog -p|--poll <message_id> -t|--type <imagetype> -a|--async  <kickstart_file.ks>"
     description = """
 %prog Sends a message asynchronously (poll for result later) to 
-the IMGer service, using <kickstarter_template.yaml> as the template.
+the IMGer service, using <kickstart.ks> as the kickstart file.
 """
     parser = OptionParser(usage=usage, description=description)
 
@@ -84,7 +93,7 @@ the IMGer service, using <kickstarter_template.yaml> as the template.
     path=None
     if not options.poll:        
         if len(args) != 1:
-            parser.error("Missing <kickstarter_template.yaml> to parse")
+            parser.error("Missing <kickstart.ks> to parse")
         else:
             path=args[0]
     if options.poll:
@@ -95,4 +104,4 @@ the IMGer service, using <kickstarter_template.yaml> as the template.
         if options.async and os.path.isfile(path):
             async_send(path,options.type)
         else:
-            print "<kickstarter_template.yaml> must be a file"
+            print "<kickstart.ks> must be a file"

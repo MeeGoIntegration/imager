@@ -22,8 +22,6 @@ from tempfile import TemporaryFile, NamedTemporaryFile, mkdtemp
 import shutil
 import re
 import time
-from threading import Thread
-from multiprocessing import Process, Queue, Pool
 from amqplib import client_0_8 as amqp
 from worker import ImageWorker
 
@@ -35,7 +33,10 @@ config.read('/etc/imger/img.conf')
 amqp_host = config.get('amqp', 'amqp_host')
 amqp_user = config.get('amqp', 'amqp_user')
 amqp_pwd = config.get('amqp', 'amqp_pwd')
-amqp_vhost = config.get('amqp', 'amqp_pwd')
+amqp_vhost = config.get('amqp', 'amqp_vhost')
+num_workers = config.getint('worker', 'num_workers')
+base_dir = config.get('worker', 'base_dir')
+base_url = config.get('worker', 'base_url')
 
 # if not root...kick out
 if not os.geteuid()==0:
@@ -69,29 +70,24 @@ def mic2(id, type, email, ksfile):
     logurl = base_url+id+'/'+os.path.split(logfile.name)[-1]
     data = json.dumps({"status":"BUILDING", "id":str(id), 'url':str(file), 'log':logurl})
     statusmsg = amqp.Message(data)
-    chan.basic_publish(statusmsg, exchange="django_result_exchange", routing_key="status")  
-    print "worker"
-    worker = ImageWorker(conn, chan, id, tmpname, type, logfile, dir)    
+    chan.basic_publish(statusmsg, exchange="django_result_exchange", routing_key="status")      
+    worker = ImageWorker(id, tmpname, type, logfile, dir, conn=conn, chan=chan)    
     worker.build()
     logfile.close()
     
-job_pool = Pool(num_workers)
+
 def mic2_callback(msg):  
     print "mic2"
     job = json.loads(msg.body)    
     email = job["email"]
     id = job["id"]    
     type = job['imagetype']
-    ksfile = job['ksfile']    
-    args = (id, type, email, ksfile)        
+    ksfile = job['ksfile']   
+    file = base_url+id
     data = json.dumps({"status":"IN QUEUE", "id":str(id), 'url':str(file)})
     statusmsg = amqp.Message(data)
     chan.basic_publish(statusmsg, exchange="django_result_exchange", routing_key="status")  
-    job_pool.apply_async(mic2, args=args)        
-    
-    #chan.basic_ack(msg.delivery_tag)
-    
-        
+    mic2(id, type, email, ksfile)        
  
 def kickstarter_callback(msg):
     print "ks"

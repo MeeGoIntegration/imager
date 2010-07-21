@@ -167,12 +167,7 @@ class ImageWorker(object):
             except CalledProcessError as err:
                 print "error %s"%err
                 error = {'status':"ERROR","error":"%s"%err, 'id':str(self._id), 'url':base_url+self._id}
-                self._update_status(error)
-                haltargs = copy.copy(self._sshargs)
-                haltargs.append('halt')
-                print haltargs
-                sub.check_call(haltargs, shell=False, stdout=sub.PIPE, stderr=sub.PIPE, stdin=sub.PIPE)
-                os.remove(self._kvmimage)
+                self._update_status(error)                
                 return 
         haltargs = copy.copy(self._sshargs)
         haltargs.append('halt')

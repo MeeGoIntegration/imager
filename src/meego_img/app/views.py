@@ -71,17 +71,49 @@ def submit(request):
                 imgjob.save()
                 #chan.queue_purge("result_queue")
                 chan.basic_publish(msg,exchange="image_exchange",routing_key="ks")
-            elif 'ksfile' in request.FILES and request.POST['overlay'] == '':
+            elif 'ksfile' in request.FILES and request.POST['overlay'] == '':                
                 ksfile = request.FILES['ksfile']                                
                 id = str(uuid1())
                 data = json.dumps({'email':email, 'id':id, 'imagetype':imagetype, 'ksfile':ksfile.read()})
-                msg = amqp.Message(data, message_id=id)                 
+                              
                 imgjob = ImageJob()                
                 imgjob.task_id = msg.message_id
                 imgjob.email = email
                 imgjob.type = imagetype
+                imgjob.status = "IN BOSS (receive not yet implemented)"
                 imgjob.save()                
-                chan.basic_publish(msg, exchange="image_exchange", routing_key="img")
+                # Specify a process definition
+                pdef = {
+                    "definition": """
+                        Ruote.process_definition :name => 'test' do
+                          sequence do
+                            mic
+                            workitem_dumper
+                          end
+                        end
+                      """,
+                    "fields" : {
+                        "kickstart" : data['ksfile'], 
+                        "email": data['email'], 
+                        "id": data['id'], 
+                        "type": data['imagetype']
+                        }
+                    }
+                    # Encode the message as json
+                msg = amqp.Message(json.dumps(pdef))
+                # delivery_mode=2 is persistent
+                msg.properties["delivery_mode"] = 2 
+                
+                # Publish the message.
+                
+                # Notice that this is sent to the anonymous/'' exchange (which is
+                # different to 'amq.direct') with a routing_key for the queue
+                bossconn = amqp.Connection(host="amqpvm", userid="ruote",
+                       password="ruote", virtual_host="ruote-test", insist=False)
+                bosschan = bossconn.channel() 
+                bosschan.basic_publish(msg, exchange='', routing_key='ruote_workitems')  
+                bosschan.close()
+                bossconn.close()
             else:
                 form = UploadFileForm()
                 return render_to_response('app/upload.html', {'form': form, 'formerror':"Can't specify an overlay and a kickstart file!"})

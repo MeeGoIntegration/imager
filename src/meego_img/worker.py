@@ -34,6 +34,7 @@ base_url = config.get('worker', 'base_url')
 base_dir = config.get('worker', 'base_dir')
 post = config.get('worker', 'post_creation')
 use_kvm = config.get('worker', 'use_kvm')
+mic_args = config.get('worker', 'mic_opts')
 
 class ImageWorker(object):
     def _getport(self):
@@ -112,6 +113,9 @@ class ImageWorker(object):
                 sshargs = copy.copy(self._sshargs)
                 for arg in self._micargs:
                     sshargs.append(arg)
+                if mic_args:
+                    for micarg in mic_args.split(','):
+                        sshargs.append(micarg)
                 mkdirargs = ['mkdir', '-p', self._dir]
                 mksshargs = copy.copy(self._sshargs)
                 for mkarg in mkdirargs:
@@ -163,7 +167,11 @@ class ImageWorker(object):
                 return   
         else:
             try:
-                sub.check_call(self._micargs, shell=False, stdin=sub.PIPE, stdout=self._logfile, stderr=self._logfile, bufsize=-1) 
+                micargs = copy.copy(self._micargs)
+                if mic_args:
+                    for micarg in mic_args.split(','):
+                        micargs.append(micarg)
+                sub.check_call(micargs, shell=False, stdin=sub.PIPE, stdout=self._logfile, stderr=self._logfile, bufsize=-1) 
             except CalledProcessError as err:
                 print "error %s"%err
                 error = {'status':"ERROR","error":"%s"%err, 'id':str(self._id), 'url':base_url+self._id}

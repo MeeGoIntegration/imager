@@ -35,6 +35,7 @@ config.read('/etc/imger/img.conf')
 base_url = config.get('worker', 'base_url')
 base_dir = config.get('worker', 'base_dir')
 post = config.get('worker', 'post_creation')
+use_kvm = config.get('worker', 'use_kvm')
 
 class ImageWorker(object):
     def _getport(self):
@@ -67,8 +68,7 @@ class ImageWorker(object):
         self._kvmargs.append('-drive')
         self._kvmargs.append(str('file='+self._kvmimage+',index=0,if=virtio,boot=on'))#,index=0,media=disk'))
         #self._kvmargs.append('-drive')
-        #self._kvmargs.append(str('file='+self._cacheimage+',index=1,media=disk'))
-        print self._kvmargs
+        #self._kvmargs.append(str('file='+self._cacheimage+',index=1,media=disk'))        
         
         self._micargs = ['mic-image-creator', '-d', '-v']
         self._micargs.append('--config='+self._tmpname)
@@ -97,71 +97,85 @@ class ImageWorker(object):
             if "image" in datadict:
                 self._work_item.set_field("Image", datadict['image'])
                 self._work_item.set_result(True)
-    def build(self):                
-        try:           
-            datadict = {'status':"VIRTUAL MACHINE, IMAGE CREATION", "url":base_url+self._id, 'id':self._id}
-            self._update_status(datadict)
-            sub.check_call(self._imagecreate, shell=False, stdin=sub.PIPE, stdout=sub.PIPE, stderr=sub.PIPE)                        
-            self._update_status(datadict)
-            self._kvmproc = sub.Popen(self._kvmargs, shell=False, stdin=sub.PIPE, stdout=sub.PIPE, stderr=sub.PIPE)
-            datadict["status"] = "VIRTUAL MACHINE, WAITING FOR VM"
-            self._update_status(datadict)
-            time.sleep(15)                        
-            datadict["status"] = "VIRTUAL MACHINE, RUNNING MIC2"
-            print datadict
-            self._update_status(datadict)
-            sshargs = copy.copy(self._sshargs)
-            for arg in self._micargs:
-                sshargs.append(arg)
-            mkdirargs = ['mkdir', '-p', self._dir]
-            mksshargs = copy.copy(self._sshargs)
-            for mkarg in mkdirargs:
-                mksshargs.append(mkarg)            
-            sub.check_call(mksshargs, shell=False, stdin=sub.PIPE, stdout=sub.PIPE, stderr=sub.PIPE)
-            print mksshargs
-            print self._scpksargs
-            print sshargs            
-            toargs = [self._tmpname, "root@127.0.0.1:"+self._dir+"/"]
-            scptoargs = copy.copy(self._scpksargs)
-            for arg in toargs:
-                scptoargs.append(arg)
-            print scptoargs
-            sub.check_call(scptoargs, shell=False, stdout=sub.PIPE, stderr=sub.PIPE, stdin=sub.PIPE)            
-            sub.check_call(sshargs, shell=False, stdin=sub.PIPE, stdout=self._logfile, stderr=self._logfile, bufsize=-1)  
-            fromargs = ['-r',"root@127.0.0.1:"+self._dir+'/*', self._dir+'/']
-            scpfromargs = copy.copy(self._scpksargs)
-            for arg in fromargs:
-                scpfromargs.append(arg)
-            datadict["status"] = "VIRTUAL MACHINE, COPYING IMAGE"
-            self._update_status(datadict)
-            sub.check_call(scpfromargs, shell=False, stdout=sub.PIPE, stderr=sub.PIPE, stdin=sub.PIPE)            
-            for file in os.listdir(self._dir):                
-                if os.path.isdir(self._dir+'/'+file):
-                    for cont in os.listdir(self._dir+'/'+file):                        
-                        if not cont.endswith('.xml'):                            
-                            self._image = base_url+self._id+'/'+file+'/'+cont
-            if self._image:
-                datadict["image"] = self._image
+    def build(self):
+        if use_kvm == "yes":
+            try:
+                datadict = {'status':"VIRTUAL MACHINE, IMAGE CREATION", "url":base_url+self._id, 'id':self._id}
                 self._update_status(datadict)
-            if self._type == 'fiasco':
-                postsshargs = copy.copy(self._sshargs)
-                postscpargs = copy.copy(self._scpksargs)
-                post_toargs = [post, "root@127.0.0.1:"+post]
-                for arg in post_toargs:
-                    postscpargs.append(arg)
-                sub.check_call(postscpargs, shell=False, stdout=sub.PIPE, stderr=sub.PIPE, stdin=sub.PIPE)
-                postsshargs.append(post)
-                sub.check_call(postsshargs, shell=False, stdout=sub.PIPE, stderr=sub.PIPE, stdin=sub.PIPE)
-        except CalledProcessError as err:
-            print "error %s"%err
-            error = {'status':"ERROR","error":"%s"%err, 'id':str(self._id), 'url':base_url+self._id}
-            self._update_status(error)
-            haltargs = copy.copy(self._sshargs)
-            haltargs.append('halt')
-            print haltargs
-            sub.check_call(haltargs, shell=False, stdout=sub.PIPE, stderr=sub.PIPE, stdin=sub.PIPE)
-            os.remove(self._kvmimage)
-            return       
+                sub.check_call(self._imagecreate, shell=False, stdin=sub.PIPE, stdout=sub.PIPE, stderr=sub.PIPE)                        
+                self._update_status(datadict)
+                self._kvmproc = sub.Popen(self._kvmargs, shell=False, stdin=sub.PIPE, stdout=sub.PIPE, stderr=sub.PIPE)
+                datadict["status"] = "VIRTUAL MACHINE, WAITING FOR VM"
+                self._update_status(datadict)
+                time.sleep(15)                        
+                datadict["status"] = "VIRTUAL MACHINE, RUNNING MIC2"
+                print datadict
+                self._update_status(datadict)
+                sshargs = copy.copy(self._sshargs)
+                for arg in self._micargs:
+                    sshargs.append(arg)
+                mkdirargs = ['mkdir', '-p', self._dir]
+                mksshargs = copy.copy(self._sshargs)
+                for mkarg in mkdirargs:
+                    mksshargs.append(mkarg)            
+                sub.check_call(mksshargs, shell=False, stdin=sub.PIPE, stdout=sub.PIPE, stderr=sub.PIPE)
+                print mksshargs
+                print self._scpksargs
+                print sshargs            
+                toargs = [self._tmpname, "root@127.0.0.1:"+self._dir+"/"]
+                scptoargs = copy.copy(self._scpksargs)
+                for arg in toargs:
+                    scptoargs.append(arg)
+                print scptoargs
+                sub.check_call(scptoargs, shell=False, stdout=sub.PIPE, stderr=sub.PIPE, stdin=sub.PIPE)            
+                sub.check_call(sshargs, shell=False, stdin=sub.PIPE, stdout=self._logfile, stderr=self._logfile, bufsize=-1)  
+                fromargs = ['-r',"root@127.0.0.1:"+self._dir+'/*', self._dir+'/']
+                scpfromargs = copy.copy(self._scpksargs)
+                for arg in fromargs:
+                    scpfromargs.append(arg)
+                datadict["status"] = "VIRTUAL MACHINE, COPYING IMAGE"
+                self._update_status(datadict)
+                sub.check_call(scpfromargs, shell=False, stdout=sub.PIPE, stderr=sub.PIPE, stdin=sub.PIPE)            
+                for file in os.listdir(self._dir):                
+                    if os.path.isdir(self._dir+'/'+file):
+                        for cont in os.listdir(self._dir+'/'+file):                        
+                            if not cont.endswith('.xml'):                            
+                                self._image = base_url+self._id+'/'+file+'/'+cont
+                if self._image:
+                    datadict["image"] = self._image
+                    self._update_status(datadict)
+                if self._type == 'fiasco':
+                    postsshargs = copy.copy(self._sshargs)
+                    postscpargs = copy.copy(self._scpksargs)
+                    post_toargs = [post, "root@127.0.0.1:"+post]
+                    for arg in post_toargs:
+                        postscpargs.append(arg)
+                    sub.check_call(postscpargs, shell=False, stdout=sub.PIPE, stderr=sub.PIPE, stdin=sub.PIPE)
+                    postsshargs.append(post)
+                    sub.check_call(postsshargs, shell=False, stdout=sub.PIPE, stderr=sub.PIPE, stdin=sub.PIPE)
+            except CalledProcessError as err:
+                print "error %s"%err
+                error = {'status':"ERROR","error":"%s"%err, 'id':str(self._id), 'url':base_url+self._id}
+                self._update_status(error)
+                haltargs = copy.copy(self._sshargs)
+                haltargs.append('halt')
+                print haltargs
+                sub.check_call(haltargs, shell=False, stdout=sub.PIPE, stderr=sub.PIPE, stdin=sub.PIPE)
+                os.remove(self._kvmimage)
+                return   
+        else:
+            try:
+                sub.check_call(self._micargs, shell=False, stdin=sub.PIPE, stdout=self._logfile, stderr=self._logfile, bufsize=-1) 
+            except CalledProcessError as err:
+                print "error %s"%err
+                error = {'status':"ERROR","error":"%s"%err, 'id':str(self._id), 'url':base_url+self._id}
+                self._update_status(error)
+                haltargs = copy.copy(self._sshargs)
+                haltargs.append('halt')
+                print haltargs
+                sub.check_call(haltargs, shell=False, stdout=sub.PIPE, stderr=sub.PIPE, stdin=sub.PIPE)
+                os.remove(self._kvmimage)
+                return 
         haltargs = copy.copy(self._sshargs)
         haltargs.append('halt')
         print haltargs

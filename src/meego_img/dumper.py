@@ -1,7 +1,10 @@
 
 from  RuoteAMQP.workitem import Workitem
 from  RuoteAMQP.participant import Participant
-import json
+try:
+     import simplejson as json
+except ImportError:
+     import json
 
 class DumpParticipant(Participant):
     def consume(self):

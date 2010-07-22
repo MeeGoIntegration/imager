@@ -18,7 +18,10 @@ from  RuoteAMQP.workitem import Workitem
 from  RuoteAMQP.participant import Participant
 #import image_creator
 from worker import ImageWorker
-import json
+try:
+     import simplejson as json
+except ImportError:
+     import json
 from multiprocessing import Process, Queue, Pool
 import ConfigParser
 

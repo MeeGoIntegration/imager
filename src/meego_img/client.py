@@ -18,7 +18,10 @@ from amqplib import client_0_8 as amqp
 from uuid import uuid1
 from optparse import OptionParser
 import os
-import json
+try:
+     import simplejson as json
+except ImportError:
+     import json
 
 import ConfigParser
 

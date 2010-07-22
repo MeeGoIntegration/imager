@@ -27,7 +27,10 @@ from settings import *
 import urllib2
 import os
 import sys
-import json
+try:
+     import simplejson as json
+except ImportError:
+     import json
 import yaml
 import Queue
 

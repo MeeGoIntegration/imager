@@ -1,5 +1,8 @@
 from amqplib import client_0_8 as amqp
-import simplejson as json
+try:
+     import simplejson as json
+except ImportError:
+     import json
 import sys
 from uuid import uuid1
 

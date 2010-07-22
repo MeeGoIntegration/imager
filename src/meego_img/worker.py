@@ -14,7 +14,10 @@
 #~ You should have received a copy of the GNU General Public License
 #~ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import json
+try:
+     import simplejson as json
+except ImportError:
+     import json
 import subprocess as sub
 from subprocess import CalledProcessError
 import os,  sys

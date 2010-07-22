@@ -1,39 +1,53 @@
 MeeGo-IMG : Image Me Get
+========================
+IMG (Image Me Give) is a small python client/server application suite, its sole
+job is to get a POST'd kickstart file from a user and then run Moblin-Image-Creator. 
+It is also possible to use kickstarter yaml files to create a tailor-made image or 
+using the default selection of yaml templates. 
 
-A service to get MeeGo images given a kickstart file.
+Source tree structure:
 
+   |-debian : Debian files
+   |-kickstarter : Custom kickstarter with scripts
+   |---custom
+   |-----part
+   |-----scripts
+   |-rpm : RPM related files
+   |-src : Sources
+   |---meego_img : Main source tree
+   |-----app : Django application
+   |-----templates : Django Templates
+   |-------app
 
-buildout structure:
- http://www.buildout.org/
- http://jacobian.org/writing/django-apps-with-buildout/
+Main scripts
+============
 
+src/meego_img/image_creator.py
 
-Installation
+Service which taps into 2 RabbitMQ queues, image_queue and kickstarter_queue 
+and executes image builds.
 
-(depends on python-setuptools)
-run:
-python ./bootstrap.py
-bin/buildout
-bin/django runserver
+src/meego_img/worker.py
 
-Install kickstarter (git://gitorious.org/meego-developer-tools/kickstarter.git)
-Install meego-image-creator (git://gitorious.org/meego-developer-tools/image-creator.git)
-Install pykickstart (http://git.fedorahosted.org/git/pykickstart.git)
+The actual dirty work handler, fires up KVM virtual machine on request and 
+executes mic2 in it (for obvious cleanup reasons)
 
-Also install packages python-json, python-multiprocessing, python-yaml, python-cheetah, yum in the system. Also note that recommended python 
-version is 2.6.x.
+src/meego_img/participant.py
 
-Setup:
+BOSS participant that listens for workitems from Ruote. For more information 
+about BOSS see http://wiki.meego.com/Infrastructure/BOSS.
 
-Install rabbitmq-server
+src/meego_img/boss_client.py
 
-rabbitmqctl add_user img imgpwd
-rabbitmqctl add_vhost imgvhost
-rabbitmqctl set_permissions -p imgvhost img "" ".*" ".*"
+BOSS workitem submitter.
 
-Run:
-bin/django syncdb
+src/meego_img/dumper.py
 
-Running the creator service:
-cd src/meego_img/
-python image_creator.py
+Another dummy participant that just listens for workitems from the participant
+to be handed back to the Ruote workflow.
+
+Django application
+==================
+
+See http://wiki.meego.com/Infrastructure/IMG#Django_client for all documentation
+regarding Django the django application. Also see INSTALL for setup instructions.

@@ -1,4 +1,45 @@
-WEB SERVER INSTALL FROM RPM:
+INSTALLATION
+
+MANUAL
+
+buildout structure:
+ http://www.buildout.org/
+ http://jacobian.org/writing/django-apps-with-buildout/
+
+
+Installation
+
+(depends on python-setuptools)
+run:
+python ./bootstrap.py
+bin/buildout
+bin/django runserver
+
+Install kickstarter (git://gitorious.org/meego-developer-tools/kickstarter.git)
+Install meego-image-creator (git://gitorious.org/meego-developer-tools/image-creator.git)
+Install pykickstart (http://git.fedorahosted.org/git/pykickstart.git)
+
+Also install packages python-simplejson, python-yaml, python-cheetah, yum in the system. Also note that recommended python 
+version is 2.6.x.
+
+Setup:
+
+Install rabbitmq-server
+
+rabbitmqctl add_user img imgpwd
+rabbitmqctl add_vhost imgvhost
+rabbitmqctl set_permissions -p imgvhost img "" ".*" ".*"
+
+If you want to run in lighttpd, check out debian/img-lighttpd.conf and make sure you modify the paths in that file to reflect your setup.
+
+Run:
+bin/django syncdb
+
+Running the creator service:
+cd src/meego_img/
+python image_creator.py
+
+WEB SERVER INSTALL FROM RPM/DEB:
 
 Install rabbitmq-server
 

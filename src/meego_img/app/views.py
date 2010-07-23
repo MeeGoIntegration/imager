@@ -23,7 +23,16 @@ from uuid import *
 from amqplib import client_0_8 as amqp
 from tempfile import TemporaryFile, NamedTemporaryFile, mkdtemp
 from django.core.servers.basehttp import FileWrapper
-from settings import *
+import ConfigParser
+
+config = ConfigParser.ConfigParser()
+config.read('/etc/imger/img.conf')
+
+amqp_host = config.get('amqp', 'amqp_host')
+amqp_user = config.get('amqp', 'amqp_user')
+amqp_pwd = config.get('amqp', 'amqp_pwd')
+amqp_vhost = config.get('amqp', 'amqp_vhost')
+
 import urllib2
 import os
 import sys
@@ -45,7 +54,7 @@ def submit(request):
             print request.POST
             email = request.POST['email']
             imagetype = request.POST['imagetype']
-            conn = amqp.Connection(host=BROKER_HOST, userid=BROKER_USER, password=BROKER_PASSWORD, virtual_host=BROKER_VHOST, insist=False)
+            conn = amqp.Connection(host=amqp_host, userid=amqp_user, password=amqp_pwd, virtual_host=amqp_vhost, insist=False)
             chan = conn.channel() 
             if 'overlay' in request.POST and not 'ksfile' in request.FILES:
                 overlay = request.POST['overlay']
@@ -136,7 +145,7 @@ def get_or_none(model, **kwargs):
         return None
 
 def queue(request):
-    conn = amqp.Connection(host=BROKER_HOST, userid=BROKER_USER, password=BROKER_PASSWORD, virtual_host=BROKER_VHOST, insist=False)
+    conn = amqp.Connection(host=amqp_host, userid=amqp_user, password=amqp_pwd, virtual_host=amqp_vhost, insist=False)
     chan = conn.channel()
     msg = chan.basic_get("status_queue")
     file = ""
@@ -173,7 +182,7 @@ def download(request, msgid):
     return response
     
 def job(request, msgid): 
-    conn = amqp.Connection(host=BROKER_HOST, userid=BROKER_USER, password=BROKER_PASSWORD, virtual_host=BROKER_VHOST, insist=False)
+    conn = amqp.Connection(host=amqp_host, userid=amqp_user, password=amqp_pwd, virtual_host=amqp_vhost, insist=False)
     chan = conn.channel()  
     imgjob = ImageJob.objects.get(task_id__exact=msgid)
     msg = chan.basic_get("status_queue")

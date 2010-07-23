@@ -39,17 +39,17 @@ Meego Image Me Give, control client package. For control.
 %install
 rm -rf %{buildroot}
 mkdir -p %{buildroot}%{_initddir}
-install -D -m 755 rpm/img-www.init %{buildroot}/etc/init.d/img-wwwd
+install -D -m 755 rpm/img-www.init %{buildroot}/etc/init.d/img-webd
 mkdir -p %{buildroot}%{_sbindir}
-ln -sf %{_initrddir}/img-wwwd %{buildroot}%{_sbindir}/rcimg-wwwd
+ln -sf %{_initrddir}/img-wwwd %{buildroot}%{_sbindir}/rcimg-webd
 install -D -m 755 rpm/img-core.init %{buildroot}/etc/init.d/img-cored
-ln -sf %{_initrddir}/img %{buildroot}%{_sbindir}/rcimg-cored
+ln -sf %{_initrddir}/img-cored %{buildroot}%{_sbindir}/rcimg-cored
 mkdir -p %{buildroot}/var/www/django/img
 cp -a src/meego_img/app %{buildroot}/var/www/django/img/
 cp src/meego_img/settings.py %{buildroot}/var/www/django/img/
 cp src/meego_img/manage.py %{buildroot}/var/www/django/img/
 mkdir -p %{buildroot}/etc/img
-cp src/meego_img/img.conf /etc/img/
+cp src/meego_img/img.conf %{buildroot}/etc/img/
 mkdir -p %{buildroot}/usr/share/img
 cp -a kickstarter %{buildroot}/usr/share/img/
 mkdir -p %{buildroot}/usr/bin
@@ -77,21 +77,19 @@ $PROJECTDIR/meego_img/manage.py sqlclear app
 
 %files -n img-web
 %defattr(-,root,root,-)
-%{_sbindir}/rcimgd
-%config /etc/init.d/img-wwwd
+%{_sbindir}/rcimg-webd
+%config /etc/init.d/img-webd
 /usr/share/doc/img/*
 %config /etc/lighttpd/vhosts.d/img-lighttpd.conf
 %doc /usr/share/img/kickstarter/*
 %defattr(-, root, root, 0755)
 /var/www/django/img/*
-%defattr(-, root, root, 0755)
-/var/www/django/img/meego_img/*
-/usr/share/img/kickstarter/*
 
 %files -n img-core
 %defattr(-,root,root,-)
 %{_sbindir}/rcimg-cored
 %config /etc/init.d/img-cored
+%config /etc/img/img.conf
 /usr/bin/meego_image_creator
 
 %files -n img-control

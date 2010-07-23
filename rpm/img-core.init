@@ -1,7 +1,7 @@
 #! /bin/sh
 ### BEGIN INIT INFO
-# Provides:          img-svc
-# Required-Start:    rabbitmq
+# Provides:          img-core
+# Required-Start:    $remote_fs rabbitmq
 # Required-Stop:     img
 # Default-Start:     2 3 4 5
 # Default-Stop:      S 0 1 6

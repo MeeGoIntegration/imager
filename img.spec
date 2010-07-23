@@ -39,10 +39,10 @@ Meego Image Me Give, control client package. For control.
 %install
 rm -rf %{buildroot}
 mkdir -p %{buildroot}%{_initddir}
-install -D -m 755 rpm/img-wwwd.init %{buildroot}/etc/init.d/img-wwwd
+install -D -m 755 rpm/img-www.init %{buildroot}/etc/init.d/img-wwwd
 mkdir -p %{buildroot}%{_sbindir}
 ln -sf %{_initrddir}/img-wwwd %{buildroot}%{_sbindir}/rcimg-wwwd
-install -D -m 755 rpm/img-cored.init %{buildroot}/etc/init.d/img-cored
+install -D -m 755 rpm/img-core.init %{buildroot}/etc/init.d/img-cored
 ln -sf %{_initrddir}/img %{buildroot}%{_sbindir}/rcimg-cored
 mkdir -p %{buildroot}/var/www/django/img
 cp -a src/meego_img/app %{buildroot}/var/www/django/img/

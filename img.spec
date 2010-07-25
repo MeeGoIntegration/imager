@@ -41,7 +41,7 @@ rm -rf %{buildroot}
 mkdir -p %{buildroot}%{_initddir}
 install -D -m 755 rpm/img-www.init %{buildroot}/etc/init.d/img-webd
 mkdir -p %{buildroot}%{_sbindir}
-ln -sf %{_initrddir}/img-wwwd %{buildroot}%{_sbindir}/rcimg-webd
+ln -sf %{_initrddir}/img-webd %{buildroot}%{_sbindir}/rcimg-webd
 install -D -m 755 rpm/img-core.init %{buildroot}/etc/init.d/img-cored
 ln -sf %{_initrddir}/img-cored %{buildroot}%{_sbindir}/rcimg-cored
 mkdir -p %{buildroot}/var/www/django/img

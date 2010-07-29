@@ -31,7 +31,7 @@ class UploadFileForm(forms.Form):
     email = forms.EmailField(label='Email:')
     overlay = forms.CharField(label="Overlay:", required=False, help_text='Kickstarter package overlay (comma separated list of packages)')
     platform = forms.ChoiceField(required=False, choices=[('0', 'YEAH')])
-    imagetype = forms.ChoiceField(label='Image type:', choices=[('livecd',"livecd"), ('liveusb', "liveusb"), ('loop', "loop"), ('raw',"raw"), ('nand',"nand"), ('mrstnand',"mrstnand"), ('vdi',"vdi"), ('vmdk',"vmdk")])
+    imagetype = forms.ChoiceField(label='Image type:', choices=[('livecd',"livecd"), ('liveusb', "liveusb"), ('loop', "loop"), ('raw',"raw"), ('nand',"nand"), ('mrstnand',"mrstnand"), ('vdi',"vdi"), ('vmdk',"vmdk"), ('fiasco', 'fiasco')])
     ksfile = forms.FileField(label="Kickstart file (not in yaml)", required=False)
 
         

@@ -43,7 +43,7 @@ if not os.path.exists('/dev/kvm'):
     
 class MICParticipant(Participant):
     __job_pool = None
-    def mic2(self, id, type, email, kickstart, wi):
+    def mic2(self, id, name,  type, email, kickstart, wi):
         dir = "%s/%s"%(base_dir, id)
         os.mkdir(dir, 0775)    
         tmp = NamedTemporaryFile(dir=dir, delete=False)    
@@ -54,7 +54,7 @@ class MICParticipant(Participant):
         file = base_url+"%s"%id    
         logfile = open(logfile_name,'w')
         logurl = base_url+id+'/'+os.path.split(logfile.name)[-1]
-        worker = ImageWorker(id, tmpname, type, logfile, dir, work_item=wi)    
+        worker = ImageWorker(id, tmpname, type, logfile, dir, work_item=wi, name=name)    
         worker.build()
         logfile.close()
         
@@ -64,17 +64,15 @@ class MICParticipant(Participant):
         kickstart = wi.lookup('kickstart')
         id = wi.lookup('id')
         type = wi.lookup('type')
+        name = wi.lookup('name')
         print "Workitem: "
         print json.dumps(wi.to_h())
-        args = (id, type, email, kickstart)
-        #self.__job_pool = Pool(2)
-        self.mic2(id, type, email, kickstart, wi)
-        #self.__job_pool.apply_async(mic2, args)
+        self.mic2(id, name, type,  email, kickstart, wi)
         
 if __name__ == "__main__":
     print "Started a python participant"
-    p = MICParticipant(ruote_queue="mic", amqp_vhost="ruote-test")
-    p.register("mic", {'queue':'mic'})
+    p = MICParticipant(ruote_queue="get_image_from_kickstart", amqp_vhost="ruote-test")
+    p.register("create_image_from_kickstart", {'queue':'get_image_from_kickstart'})
     p.run()
     
         

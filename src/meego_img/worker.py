@@ -27,7 +27,6 @@ import re
 import time
 import random
 import copy
-from amqplib import client_0_8 as amqp
 
 import ConfigParser
 
@@ -39,19 +38,19 @@ post = config.get('worker', 'post_creation')
 use_kvm = config.get('worker', 'use_kvm')
 mic_args = config.get('worker', 'mic_opts')
 
+
 class ImageWorker(object):
     def _getport(self):
         return random.randint(49152, 65535)
-    def __init__(self, id, tmpname, type, logfile, dir, port=2222, conn=None, chan=None, work_item=None):
+    def __init__(self, id, tmpname, type, logfile, dir, port=2222, conn=None, chan=None, work_item=None, name=None):
         print "init"
-        self._amqp_conn = conn
-        self._amqp_chan = chan
         self._tmpname = tmpname
         self._type = type
         self._logfile = logfile
         self._dir = dir
         self._id = id
         self._image =None
+        self._name = name
         self._port = self._getport()
         self._work_item = work_item
         self._kvmimage = '/tmp/overlay-%s-port-%s'%(self._id, self._port)
@@ -77,15 +76,9 @@ class ImageWorker(object):
         self._micargs.append('--format='+self._type)
         self._micargs.append('--cache=/var/mycache')#+guest_mount_cache)
         self._micargs.append('--outdir='+dir)
-        self._micargs.append('--prefix=imger')
-        self._micargs.append('--suffix='+self._id)
         
         self._loopargs = []
     def _update_status(self, datadict):
-        data = json.dumps(datadict)        
-        msg = amqp.Message(data)
-        if self._amqp_chan:
-            self._amqp_chan.basic_publish(msg, exchange="django_result_exchange", routing_key="status") 
         if self._work_item:
             if "status" in datadict:
                 fields = self._work_item.fields()
@@ -99,7 +92,23 @@ class ImageWorker(object):
             if "image" in datadict:
                 self._work_item.set_field("Image", datadict['image'])
                 self._work_item.set_result(True)
+            if "log" in datadict:
+                self._work_item.set_field("Log", datadict['log'])
+    def _post_copying(self, datadict):
+        for file in os.listdir(self._dir):                
+            if os.path.isdir(self._dir+'/'+file):
+                for cont in os.listdir(self._dir+'/'+file):                        
+                    if not cont.endswith('.xml'):                            
+                        self._imagepath = self._dir+'/'+file+'/'+cont
+                        self._image = base_url+self._id+'/'+file+'/'+cont
+                if self._imagepath and self._name:
+                    shutil.move(self._imagepath, self._dir+'/'+self._name+'.'+self._type)
+                    self._image = base_url+self._id+'/'+self._name+'.'+self._type
+                if self._image:
+                    datadict["image"] = self._image
+                    self._update_status(datadict)
     def build(self):
+        logurl = base_url+self._id+'/'+str(os.path.split(self._logfile.name)[-1])
         if use_kvm == "yes":
             try:
                 datadict = {'status':"VIRTUAL MACHINE, IMAGE CREATION", "url":base_url+self._id, 'id':self._id}
@@ -141,15 +150,8 @@ class ImageWorker(object):
                 datadict["status"] = "VIRTUAL MACHINE, COPYING IMAGE"
                 self._update_status(datadict)
                 sub.check_call(scpfromargs, shell=False, stdout=sub.PIPE, stderr=sub.PIPE, stdin=sub.PIPE)            
-                for file in os.listdir(self._dir):                
-                    if os.path.isdir(self._dir+'/'+file):
-                        for cont in os.listdir(self._dir+'/'+file):                        
-                            if not cont.endswith('.xml'):                            
-                                self._image = base_url+self._id+'/'+file+'/'+cont
-                if self._image:
-                    datadict["image"] = self._image
-                    self._update_status(datadict)
-                if self._type == 'fiasco':
+                self._post_copying(datadict)
+                if post:
                     postsshargs = copy.copy(self._sshargs)
                     postscpargs = copy.copy(self._scpksargs)
                     post_toargs = [post, "root@127.0.0.1:"+post]
@@ -160,7 +162,7 @@ class ImageWorker(object):
                     sub.check_call(postsshargs, shell=False, stdout=sub.PIPE, stderr=sub.PIPE, stdin=sub.PIPE)
             except CalledProcessError as err:
                 print "error %s"%err
-                error = {'status':"ERROR","error":"%s"%err, 'id':str(self._id), 'url':base_url+self._id}
+                error = {'status':"ERROR","error":"%s"%err, 'id':str(self._id), 'url':base_url+self._id, 'log':logurl}
                 self._update_status(error)
                 haltargs = copy.copy(self._sshargs)
                 haltargs.append('halt')
@@ -170,14 +172,16 @@ class ImageWorker(object):
                 return   
         else:
             try:
+                datadict = {'status':"RUNNING MIC2", "url":base_url+self._id, 'id':self._id, 'log':logurl}
                 micargs = copy.copy(self._micargs)
                 if mic_args:
                     for micarg in mic_args.split(','):
                         micargs.append(micarg)
                 sub.check_call(micargs, shell=False, stdin=sub.PIPE, stdout=self._logfile, stderr=self._logfile, bufsize=-1) 
+                self._post_copying(datadict)
             except CalledProcessError as err:
                 print "error %s"%err
-                error = {'status':"ERROR","error":"%s"%err, 'id':str(self._id), 'url':base_url+self._id}
+                error = {'status':"ERROR","error":"%s"%err, 'id':str(self._id), 'url':base_url+self._id, 'log':logurl}
                 self._update_status(error)                
                 return 
         haltargs = copy.copy(self._sshargs)
@@ -185,6 +189,7 @@ class ImageWorker(object):
         print haltargs
         sub.check_call(haltargs, shell=False, stdout=sub.PIPE, stderr=sub.PIPE, stdin=sub.PIPE)
         os.remove(self._kvmimage)
-        data = {'status':"DONE", "url":base_url+self._id, 'id':self._id}
+        
+        data = {'status':"DONE", "url":base_url+self._id, 'id':self._id, 'log':logurl}
         self._update_status(data)
         

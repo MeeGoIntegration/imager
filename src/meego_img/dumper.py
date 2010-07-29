@@ -9,7 +9,7 @@ except ImportError:
 class DumpParticipant(Participant):
     def consume(self):
         wi = self.workitem
-        print json.dumps(wi.to_h())
+        print json.dumps(wi.to_h(), sort_keys=True, indent=4)
         
 if __name__ == "__main__":
     print "Started a python participant"

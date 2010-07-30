@@ -14,7 +14,7 @@ setup(
     description = "Image Me Give : Meego Image creation service",
     long_description = read('README'),
     author = 'Ramez Hanna + Co',    
-    package_dir = {'img-worker': 'src/meego_img'},
-    packages = ['img-worker'],    
+    package_dir = {'worker': 'src/meego_img'},
+    packages = ['worker'],    
     #py_modules = ['src.meego_img.worker'],
 )

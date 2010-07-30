@@ -49,8 +49,8 @@ mkdir -p %{buildroot}/var/www/django/img
 cp -a src/meego_img %{buildroot}/var/www/django/img/
 #cp src/meego_img/settings.py %{buildroot}/var/www/django/img/
 #cp src/meego_img/manage.py %{buildroot}/var/www/django/img/
-mkdir -p %{buildroot}/etc/img
-cp src/meego_img/img.conf %{buildroot}/etc/img/
+mkdir -p %{buildroot}/etc/imger
+cp src/meego_img/img.conf %{buildroot}/etc/imger/
 mkdir -p %{buildroot}/usr/share/img
 cp -a kickstarter %{buildroot}/usr/share/img/
 mkdir -p %{buildroot}/usr/bin
@@ -93,7 +93,7 @@ PROJECTDIR=/var/www/django/img
 %defattr(-,root,root,-)
 %{_sbindir}/rcimg-cored
 %config /etc/init.d/img-cored
-%config /etc/img/img.conf
+%config /etc/imger/img.conf
 /usr/bin/boss_participant
 
 %files -n img-control

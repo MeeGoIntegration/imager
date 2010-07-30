@@ -8,7 +8,7 @@ URL: http://www.meego.com
 Source0: img-core-%{version}.tar.gz
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 #Requires(pre): %insserv_prereq %fillup_prereq
-Requires: rabbitmq-server, yum, mic2, pykickstart, bzip2, sudo, python-cheetah
+Requires: yum, mic2, python-pykickstart, bzip2, boss
 Requires: python >= 2.5.0
 BuildArchitectures: noarch
 Summary: Image Me Give, service package
@@ -45,16 +45,18 @@ ln -sf %{_initrddir}/img-webd %{buildroot}%{_sbindir}/rcimg-webd
 install -D -m 755 rpm/img-core.init %{buildroot}/etc/init.d/img-cored
 ln -sf %{_initrddir}/img-cored %{buildroot}%{_sbindir}/rcimg-cored
 mkdir -p %{buildroot}/var/www/django/img
-cp -a src/meego_img/app %{buildroot}/var/www/django/img/
-cp src/meego_img/settings.py %{buildroot}/var/www/django/img/
-cp src/meego_img/manage.py %{buildroot}/var/www/django/img/
+cp -a src/meego_img %{buildroot}/var/www/django/img/
+#cp src/meego_img/settings.py %{buildroot}/var/www/django/img/
+#cp src/meego_img/manage.py %{buildroot}/var/www/django/img/
 mkdir -p %{buildroot}/etc/img
 cp src/meego_img/img.conf %{buildroot}/etc/img/
 mkdir -p %{buildroot}/usr/share/img
 cp -a kickstarter %{buildroot}/usr/share/img/
 mkdir -p %{buildroot}/usr/bin
-install -D -m 755 src/meego_img/image_creator.py %{buildroot}/usr/bin/meego_image_creator
-install -D -m 755 src/meego_img/client.py %{buildroot}/usr/bin/meego_image_client
+#install -D -m 755 src/meego_img/image_creator.py %{buildroot}/usr/bin/meego_image_creator
+#install -D -m 755 src/meego_img/client.py %{buildroot}/usr/bin/meego_image_client
+install -D -m 755 src/meego_img/boss_client.py %{buildroot}/usr/bin/boss_img_client
+install -D -m 755 src/meego_img/participant.py %{buildroot}/usr/bin/boss_participant
 mkdir -p %{buildroot}/etc/lighttpd/vhosts.d
 mkdir -p %{buildroot}/var/www/django/run
 cp -a debian/img-lighttpd.conf %{buildroot}/etc/lighttpd/vhosts.d/
@@ -68,7 +70,6 @@ PROJECTDIR=/var/www/django/img
 $PROJECTDIR/meego_img/manage.py syncdb --noinput
 %postun -n img-web
 PROJECTDIR=/var/www/django/img
-$PROJECTDIR/meego_img/manage.py sqlclear app
 
 %post -n img-core
 #rabbitmqctl add_user img imgpwd
@@ -90,11 +91,11 @@ $PROJECTDIR/meego_img/manage.py sqlclear app
 %{_sbindir}/rcimg-cored
 %config /etc/init.d/img-cored
 %config /etc/img/img.conf
-/usr/bin/meego_image_creator
+/usr/bin/boss_participant
 
 %files -n img-control
 %defattr(-,root,root,-)
-/usr/bin/meego_image_client
+/usr/bin/boss_img_client
 
 %changelog
 * Fri Jul 23 2010 Marko Helenius <marko.helenius@nomovok.com> 0.1

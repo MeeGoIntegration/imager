@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import os
 from setuptools import setup, find_packages
 
@@ -6,14 +7,14 @@ def read(fname):
 
 
 setup(
-    name = "meego_img",
+    name = "img-worker",
     version = "0.1",
     url = 'https://dvcs.projects.maemo.org/git/?p=OBS/img',
     license = 'GPL',
     description = "Image Me Give : Meego Image creation service",
     long_description = read('README'),
-    author = 'Aleksi Suomalainen + Co',
-    packages = find_packages('src'),
-    package_dir = {'': 'src'},
-    install_requires = ['setuptools', 'django<1.2', 'amqplib','pyyaml'],
+    author = 'Ramez Hanna + Co',    
+    package_dir = {'img-worker': 'src/meego_img'},
+    packages = ['img-worker'],    
+    #py_modules = ['src.meego_img.worker'],
 )

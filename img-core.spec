@@ -8,7 +8,8 @@ URL: http://www.meego.com
 Source0: img-core-%{version}.tar.gz
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 #Requires(pre): %insserv_prereq %fillup_prereq
-Requires: yum, mic2, python-pykickstart, bzip2, boss, python-amqplib, ruote-amqp-pyclient, python-air
+BuildRequires: python, python-setuptools
+Requires: yum, mic2, python-pykickstart, bzip2, boss, python-amqplib, ruote-amqp-pyclient, python-air, python-simplejson
 Requires: python >= 2.5.0
 BuildArchitectures: noarch
 Summary: Image Me Give, service package
@@ -20,7 +21,7 @@ An image creation service and a django frontend for MeeGo.
 Group: Applications/Engineering
 BuildRequires: python >= 2.5.0, python-django, lighttpd
 BuildRequires: -post-build-checks
-Requires: lighttpd, lighttpd-fastcgi,PyYAML, python-sqlite,Django,python-flup
+Requires: lighttpd, lighttpd-fastcgi,PyYAML, python-sqlite, python-django,python-flup, python-simplejson
 Summary: Meego Image Me Give, django frontend + service
 %description -n img-web
 Meego Image Me Give, service package: django frontend + service
@@ -28,7 +29,7 @@ Meego Image Me Give, service package: django frontend + service
 %package -n img-control
 Group: Applications/Engineering
 Requires: python >= 2.5.0
-Requires: python-amqplib
+Requires: python-amqplib, python-simplejson
 Summary: MeeGo Image Me Give, a control client
 %description -n img-control
 Meego Image Me Give, control client package. For control.
@@ -62,6 +63,7 @@ mkdir -p %{buildroot}/var/www/django/run
 cp -a debian/img-lighttpd.conf %{buildroot}/etc/lighttpd/vhosts.d/
 mkdir -p %{buildroot}/usr/share/doc/img
 cp README INSTALL %{buildroot}/usr/share/doc/img/
+python setup.py install --prefix=/usr --root=$RPM_BUILD_ROOT --record=INSTALLED_FILES 
 %clean
 rm -rf %{buildroot}
 
@@ -75,7 +77,8 @@ PROJECTDIR=/var/www/django/img
 #rabbitmqctl add_user img imgpwd
 #rabbitmqctl add_vhost imgvhost
 #rabbitmqctl set_permissions -p imgvhost img "" ".*" ".*"
-
+%files -f INSTALLED_FILES  
+%defattr(-,root,root)
 %files -n img-web
 %defattr(-,root,root,-)
 %{_sbindir}/rcimg-webd

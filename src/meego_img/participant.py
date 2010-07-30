@@ -30,6 +30,7 @@ config.read('/etc/imger/img.conf')
 base_url = config.get('worker', 'base_url')
 base_dir = config.get('worker', 'base_dir')
 post = config.get('worker', 'post_creation')
+amqp_vhost = config.get('boss', 'amqp_vhost')
 
 import os, sys
 from tempfile import TemporaryFile, NamedTemporaryFile, mkdtemp
@@ -71,7 +72,7 @@ class MICParticipant(Participant):
         
 if __name__ == "__main__":
     print "Started a python participant"
-    p = MICParticipant(ruote_queue="get_image_from_kickstart", amqp_vhost="ruote-test")
+    p = MICParticipant(ruote_queue="get_image_from_kickstart", amqp_vhost=amqp_vhost)
     p.register("create_image_from_kickstart", {'queue':'get_image_from_kickstart'})
     p.run()
     

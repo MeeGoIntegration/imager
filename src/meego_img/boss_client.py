@@ -23,7 +23,14 @@ import sys
 import os
 from uuid import uuid1
 from optparse import OptionParser
+import ConfigParser
 
+config = ConfigParser.ConfigParser()
+config.read('/etc/imger/img.conf')
+amqp_host = config.get('boss', 'amqp_host')
+amqp_user = config.get('boss', 'amqp_user')
+amqp_pass = config.get('boss', 'amqp_pass')
+amqp_vhost = config.get('boss', 'amqp_vhost')
 
 def submit(kickstart, type,  email, name):
     # Specify a process definition
@@ -42,8 +49,8 @@ def submit(kickstart, type,  email, name):
             "type":type, 
             "name":name
             }
-    launcher = RuoteAMQP.Launcher(amqp_host="amqpvm", amqp_user="ruote",
-                              amqp_pass="ruote", amqp_vhost="ruote-test")
+    launcher = RuoteAMQP.Launcher(amqp_host=amqp_host, amqp_user=amqp_user,
+                              amqp_pass=amqp_pass, amqp_vhost=amqp_vhost)
     launcher.launch(process, fields)
         
 

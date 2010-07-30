@@ -31,7 +31,7 @@ base_url = config.get('worker', 'base_url')
 base_dir = config.get('worker', 'base_dir')
 post = config.get('worker', 'post_creation')
 amqp_vhost = config.get('boss', 'amqp_vhost')
-
+use_kvm = config.get('worker', 'use_kvm')
 import os, sys
 from tempfile import TemporaryFile, NamedTemporaryFile, mkdtemp
 
@@ -39,7 +39,7 @@ from tempfile import TemporaryFile, NamedTemporaryFile, mkdtemp
 # if not root...kick out
 if not os.geteuid()==0:
     sys.exit("\nOnly root can run this script\n")
-if not os.path.exists('/dev/kvm'):
+if not os.path.exists('/dev/kvm') and use_kvm == "yes":
     sys.exit("\nYou must enable KVM kernel module\n")
     
 class MICParticipant(Participant):

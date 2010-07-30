@@ -89,7 +89,7 @@ PROJECTDIR=/var/www/django/img
 %defattr(-, root, root, 0755)
 /var/www/django/img/*
 
-%files -n img-core
+%files -n img-core -f INSTALLED_FILES
 %defattr(-,root,root,-)
 %{_sbindir}/rcimg-cored
 %config /etc/init.d/img-cored

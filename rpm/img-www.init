@@ -46,7 +46,7 @@ d_start()
         if [ -f $RUNFILES_PATH/$SITE.pid ]; then
             echo -n " already running"
         else
-            daemon --pidfile $RUNFILES_PATH/$SITE.pid /usr/bin/python2.6 $SITES_PATH/$SITE/manage.py runfcgi method=threaded  socket=$RUNFILES_PATH/img-web.sock pidfile=$RUNFILES_PATH/$SITE.pid 
+            startproc -p /var/run/image_creator.pid /usr/bin/meego_image_creator /usr/bin/python2.6 $SITES_PATH/$SITE/manage.py runfcgi method=threaded  socket=$RUNFILES_PATH/img-web.sock pidfile=$RUNFILES_PATH/$SITE.pid 
             chmod 400 $RUNFILES_PATH/$SITE.pid
         fi
     done
@@ -59,7 +59,7 @@ d_stop() {
 	for SITE in $DJANGO_SITES
 	do
         echo -n ", $SITE"
-        killproc --pidfile $RUNFILES_PATH/$SITE.pid \
+        killproc -p $RUNFILES_PATH/$SITE.pid \
                           || echo -n " not running"
         if [ -f $RUNFILES_PATH/$SITE.pid ]; then
            rm $RUNFILES_PATH/$SITE.pid

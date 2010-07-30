@@ -27,7 +27,7 @@ d_start()
         if [ -f /var/run/image_creator.pid ]; then
             echo -n " already running"
         else
-            daemon --pidfile /var/run/image_creator.pid /usr/bin/meego_image_creator 
+            startproc -p /var/run/image_creator.pid /usr/bin/meego_image_creator 
         fi
 }
 
@@ -36,7 +36,7 @@ d_start()
 #
 d_stop() {
         echo -n ", img"
-        killproc --pidfile /var/run/image_creator.pid \
+        killproc -p /var/run/image_creator.pid \
                           || echo -n " not running"
         if [ -f /var/run/image_creator.pid ]; then
            rm /var/run/image_creator.pid

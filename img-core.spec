@@ -8,7 +8,7 @@ URL: http://www.meego.com
 Source0: img-core-%{version}.tar.gz
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 #Requires(pre): %insserv_prereq %fillup_prereq
-Requires: yum, mic2, python-pykickstart, bzip2, boss
+Requires: yum, mic2, python-pykickstart, bzip2, boss, python-amqplib, ruote-amqp-pyclient, python-air
 Requires: python >= 2.5.0
 BuildArchitectures: noarch
 Summary: Image Me Give, service package
@@ -18,7 +18,7 @@ An image creation service and a django frontend for MeeGo.
 
 %package -n img-web
 Group: Applications/Engineering
-BuildRequires: python >= 2.5.0, rabbitmq-server, python-django, lighttpd
+BuildRequires: python >= 2.5.0, python-django, lighttpd
 BuildRequires: -post-build-checks
 Requires: lighttpd, lighttpd-fastcgi,PyYAML, python-sqlite,Django,python-flup
 Summary: Meego Image Me Give, django frontend + service

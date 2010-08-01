@@ -17,7 +17,10 @@
 from  RuoteAMQP.workitem import Workitem
 from  RuoteAMQP.participant import Participant
 #import image_creator
-from worker import ImageWorker
+try:
+     from worker import ImageWorker
+except ImportError:
+     from worker.worker import ImageWorker	
 try:
      import simplejson as json
 except ImportError:
@@ -47,11 +50,12 @@ class MICParticipant(Participant):
     def mic2(self, id, name,  type, email, kickstart, wi):
         dir = "%s/%s"%(base_dir, id)
         os.mkdir(dir, 0775)    
-        tmp = NamedTemporaryFile(dir=dir, delete=False)    
+        tmp = NamedTemporaryFile(dir=dir, delete=False, prefix='img-',suffix='-kickstart',mode='rw+b')    
         tmpname = tmp.name
-        logfile_name = tmp.name+"-log"
+        logfile_name = name+"-log"
         tmp.write(kickstart)    
-        tmp.close()    
+        os.fchmod(tmp,0644)
+        tmp.close()
         file = base_url+"%s"%id    
         logfile = open(logfile_name,'w')
         logurl = base_url+id+'/'+os.path.split(logfile.name)[-1]

@@ -27,7 +27,7 @@ d_start()
         if [ -f /var/run/image_creator.pid ]; then
             echo -n " already running"
         else
-            startproc -p /var/run/image_creator.pid /usr/bin/meego_image_creator 
+            startproc -p /var/run/image_creator.pid /usr/bin/bossarticipant
         fi
 }
 

@@ -1,8 +1,8 @@
 #! /bin/sh
 ### BEGIN INIT INFO
-# Provides:          img-core
+# Provides:          img-cored
 # Required-Start:    $remote_fs rabbitmq
-# Required-Stop:     img
+# Required-Stop:     $null
 # Default-Start:     2 3 4 5
 # Default-Stop:      S 0 1 6
 # Short-Description: Start FastCGI servers with Django.
@@ -64,7 +64,7 @@ case "$ACTION" in
         echo "."
         ;;
     status)
-        checkproc -p /var/run/boss_participant.pid
+        checkproc -p /var/run/boss_participant.pid /usr/bin/boss_participant
         rc_status -v
         ;;
     *)

@@ -172,7 +172,7 @@ class ImageWorker(object):
                 return   
         else:
             try:
-                datadict = {'status':"RUNNING MIC2", "url":base_url+self._id, 'id':self._id, 'log':logurl}
+                datadict = {'status':"RUNNING MIC2", "url":base_url+self._id, 'id':self._id, 'log':logurl}                
                 micargs = copy.copy(self._micargs)
                 if mic_args:
                     for micarg in mic_args.split(','):

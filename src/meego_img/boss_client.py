@@ -29,7 +29,7 @@ config = ConfigParser.ConfigParser()
 config.read('/etc/imger/img.conf')
 amqp_host = config.get('boss', 'amqp_host')
 amqp_user = config.get('boss', 'amqp_user')
-amqp_pass = config.get('boss', 'amqp_pass')
+amqp_pass = config.get('boss', 'amqp_pwd')
 amqp_vhost = config.get('boss', 'amqp_vhost')
 
 def submit(kickstart, type,  email, name):

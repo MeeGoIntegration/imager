@@ -63,6 +63,8 @@ mkdir -p %{buildroot}/var/www/django/run
 cp -a debian/img-lighttpd.conf %{buildroot}/etc/lighttpd/vhosts.d/
 mkdir -p %{buildroot}/usr/share/doc/img
 cp README INSTALL %{buildroot}/usr/share/doc/img/
+mkdir -p %{buildroot}/etc/sysconfig
+cp rpm/img_sysconfig %{buildroot}/etc/sysconfig/img
 python setup.py install --prefix=/usr --root=$RPM_BUILD_ROOT --record=INSTALLED_FILES 
 %clean
 rm -rf %{buildroot}

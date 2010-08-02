@@ -24,10 +24,10 @@ d_start()
 {
     # Starting all Django FastCGI processes
         echo -n "IMG service "
-        if [ -f /var/run/image_creator.pid ]; then
+        if [ -f /var/run/boss_participant.pid ]; then
             echo -n " already running"
         else
-            startproc -p /var/run/image_creator.pid /usr/bin/bossarticipant
+            startproc -p /var/run/boss_participant.pid /usr/bin/boss_participant
         fi
 }
 
@@ -36,10 +36,10 @@ d_start()
 #
 d_stop() {
         echo -n ", img"
-        killproc -p /var/run/image_creator.pid \
+        killproc -p /var/run/boss_participant.pid \
                           || echo -n " not running"
-        if [ -f /var/run/image_creator.pid ]; then
-           rm /var/run/image_creator.pid
+        if [ -f /var/run/boss_participant.pid ]; then
+           rm /var/run/boss_participant.pid
         fi
 }
 
@@ -64,7 +64,10 @@ case "$ACTION" in
         d_start
         echo "."
         ;;
-
+    status)
+        checkproc -p /var/run/boss_participant.pid
+        rc_status -v
+        ;;
     *)
         echo "Usage: $NAME {start|stop|restart|force-reload}" >&2
         exit 3

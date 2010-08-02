@@ -59,6 +59,7 @@ d_stop() {
 	for SITE in $DJANGO_SITES
 	do
         echo -n ", $SITE"
+        killproc -p /var/run/img_web.pid
         killproc -p $RUNFILES_PATH/$SITE.pid \
                           || echo -n " not running"
         if [ -f $RUNFILES_PATH/$SITE.pid ]; then
@@ -88,7 +89,10 @@ case "$ACTION" in
         d_start
         echo "."
         ;;
-
+    status)
+        checkproc -p /var/run/img_web.pid
+        rc_status -v
+        ;;
     *)
         echo "Usage: $NAME {start|stop|restart|force-reload}" >&2
         exit 3

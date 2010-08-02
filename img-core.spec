@@ -9,7 +9,7 @@ Source0: img-core-%{version}.tar.gz
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 #Requires(pre): %insserv_prereq %fillup_prereq
 BuildRequires: python, python-setuptools
-Requires: yum, mic2, python-pykickstart, bzip2, boss, python-amqplib, ruote-amqp-pyclient, python-air, python-simplejson
+Requires: yum, mic2, bzip2, python-amqplib, route-amqp-pyclient, python-air, python-simplejson
 Requires: python >= 2.5.0
 BuildArchitectures: noarch
 Summary: Image Me Give, service package
@@ -19,7 +19,7 @@ An image creation service and a django frontend for MeeGo.
 
 %package -n img-web
 Group: Applications/Engineering
-BuildRequires: python >= 2.5.0, python-django, lighttpd
+BuildRequires: python >= 2.5.0, lighttpd
 BuildRequires: -post-build-checks
 Requires: lighttpd, lighttpd-fastcgi,PyYAML, python-sqlite, python-django,python-flup, python-simplejson
 Summary: Meego Image Me Give, django frontend + service
@@ -96,7 +96,9 @@ PROJECTDIR=/var/www/django/img
 %{_sbindir}/rcimg-cored
 %config /etc/init.d/img-cored
 %config /etc/imger/img.conf
+%config /etc/sysconfig/img
 /usr/bin/boss_participant
+
 
 %files -n img-control
 %defattr(-,root,root,-)

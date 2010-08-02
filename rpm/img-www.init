@@ -46,7 +46,7 @@ d_start()
         if [ -f $RUNFILES_PATH/$SITE.pid ]; then
             echo -n " already running"
         else
-            startproc -p /var/run/image_creator.pid /usr/bin/meego_image_creator /usr/bin/python2.6 $SITES_PATH/$SITE/manage.py runfcgi method=threaded  socket=$RUNFILES_PATH/img-web.sock pidfile=$RUNFILES_PATH/$SITE.pid 
+            startproc -p /var/run/img_web.pid /usr/bin/python2.6 $SITES_PATH/$SITE/manage.py runfcgi method=threaded  socket=$RUNFILES_PATH/img-web.sock pidfile=$RUNFILES_PATH/$SITE.pid 
             chmod 400 $RUNFILES_PATH/$SITE.pid
         fi
     done

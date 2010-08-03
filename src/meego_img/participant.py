@@ -33,6 +33,9 @@ config.read('/etc/imger/img.conf')
 base_url = config.get('worker', 'base_url')
 base_dir = config.get('worker', 'base_dir')
 post = config.get('worker', 'post_creation')
+amqp_host = config.get('boss', 'amqp_host')
+amqp_user = config.get('boss', 'amqp_user')
+amqp_pass = config.get('boss', 'amqp_pwd')
 amqp_vhost = config.get('boss', 'amqp_vhost')
 use_kvm = config.get('worker', 'use_kvm')
 import os, sys
@@ -76,7 +79,7 @@ class MICParticipant(Participant):
         
 if __name__ == "__main__":
     print "Started a python participant"
-    p = MICParticipant(ruote_queue="get_image_from_kickstart", amqp_vhost=amqp_vhost)
+    p = MICParticipant(ruote_queue="get_image_from_kickstart", amqp_host=amqp_host,  amqp_user=amqp_user, amqp_pass=amqp_pass, amqp_vhost=amqp_vhost)
     p.register("create_image_from_kickstart", {'queue':'get_image_from_kickstart'})
     p.run()
     

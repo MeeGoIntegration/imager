@@ -50,12 +50,12 @@ class MICParticipant(Participant):
     def mic2(self, id, name,  type, email, kickstart, wi):
         dir = "%s/%s"%(base_dir, id)
         os.mkdir(dir, 0775)    
-        tmp = NamedTemporaryFile(dir=dir, delete=False, prefix='img-',suffix='-kickstart',mode='rw+b')    
+        tmp = open(dir+'/'+name+'.ks', mode='w+b')    
         tmpname = tmp.name
-        logfile_name = name+"-log"
-        tmp.write(kickstart)    
-        os.fchmod(tmp,0644)
+        logfile_name = dir+'/'+name+"-log"
+        tmp.write(kickstart)            
         tmp.close()
+        os.chmod(tmpname, 0644)
         file = base_url+"%s"%id    
         logfile = open(logfile_name,'w')
         logurl = base_url+id+'/'+os.path.split(logfile.name)[-1]

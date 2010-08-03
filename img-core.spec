@@ -57,7 +57,7 @@ mkdir -p %{buildroot}/usr/bin
 #install -D -m 755 src/meego_img/image_creator.py %{buildroot}/usr/bin/meego_image_creator
 #install -D -m 755 src/meego_img/client.py %{buildroot}/usr/bin/meego_image_client
 install -D -m 755 src/meego_img/boss_client.py %{buildroot}/usr/bin/boss_img_client
-install -D -m 755 src/meego_img/participant.py %{buildroot}/usr/bin/boss_participant
+install -D -m 755 src/meego_img/participant.py %{buildroot}/usr/bin/boss_img_participant
 mkdir -p %{buildroot}/etc/lighttpd/vhosts.d
 mkdir -p %{buildroot}/var/www/django/run
 cp -a debian/img-lighttpd.conf %{buildroot}/etc/lighttpd/vhosts.d/

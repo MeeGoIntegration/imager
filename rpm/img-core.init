@@ -26,7 +26,7 @@ d_start()
         if [ -f /var/run/boss_participant.pid ]; then
             echo -n " already running"
         else
-            startproc -p /var/run/boss_participant.pid /usr/bin/boss_participant
+            startproc -p /var/run/boss_participant.pid /usr/bin/boss_img_participant
         fi
 }
 
@@ -35,7 +35,7 @@ d_start()
 #
 d_stop() {
         echo -n ", img"
-        killproc -p /var/run/boss_participant.pid /usr/bin/boss_participant\
+        killproc -p /var/run/boss_participant.pid /usr/bin/boss_img_participant\
                           || echo -n " not running"
         if [ -f /var/run/boss_participant.pid ]; then
            rm /var/run/boss_participant.pid

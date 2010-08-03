@@ -97,7 +97,7 @@ PROJECTDIR=/var/www/django/img
 %config /etc/init.d/img-cored
 %config /etc/imger/img.conf
 %config /etc/sysconfig/img
-/usr/bin/boss_participant
+/usr/bin/boss_img_participant
 
 
 %files -n img-control

@@ -20,7 +20,6 @@ urlpatterns = patterns('',
     url(r'submit/$', 'meego_img.app.views.submit', name='img-app-submit'), 
     url(r'queue/$', 'meego_img.app.views.queue', name='img-app-queue'),
     #(r'$', 'meego_img.app.views.index'),
-    url(r'job/(?P<msgid>\S+)$', 'meego_img.app.views.job', name='img-app-job'),  
-    url(r'clear/$', 'meego_img.app.views.clear', name='img-app-clear'),     
+    url(r'job/(?P<msgid>\S+)$', 'meego_img.app.views.job', name='img-app-job'),      
     url(r'images/(?P<msgid>\S+)$', 'meego_img.app.views.download',name='img-app-download'),
 )

@@ -27,6 +27,7 @@ import re
 import time
 from amqplib import client_0_8 as amqp
 from worker import ImageWorker
+from multiprocessing import Process, Queue, Pool
 
 import ConfigParser
 
@@ -40,11 +41,12 @@ amqp_vhost = config.get('amqp', 'amqp_vhost')
 num_workers = config.getint('worker', 'num_workers')
 base_dir = config.get('worker', 'base_dir')
 base_url = config.get('worker', 'base_url')
+use_kvm = config.get('worker', 'use_kvm')
 
 # if not root...kick out
 if not os.geteuid()==0:
     sys.exit("\nOnly root can run this script\n")
-if not os.path.exists('/dev/kvm'):
+if not os.path.exists('/dev/kvm') and use_kvm == "yes":
     sys.exit("\nYou must enable KVM kernel module\n")
 conn = amqp.Connection(host=amqp_host, userid=amqp_user, password=amqp_pwd, virtual_host=amqp_vhost, insist=False)
 chan = conn.channel()
@@ -60,25 +62,23 @@ chan.queue_bind(queue="image_queue", exchange="image_exchange", routing_key="img
 chan.queue_bind(queue="kickstarter_queue", exchange="image_exchange", routing_key="ks")
 chan.queue_bind(queue="status_queue", exchange="django_result_exchange", routing_key="status")
 
-def mic2(id, type, email, ksfile):
+def mic2(id, name,type, email, kickstart):
     dir = "%s/%s"%(base_dir, id)
     os.mkdir(dir, 0775)    
-    tmp = NamedTemporaryFile(dir=dir, delete=False)    
+    tmp = open(dir+'/'+name+'.ks', mode='w+b')    
     tmpname = tmp.name
-    logfile_name = tmp.name+"-log"
-    tmp.write(ksfile)    
-    tmp.close()    
+    logfile_name = dir+'/'+name+"-log"
+    tmp.write(kickstart)            
+    tmp.close()
+    os.chmod(tmpname, 0644)
     file = base_url+"%s"%id    
     logfile = open(logfile_name,'w')
-    logurl = base_url+id+'/'+os.path.split(logfile.name)[-1]
-    data = json.dumps({"status":"BUILDING", "id":str(id), 'url':str(file), 'log':logurl})
-    statusmsg = amqp.Message(data)
-    chan.basic_publish(statusmsg, exchange="django_result_exchange", routing_key="status")      
-    worker = ImageWorker(id, tmpname, type, logfile, dir, conn=conn, chan=chan)    
+    logurl = base_url+id+'/'+os.path.split(logfile.name)[-1]     
+    worker = ImageWorker(id, tmpname, type, logfile, dir, chan=chan, name=name)    
     worker.build()
     logfile.close()
     
-
+job_pool = Pool(num_workers)
 def mic2_callback(msg):  
     print "mic2"
     job = json.loads(msg.body)    
@@ -86,11 +86,14 @@ def mic2_callback(msg):
     id = job["id"]    
     type = job['imagetype']
     ksfile = job['ksfile']   
+    name = job['name']
     file = base_url+id
     data = json.dumps({"status":"IN QUEUE", "id":str(id), 'url':str(file)})
     statusmsg = amqp.Message(data)
     chan.basic_publish(statusmsg, exchange="django_result_exchange", routing_key="status")  
-    mic2(id, type, email, ksfile)        
+    args=(id, name, type, email, ksfile)
+    #job_pool.apply_async(mic2, args=args)
+    mic2(id, name, type, email, ksfile)        
  
 def kickstarter_callback(msg):
     print "ks"

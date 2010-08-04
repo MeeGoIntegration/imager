@@ -28,6 +28,7 @@ import time
 import random
 import copy
 
+from amqplib import client_0_8 as amqp
 import ConfigParser
 
 config = ConfigParser.ConfigParser()
@@ -42,7 +43,7 @@ mic_args = config.get('worker', 'mic_opts')
 class ImageWorker(object):
     def _getport(self):
         return random.randint(49152, 65535)
-    def __init__(self, id, tmpname, type, logfile, dir, port=2222, conn=None, chan=None, work_item=None, name=None):
+    def __init__(self, id, tmpname, type, logfile, dir, port=2222, chan=None, work_item=None, name=None):
         print "init"
         self._tmpname = tmpname
         self._type = type
@@ -53,6 +54,7 @@ class ImageWorker(object):
         self._name = name
         self._port = self._getport()
         self._work_item = work_item
+        self._amqp_chan = chan
         self._kvmimage = '/tmp/overlay-%s-port-%s'%(self._id, self._port)
         self._cacheimage = '/tmp/cache-image'#%self._id
         self._sshargs = ['/usr/bin/ssh','-o','ConnectTimeout=60', '-o', 'ConnectionAttempts=4','-o','UserKnownHostsFile=/dev/null','-o','StrictHostKeyChecking=no','-p%s'%self._port, '-lroot', '-i/usr/share/img/id_rsa', '127.0.0.1']        
@@ -79,6 +81,10 @@ class ImageWorker(object):
         
         self._loopargs = []
     def _update_status(self, datadict):
+        data = json.dumps(datadict)
+        if self._amqp_chan:
+            msg = amqp.Message(data)
+            self._amqp_chan.basic_publish(msg, exchange="django_result_exchange", routing_key="status") 
         if self._work_item:
             if "status" in datadict:
                 fields = self._work_item.fields()

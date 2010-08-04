@@ -33,7 +33,7 @@ amqp_user = config.get('amqp', 'amqp_user')
 amqp_pwd = config.get('amqp', 'amqp_pwd')
 amqp_vhost = config.get('amqp', 'amqp_vhost')
 
-def async_send(fname, imagetype=None):
+def async_send(fname, email, name, imagetype):
     conn = amqp.Connection(host=amqp_host, userid=amqp_user, password=amqp_pwd, virtual_host=amqp_vhost, insist=False)
     chan = conn.channel()
     # Read configurations.yaml
@@ -41,7 +41,7 @@ def async_send(fname, imagetype=None):
     config = file.read()
     id = str(uuid1())
     # Format message as python list
-    params = {'ksfile':config, 'email':"test@test.org", 'imagetype':imagetype if imagetype else 'raw', 'id':id}
+    params = {'ksfile':config, 'email':email, 'imagetype':imagetype if imagetype else 'raw', 'id':id, 'name':name}
     data = json.dumps(params)
     
     msg = amqp.Message(data, message_id=id)
@@ -78,33 +78,34 @@ def poll(id):
 if __name__ == '__main__':
     import sys
     
-    usage="usage: %prog -p|--poll <message_id> -t|--type <imagetype> -a|--async  <kickstart_file.ks>"
+    usage="usage: %prog -p|--poll <id> -n|--name <name> -t|--type <imagetype> -e|--email <author@email> -s|--submit -k <kickstart_file.ks>"
     description = """
 %prog Sends a message asynchronously (poll for result later) to 
 the IMGer service, using <kickstart.ks> as the kickstart file.
 """
     parser = OptionParser(usage=usage, description=description)
 
-    parser.add_option("-a", "--async", dest="async", action="store_true",
-                      help="Asynchronous operation")
+    parser.add_option("-s", "--submit", dest="submit", action="store_true",
+                      help="Submit a kickstart file")
     parser.add_option("-p", "--poll", dest="poll", action="store", 
                       help="Poll for results with an id")
     parser.add_option("-t", "--type", dest="type", action="store", 
                       help="Poll for results with an id")
-
+    parser.add_option("-n", "--name", dest="name", action="store", 
+                      help="Image name")
+    parser.add_option("-e", "--email", dest="email", action="store", 
+                      help="Author email")
+    parser.add_option("-k", "--kickstart", dest="kickstart", action="store",
+                      help="Kickstart file")
     (options, args) = parser.parse_args()
-    path=None
-    if not options.poll:        
-        if len(args) != 1:
+    if not options.kickstart and not options.poll:
             parser.error("Missing <kickstart.ks> to parse")
-        else:
-            path=args[0]
     if options.poll:
         poll(options.poll)
-    if not options.async and not options.poll:
-        parser.error("Missing --async or --poll")
+    if not options.submit and not options.poll:
+        parser.error("Missing --submit or --poll")
     if not options.poll:        
-        if options.async and os.path.isfile(path):
-            async_send(path,options.type)
+        if options.submit and os.path.isfile(options.kickstart) and options.name and options.email and options.type:
+            async_send(options.kickstart,options.email, options.name, options.type)
         else:
-            print "<kickstart.ks> must be a file"
+            print "<kickstart.ks> must be a file and you must specify a image name, email and image type"

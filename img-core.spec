@@ -58,6 +58,8 @@ mkdir -p %{buildroot}/usr/bin
 #install -D -m 755 src/meego_img/client.py %{buildroot}/usr/bin/meego_image_client
 install -D -m 755 src/meego_img/boss_client.py %{buildroot}/usr/bin/boss_img_client
 install -D -m 755 src/meego_img/participant.py %{buildroot}/usr/bin/boss_img_participant
+install -D -m 755 src/meego_img/image_creator.py %{buildroot}/usr/bin/img_service
+install -D -m 755 src/meego_img/client.py %{buildroot}/usr/bin/img_client
 mkdir -p %{buildroot}/etc/lighttpd/vhosts.d
 mkdir -p %{buildroot}/var/www/django/run
 cp -a debian/img-lighttpd.conf %{buildroot}/etc/lighttpd/vhosts.d/
@@ -98,12 +100,13 @@ PROJECTDIR=/var/www/django/img
 %config /etc/imger/img.conf
 %config /etc/sysconfig/img
 /usr/bin/boss_img_participant
+/usr/bin/img_service
 
 
 %files -n img-control
 %defattr(-,root,root,-)
 /usr/bin/boss_img_client
-
+/usr/bin/img_client
 %changelog
 * Fri Jul 23 2010 Marko Helenius <marko.helenius@nomovok.com> 0.1
 - Fixed Spec

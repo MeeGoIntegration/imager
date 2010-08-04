@@ -57,7 +57,7 @@ def submit(kickstart, type,  email, name):
 if __name__ == '__main__':
     import sys
     
-    usage="usage: %prog -t|--type <imagetype> -e|--email <author@email> -s|--submit -k <kickstart_file.ks>"
+    usage="usage: %prog -n|--name <name> -t|--type <imagetype> -e|--email <author@email> -s|--submit -k <kickstart_file.ks>"
     description = """
 %prog Sends a message (poll for result later) to the BOSS, using <kickstart.ks> 
 as the kickstart file. 

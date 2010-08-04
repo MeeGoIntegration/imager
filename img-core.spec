@@ -44,6 +44,7 @@ install -D -m 755 rpm/img-www.init %{buildroot}/etc/init.d/img-webd
 mkdir -p %{buildroot}%{_sbindir}
 ln -sf %{_initrddir}/img-webd %{buildroot}%{_sbindir}/rcimg-webd
 install -D -m 755 rpm/img-core.init %{buildroot}/etc/init.d/img-cored
+install -D -m 755 rpm/img-core-amqp.init %{buildroot}/etc/init.d/img-amqp-cored
 ln -sf %{_initrddir}/img-cored %{buildroot}%{_sbindir}/rcimg-cored
 mkdir -p %{buildroot}/var/www/django/img
 cp -a src/meego_img %{buildroot}/var/www/django/img/
@@ -97,6 +98,7 @@ PROJECTDIR=/var/www/django/img
 %defattr(-,root,root,-)
 %{_sbindir}/rcimg-cored
 %config /etc/init.d/img-cored
+%config /etc/init.d/img-amqp-cored
 %config /etc/imger/img.conf
 %config /etc/sysconfig/img
 /usr/bin/boss_img_participant

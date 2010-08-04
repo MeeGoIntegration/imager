@@ -38,7 +38,7 @@ def submit(kickstart, type,  email, name):
             Ruote.process_definition :name => 'test' do
               sequence do
                 get_image_from_kickstart
-                workitem_dumper
+                notifier
               end
             end
           """

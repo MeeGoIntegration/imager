@@ -55,6 +55,7 @@ def submit(request):
             email = request.POST['email']
             imagetype = request.POST['imagetype']
             name = request.POST['name']
+            release = request.POST['release']
             conn = amqp.Connection(host=amqp_host, userid=amqp_user, password=amqp_pwd, virtual_host=amqp_vhost, insist=False)
             chan = conn.channel() 
             if 'overlay' in request.POST and not 'ksfile' in request.FILES:
@@ -74,7 +75,7 @@ def submit(request):
                 print config_raw
                 uuid = str(uuid1())        
                                   
-                params = {'config':config_raw, 'email':email, 'imagetype':imagetype, 'id':uuid, 'name':name}
+                params = {'config':config_raw, 'email':email, 'imagetype':imagetype, 'id':uuid, 'name':name, 'release':release}
                 data = json.dumps(params)
                 msg = amqp.Message(data, message_id=uuid)    
                 imgjob = ImageJob()
@@ -87,7 +88,7 @@ def submit(request):
             elif 'ksfile' in request.FILES and request.POST['overlay'] == '':                
                 ksfile = request.FILES['ksfile']                                
                 id = str(uuid1())
-                data = json.dumps({'email':email, 'id':id, 'imagetype':imagetype, 'ksfile':ksfile.read(), 'name':name})
+                data = json.dumps({'email':email, 'id':id, 'imagetype':imagetype, 'ksfile':ksfile.read(), 'name':name, 'release':release})
                 msg = amqp.Message(data, message_id=id)              
                 imgjob = ImageJob()                
                 imgjob.task_id = msg.message_id

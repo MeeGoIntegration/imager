@@ -50,7 +50,7 @@ if not os.path.exists('/dev/kvm') and use_kvm == "yes":
     
 class MICParticipant(Participant):
     __job_pool = None
-    def mic2(self, id, name,  type, email, kickstart, wi):
+    def mic2(self, id, name,  type, email, kickstart, wi, release):
         dir = "%s/%s"%(base_dir, id)
         os.mkdir(dir, 0775)    
         tmp = open(dir+'/'+name+'.ks', mode='w+b')    
@@ -62,7 +62,7 @@ class MICParticipant(Participant):
         file = base_url+"%s"%id    
         logfile = open(logfile_name,'w')
         logurl = base_url+id+'/'+os.path.split(logfile.name)[-1]
-        worker = ImageWorker(id, tmpname, type, logfile, dir, work_item=wi, name=name)    
+        worker = ImageWorker(id, tmpname, type, logfile, dir, work_item=wi, name=name, release=release)    
         worker.build()
         logfile.close()
         
@@ -73,9 +73,10 @@ class MICParticipant(Participant):
         id = wi.lookup('id')
         type = wi.lookup('type')
         name = wi.lookup('name')
+        release = wi.lookup('release')
         print "Workitem: "
         print json.dumps(wi.to_h())
-        self.mic2(id, name, type,  email, kickstart, wi)
+        self.mic2(id, name, type,  email, kickstart, wi, release)
         
 if __name__ == "__main__":
     print "Started a python participant"

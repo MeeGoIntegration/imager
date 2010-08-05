@@ -43,7 +43,7 @@ mic_args = config.get('worker', 'mic_opts')
 class ImageWorker(object):
     def _getport(self):
         return random.randint(49152, 65535)
-    def __init__(self, id, tmpname, type, logfile, dir, port=2222, chan=None, work_item=None, name=None):
+    def __init__(self, id, tmpname, type, logfile, dir, port=2222, chan=None, work_item=None, name=None, release=None):
         print "init"
         self._tmpname = tmpname
         self._type = type
@@ -51,6 +51,7 @@ class ImageWorker(object):
         self._dir = dir
         self._id = id
         self._image =None
+        self._release = release
         self._name = name
         self._port = self._getport()
         self._work_item = work_item
@@ -78,7 +79,8 @@ class ImageWorker(object):
         self._micargs.append('--format='+self._type)
         self._micargs.append('--cache=/var/mycache')#+guest_mount_cache)
         self._micargs.append('--outdir='+dir)
-        
+        if self._release:
+            self._micargs.append('--release='+self._release)
         self._loopargs = []
     def _update_status(self, datadict):
         data = json.dumps(datadict)

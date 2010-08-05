@@ -62,7 +62,7 @@ chan.queue_bind(queue="image_queue", exchange="image_exchange", routing_key="img
 chan.queue_bind(queue="kickstarter_queue", exchange="image_exchange", routing_key="ks")
 chan.queue_bind(queue="status_queue", exchange="django_result_exchange", routing_key="status")
 
-def mic2(id, name,type, email, kickstart):
+def mic2(id, name,type, email, kickstart, release):
     dir = "%s/%s"%(base_dir, id)
     os.mkdir(dir, 0775)    
     tmp = open(dir+'/'+name+'.ks', mode='w+b')    
@@ -74,7 +74,7 @@ def mic2(id, name,type, email, kickstart):
     file = base_url+"%s"%id    
     logfile = open(logfile_name,'w')
     logurl = base_url+id+'/'+os.path.split(logfile.name)[-1]     
-    worker = ImageWorker(id, tmpname, type, logfile, dir, chan=chan, name=name)    
+    worker = ImageWorker(id, tmpname, type, logfile, dir, chan=chan, name=name, release=release)    
     worker.build()
     logfile.close()
     
@@ -87,13 +87,14 @@ def mic2_callback(msg):
     type = job['imagetype']
     ksfile = job['ksfile']   
     name = job['name']
+    release = job['release']
     file = base_url+id
     data = json.dumps({"status":"IN QUEUE", "id":str(id), 'url':str(file)})
     statusmsg = amqp.Message(data)
     chan.basic_publish(statusmsg, exchange="django_result_exchange", routing_key="status")  
     args=(id, name, type, email, ksfile)
     #job_pool.apply_async(mic2, args=args)
-    mic2(id, name, type, email, ksfile)        
+    mic2(id, name, type, email, ksfile, release)        
  
 def kickstarter_callback(msg):
     print "ks"

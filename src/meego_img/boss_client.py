@@ -32,7 +32,7 @@ amqp_user = config.get('boss', 'amqp_user')
 amqp_pass = config.get('boss', 'amqp_pwd')
 amqp_vhost = config.get('boss', 'amqp_vhost')
 
-def submit(kickstart, type,  email, name):
+def submit(kickstart, type,  email, name, release):
     # Specify a process definition
     process = """
             Ruote.process_definition :name => 'test' do
@@ -47,7 +47,8 @@ def submit(kickstart, type,  email, name):
             "email": email, 
             "id":str(uuid1()), 
             "type":type, 
-            "name":name
+            "name":name, 
+            "release": release, 
             }
     launcher = RuoteAMQP.Launcher(amqp_host=amqp_host, amqp_user=amqp_user,
                               amqp_pass=amqp_pass, amqp_vhost=amqp_vhost)
@@ -57,7 +58,7 @@ def submit(kickstart, type,  email, name):
 if __name__ == '__main__':
     import sys
     
-    usage="usage: %prog -n|--name <name> -t|--type <imagetype> -e|--email <author@email> -s|--submit -k <kickstart_file.ks>"
+    usage="usage: %prog -n|--name <name> -t|--type <imagetype> -e|--email <author@email> -r|--release <release> -s|--submit -k <kickstart_file.ks>"
     description = """
 %prog Sends a message (poll for result later) to the BOSS, using <kickstart.ks> 
 as the kickstart file. 
@@ -74,6 +75,8 @@ as the kickstart file.
                       help="Image name")
     parser.add_option("-e", "--email", dest="email", action="store", 
                       help="Author email")
+    parser.add_option("-r", "--release", dest="release", action="store", 
+                      help="Release for mic2")
 
     (options, args) = parser.parse_args()
     path=None
@@ -81,7 +84,7 @@ as the kickstart file.
     if not options.submit:
         parser.error("Missing --submit")
     if options.submit:
-        if options.submit and os.path.isfile(path) and options.name and options.email and options.type:
-            submit(path,options.type,options.email, options.name)
+        if options.submit and os.path.isfile(path) and options.name and options.email and options.type and options.release:
+            submit(path,options.type,options.email, options.name, options.release)
         else:
             print "<kickstart.ks> must be a file and you must supply a image name, email and image type"

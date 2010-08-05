@@ -33,7 +33,7 @@ amqp_user = config.get('amqp', 'amqp_user')
 amqp_pwd = config.get('amqp', 'amqp_pwd')
 amqp_vhost = config.get('amqp', 'amqp_vhost')
 
-def async_send(fname, email, name, imagetype):
+def async_send(fname, email, name, imagetype, release):
     conn = amqp.Connection(host=amqp_host, userid=amqp_user, password=amqp_pwd, virtual_host=amqp_vhost, insist=False)
     chan = conn.channel()
     # Read configurations.yaml
@@ -41,7 +41,7 @@ def async_send(fname, email, name, imagetype):
     config = file.read()
     id = str(uuid1())
     # Format message as python list
-    params = {'ksfile':config, 'email':email, 'imagetype':imagetype if imagetype else 'raw', 'id':id, 'name':name}
+    params = {'ksfile':config, 'email':email, 'imagetype':imagetype if imagetype else 'raw', 'id':id, 'name':name, 'release':release}
     data = json.dumps(params)
     
     msg = amqp.Message(data, message_id=id)
@@ -97,6 +97,8 @@ the IMGer service, using <kickstart.ks> as the kickstart file.
                       help="Author email")
     parser.add_option("-k", "--kickstart", dest="kickstart", action="store",
                       help="Kickstart file")
+    parser.add_option("-r", "--release", dest="release", action="store", 
+                      help="Release for mic2")
     (options, args) = parser.parse_args()
     if not options.kickstart and not options.poll:
             parser.error("Missing <kickstart.ks> to parse")
@@ -105,7 +107,7 @@ the IMGer service, using <kickstart.ks> as the kickstart file.
     if not options.submit and not options.poll:
         parser.error("Missing --submit or --poll")
     if not options.poll:        
-        if options.submit and os.path.isfile(options.kickstart) and options.name and options.email and options.type:
-            async_send(options.kickstart,options.email, options.name, options.type)
+        if options.submit and os.path.isfile(options.kickstart) and options.name and options.email and options.type and options.release:
+            async_send(options.kickstart,options.email, options.name, options.type, options.release)
         else:
             print "<kickstart.ks> must be a file and you must specify a image name, email and image type"

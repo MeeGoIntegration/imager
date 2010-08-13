@@ -33,6 +33,15 @@ Requires: python-amqplib, python-simplejson
 Summary: MeeGo Image Me Give, a control client
 %description -n img-control
 Meego Image Me Give, control client package. For control.
+
+%package -n img-kickstarter
+Group: Applications/Engineering
+BuildRequires: python >= 2.5.0
+Requires: PyYAML, mic2, bzip2, python-amqplib, route-amqp-pyclient, python-air, python-simplejson
+Summary: Meego Image Me Give, kickstart file generator
+%description -n img-kickstarter
+BOSS participant that generates kickstart files and feeds them to imger
+
 %prep
 %setup -q
 %build
@@ -44,6 +53,7 @@ install -D -m 755 rpm/img-www.init %{buildroot}/etc/init.d/img-webd
 mkdir -p %{buildroot}%{_sbindir}
 ln -sf %{_initrddir}/img-webd %{buildroot}%{_sbindir}/rcimg-webd
 install -D -m 755 rpm/img-core.init %{buildroot}/etc/init.d/img-cored
+install -D -m 755 rpm/img-kickstarter.init %{buildroot}/etc/init.d/img-kickstarter
 install -D -m 755 rpm/img-core-amqp.init %{buildroot}/etc/init.d/img-amqp-cored
 ln -sf %{_initrddir}/img-cored %{buildroot}%{_sbindir}/rcimg-cored
 mkdir -p %{buildroot}/var/www/django/img
@@ -59,6 +69,7 @@ mkdir -p %{buildroot}/usr/bin
 #install -D -m 755 src/meego_img/client.py %{buildroot}/usr/bin/meego_image_client
 install -D -m 755 src/meego_img/boss_client.py %{buildroot}/usr/bin/boss_img_client
 install -D -m 755 src/meego_img/participant.py %{buildroot}/usr/bin/boss_img_participant
+install -D -m 755 src/meego_img/build_ks_participant.py %{buildroot}/usr/bin/build_ks_participant
 install -D -m 755 src/meego_img/image_creator.py %{buildroot}/usr/bin/img_service
 install -D -m 755 src/meego_img/client.py %{buildroot}/usr/bin/img_client
 mkdir -p %{buildroot}/etc/lighttpd/vhosts.d
@@ -101,7 +112,7 @@ PROJECTDIR=/var/www/django/img
 %config /etc/init.d/img-amqp-cored
 %config /etc/imger/img.conf
 %config /etc/sysconfig/img
-/usr/bin/boss_img_participant
+/usr/bin/build_ks_participant
 /usr/bin/img_service
 
 
@@ -109,7 +120,14 @@ PROJECTDIR=/var/www/django/img
 %defattr(-,root,root,-)
 /usr/bin/boss_img_client
 /usr/bin/img_client
+
+%files -n img-kickstarter
+/usr/bin/boss_img_participant
+/etc/init.d/img-kickstarter
+
 %changelog
+* Fri Aug 13 2010 Islam Amer <islam.amer@nokia.com> 0.1
+- Added kickstarter participant package
 * Fri Jul 23 2010 Marko Helenius <marko.helenius@nomovok.com> 0.1
 - Fixed Spec
 

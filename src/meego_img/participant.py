@@ -76,12 +76,13 @@ class MICParticipant(Participant):
         release = wi.lookup('release')
         print "Workitem: "
         print json.dumps(wi.to_h())
-        self.mic2(id, name, type,  email, kickstart, wi, release)
+        if kickstart:
+          self.mic2(id, name, type,  email, kickstart, wi, release)
         
 if __name__ == "__main__":
     print "Started a python participant"
-    p = MICParticipant(ruote_queue="get_image_from_kickstart", amqp_host=amqp_host,  amqp_user=amqp_user, amqp_pass=amqp_pass, amqp_vhost=amqp_vhost)
-    p.register("create_image_from_kickstart", {'queue':'get_image_from_kickstart'})
+    p = MICParticipant(ruote_queue="build_image", amqp_host=amqp_host,  amqp_user=amqp_user, amqp_pass=amqp_pass, amqp_vhost=amqp_vhost)
+    p.register("build_image", {'queue':'build_image'})
     p.run()
     
         

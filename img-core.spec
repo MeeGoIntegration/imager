@@ -7,7 +7,6 @@ License: GPLv2+
 URL: http://www.meego.com
 Source0: img-core-%{version}.tar.gz
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
-#Requires(pre): %insserv_prereq %fillup_prereq
 BuildRequires: python, python-setuptools
 Requires: yum, mic2, bzip2, python-amqplib, route-amqp-pyclient, python-air, python-simplejson
 Requires: python >= 2.5.0
@@ -20,7 +19,6 @@ An image creation service and a django frontend for MeeGo.
 %package -n img-web
 Group: Applications/Engineering
 BuildRequires: python >= 2.5.0, lighttpd
-BuildRequires: -post-build-checks
 Requires: lighttpd, lighttpd-fastcgi,PyYAML, python-sqlite, python-django,python-flup, python-simplejson
 Summary: Meego Image Me Give, django frontend + service
 %description -n img-web
@@ -122,6 +120,7 @@ PROJECTDIR=/var/www/django/img
 /usr/bin/img_client
 
 %files -n img-kickstarter
+%defattr(-,root,root,-)
 /usr/bin/boss_img_participant
 /etc/init.d/img-kickstarter
 

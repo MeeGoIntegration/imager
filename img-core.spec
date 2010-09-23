@@ -1,5 +1,5 @@
 Name: img-core
-Version: 0.1
+Version: 0.2
 Release: 1%{?dist}
 
 Group: Applications/Engineering
@@ -125,6 +125,8 @@ PROJECTDIR=/var/www/django/img
 /etc/init.d/img-kickstarter
 
 %changelog
+* Thu Sep 23 2010 Islam Amer <islam.amer@nokia.com> 0.2
+- Increment version to build new package
 * Fri Aug 13 2010 Islam Amer <islam.amer@nokia.com> 0.1
 - Added kickstarter participant package
 * Fri Jul 23 2010 Marko Helenius <marko.helenius@nomovok.com> 0.1

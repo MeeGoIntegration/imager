@@ -1,5 +1,0 @@
-# verify link of flash plugin
-if [ -f /usr/lib/flash-plugin/setup ]; then
-    sh /usr/lib/flash-plugin/setup install
-    rm -f /root/oldflashplugins.tar.gz
-fi

@@ -1,0 +1,71 @@
+#! /bin/sh
+### BEGIN INIT INFO
+# Provides:          img-amqp
+# Required-Start:    networking
+# Required-Stop:     networking
+# Default-Start:     2 3 4 5
+# Default-Stop:      S 0 1 6
+# Short-Description: Imager AMQP client.
+# Description:       Start imager AMQP client.
+### END INIT INFO
+set -e
+DAEMON="build_image"
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+NAME=$0
+SCRIPTNAME=/etc/init.d/$NAME
+
+#
+#       Function that starts the daemon/service.
+#
+d_start()
+{
+        echo -n "IMG service "
+        if [ -f /var/run/$DAEMON.pid ]; then
+            echo -n " already running"
+        else
+            start-stop-daemon -b --start --exec /usr/bin/$DAEMON.py --pidfile /var/run/$DAEMON.pid
+        fi
+}
+
+#
+#       Function that stops the daemon/service.
+#
+d_stop() {
+        echo -n ", img"
+        start-stop-daemon --stop --quiet --pidfile /var/run/$DAEMON.pid \
+                          || echo -n " not running"
+        if [ -f /var/run/$DAEMON.pid ]; then
+           rm /var/run/$DAEMON.pid
+        fi
+}
+
+ACTION="$1"
+case "$ACTION" in
+    start)
+        echo -n "Starting "
+        d_start
+        echo "."
+        ;;
+
+    stop)
+        echo -n "Stopping "
+        d_stop
+        echo "."
+        ;;
+
+    restart|force-reload)
+        echo -n "Restarting "
+        d_stop
+        sleep 1
+        d_start
+        echo "."
+        ;;
+
+    *)
+        echo "Usage: $NAME {start|stop|restart|force-reload}" >&2
+        exit 3
+        ;;
+esac
+
+exit 0
+

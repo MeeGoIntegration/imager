@@ -1,0 +1,3 @@
+usr/bin/boss_build_image.py
+usr/bin/boss_build_ks.py 
+usr/bin/boss_img_client.py

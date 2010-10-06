@@ -1,3 +1,10 @@
+img (0.3) unstable; urgency=low
+
+  * Updated version.
+  * Major restructure and makeover
+
+ -- Islam Amer <islam.amer@nokia.com>  Tue, 28 Sep 2010 00:55:25 +0300
+
 img (0.0.2) unstable; urgency=low
 
   * KVM integration added

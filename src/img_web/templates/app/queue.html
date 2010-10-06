@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+
+{% block pagetitle %}IMG Queue{% endblock %}
+
+{% block title %}IMG Queue{% endblock %}
+
+{% block content %}
+
+{%if queue %}
+<meta http-equiv="refresh" content="60">
+<table id="queue">
+<thead><tr>
+<th>Created on</th>
+<th>Email</th>
+<th>Status</th>
+<th>Type</th>
+<th>Log file</th>
+<th>Build directory</th>
+</tr></thead>
+<tbody>
+    {% for obj in queue.object_list %}
+        <tr>
+                <td>{{obj.created|date:"H:i:s d.m.Y"}}</td>
+                <td>{{obj.email}}</td> 
+                <td>{{obj.status}} </td> 
+                <td>{{obj.type}} </td>
+                <td><a href="{% url img-app-job obj.task_id %}">Log file</a></td>
+                <td><a href="{% url img-app-download obj.task_id %}">Build directory</a></td>                
+        </tr>
+    {% endfor %}
+</tbody>
+<tfoot>
+<tr class="pagination">
+        <td>
+        {% if queue.has_previous %}
+            <a href="?page={{ queue.previous_page_number }}">previous</a>
+        {% endif %}
+        </td>
+        <td colspan="4">
+            Page {{ queue.number }} of {{ queue.paginator.num_pages }}.
+        </td>
+        <td>
+        {% if queue.has_next %}
+            <a href="?page={{ queue.next_page_number }}">next</a>
+        {% endif %}
+        </td>
+</tr>
+</tfoot>
+</table>
+{% endif %}
+{% endblock %}
+{% block sidebar_title %}
+Help
+{% endblock %}
+{% block sidebar_content %}
+<li>
+<p>If your image fails to build check the log file in the download directory to find out about the reason it failed. Usually it is a depndency problem in one of the packages.</p>
+</li>
+{% endblock %}

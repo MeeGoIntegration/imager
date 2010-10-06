@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+
+{% block pagetitle %}Log viewer{% endblock %}
+
+{% block title %}Log view{% endblock %}
+
+{% block content %}
+<meta http-equiv="refresh" content="10">
+      <textarea id="textarea" rows="30" style="width: 100%;">
+            {{job}}
+      </textarea><br/>
+{% endblock %}
+{% block sidebar_title %}
+Help
+{% endblock %} 
+{% block sidebar_content %}
+<li>
+This page will refresh automatically every 20 seconds.
+</li>
+{% endblock %} 

@@ -1,26 +1,35 @@
 Source: img
 Section: python
 Priority: optional
-Maintainer: Ramez Hanna <ramez.hanna@nokia.com>
-Build-Depends: debhelper (>= 7), python (>=2.6), python-support (>= 0.5.0), python-setuptools, python-amqplib, python-yaml
+Maintainer: Islam Amer <islam.amer@nokia.com>
+Build-Depends: debhelper (>= 7), python-support (>= 0.5.0), python-dev, python-setuptools
 Standards-Version: 3.8.4
-
-Package: img-www
-Architecture: all
-Depends: ${python:Depends}, ${misc:Depends}, ${python:Versions}, python-sqlite, lighttpd, yum, python-django, python-flup, python-yaml, img-core
-Description: A image creation service for MeeGo related products
- img is a image creation service for MeeGo related products.
+XS-Python-Version: >= 2.5
 
 Package: img-core
 Architecture: all
-Depends: ${python:Depends}, ${misc:Depends}, ${python:Versions}, rabbitmq-server, python-sqlite, yum,  mic2, pykickstart, python-amqplib, python-yaml, bzip2, sudo
-Description: A image creation service for MeeGo related products
- img is a image creation service for MeeGo related products.
- Service component for IMG.
+Depends: ${python:Depends}, ${misc:Depends}, mic2, python-amqplib, bzip2, sudo
+XB-Python-Version: ${python:Versions}
+Description: image creation service for MeeGo related products
+ This package provides the core worker logic of imager. It builds images using mic2 optionally in a virtual machine.
 
-Package: img-control
+Package: img-web
 Architecture: all
-Depends: ${python:Depends}, ${misc:Depends}, ${python:Versions}, python-amqplib, python-yaml, bzip2, sudo, img-core
-Description: A image creation service for MeeGo related products
- img is a image creation service for MeeGo related products.
- Service component for IMG.
+Depends: ${python:Depends}, ${misc:Depends}, lighttpd, python-django, python-flup, python-yaml 
+XB-Python-Version: ${python:Versions}
+Description: image creation service for MeeGo related products
+ This package provides a django based web interface for imager. It can work with a standalone imager installation communicating over AMQP, or an installation that is part of BOSS.
+
+Package: img-amqp
+Architecture: all
+Depends: ${python:Depends}, ${misc:Depends}, python-pykickstart, python-amqplib, img-core
+XB-Python-Version: ${python:Versions}
+Description: image creation service for MeeGo related products
+ This package provides the imager client components that communicate over AMQP with the worker to build images using mic2.
+
+Package: img-boss
+Architecture: all
+Depends: ${python:Depends}, ${misc:Depends}, python-pykickstart, python-ruote-amqp-pyclient, python-air, img-core
+XB-Python-Version: ${python:Versions}
+Description: image creation service for MeeGo related products
+ This package provides imager participants that plugin into a BOSS system to fulfill image building steps of processes 

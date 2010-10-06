@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+
+{% block title %}Welcome to the meego image creation service{% endblock %}
+
+{% block content %}
+<p>
+<h2>Please choose an action</h2>
+<ul>
+	<li><a href="{%url img-app-submit%}">Create an image</a></li>
+	<li><a href="{%url img-app-queue %}">Look at the image creating job queue</a></li>
+<ul>
+</p>
+{% endblock %}
+{% block sidebar_title %}
+Contact us
+{% endblock %}
+{% block sidebar_content %}
+<li>
+  <p>Please join the <a href="mailto://ilmatar-integrators@projects.maemo.org">Ilmatar integrators</a> mailing list
+    for discussions on using the service.
+  </p>
+</li>
+<li>
+  <p>
+    For assistance with imager in general please ask on Freenode
+    in <a href="irc://freenode.net/meego">#meego</a> or, for Nokia confidential matters,
+    ask <a href="https://projects.maemo.org/trac/meego-obs/wiki/support">the support team on obs-guide
+    on jabber</a>
+  </p>
+</li>
+{% endblock %}

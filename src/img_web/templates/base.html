@@ -1,0 +1,84 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<!--
+Design by Free CSS Templates
+http://www.freecsstemplates.org
+Released for free under a Creative Commons Attribution 2.5 License
+
+Name       : Concurrence  
+Description: A two-column, fixed-width design for 1024x768 screen resolutions.
+Version    : 1.0
+Released   : 20100727
+
+-->
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<title>Imager  Meego image creation service</title>
+<meta name="keywords" content="" />
+<meta name="description" content="" />
+<link href="{{ MEDIA_URL }}/style.css" rel="stylesheet" type="text/css" media="screen" />
+</head>
+<body>
+<div id="header">
+	<div id="menu">
+		<ul>
+			{% if user.is_authenticated %}
+			<li><a href="{%url logout %}">Logout</a></li>
+			{% else %}
+			<li><a href="{%url login %}">Login</a></li>
+			{% endif %}
+			<li class="current_page_item"><a href="{%url img-app-queue %}">Queue</a></li>
+			<li class="current_page_item"><a href="{%url img-app-submit %}">Submit</a></li>
+		</ul>
+	</div>
+	<!-- end #menu -->
+</div>
+<!-- end #header -->
+<div id="logo">
+	<h1><a href="{%url index %}">Imager</a></h1>
+	<p><em> Meego image creation service</em></p>
+</div>
+<hr />
+<!-- end #logo -->
+<div id="page">
+	<div id="page-bgtop">
+		<div id="page-bgbtm">
+			<!-- start #content -->
+			<div id="content">
+				<div class="post">
+					<div class="post-bgtop">
+						<div class="post-bgbtm">
+							<h2 class="title">{% block title %}{% endblock %}</h2>
+							<div class="entry">
+							{% block content %}{% endblock %}
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="post">
+				</div>
+				<div class="post">
+				</div>
+			</div>
+			<!-- end #content -->
+			<!-- start #sidebar -->
+			<div id="sidebar">
+				<ul>
+					<li>
+						<h2>{% block sidebar_title %}{% endblock %}</h2>
+						<ul>
+						{% block sidebar_content %}{% endblock %}
+						</ul>
+					</li>
+				</ul>
+			</div>
+			<!-- end #sidebar -->
+		</div>
+	</div>
+</div>
+<div id="footer">
+	<p>Design by <a href="http://www.freecsstemplates.org/">Free CSS Templates</a>.</p>
+</div>
+<!-- end #footer -->
+</body>
+</html>

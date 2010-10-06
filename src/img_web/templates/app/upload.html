@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+
+{% block pagetitle %}IMG image uploader{% endblock %}
+
+{% block title %}IMG image uploader{% endblock %}
+
+{% block content %}
+{% if formerror%}
+<h1 style="color: red;">{{formerror}}</h1>
+{% endif%}
+<form action="{%url img-app-submit%}" method="post" enctype="multipart/form-data">
+    <table>
+    {% for field in form %}
+        <tr>
+            <td>
+            {{ field.label_tag }} 
+            </td>
+            <td>
+            {{ field }}
+            </td>
+        </tr>
+    {% endfor %}
+    </table>
+<p><input type="submit" value="Submit" /></p>
+</form>
+
+{% endblock %}
+{% block sidebar_title %}
+Help
+{% endblock %}
+{% block sidebar_content %}
+    {% for field in form %}
+    <li>{{ field.help_text }}</li>
+    {% endfor %}
+{% endblock %}

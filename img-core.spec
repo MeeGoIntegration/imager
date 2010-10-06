@@ -10,6 +10,7 @@ BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: python, python-setuptools
 Requires: yum, mic2, bzip2, python-amqplib, route-amqp-pyclient, python-air, python-simplejson
 Requires: python >= 2.5.0
+Requires: python-daemon
 BuildArchitectures: noarch
 Summary: Image Me Give, service package
 

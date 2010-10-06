@@ -26,7 +26,9 @@ try:
 except ImportError:
      import json
 from multiprocessing import Process, Queue, Pool
+import pwd, grp
 import ConfigParser
+import daemon
 
 config = ConfigParser.ConfigParser()
 config.read('/etc/imger/img.conf')
@@ -38,6 +40,10 @@ amqp_user = config.get('boss', 'amqp_user')
 amqp_pass = config.get('boss', 'amqp_pwd')
 amqp_vhost = config.get('boss', 'amqp_vhost')
 use_kvm = config.get('worker', 'use_kvm')
+runas_user = config.get('daemon', 'runas_user')
+runas_group = config.get('daemon', 'runas_group')
+uid = pwd.getpwnam(runas_user)[2]
+gid = grp.getgrnam(runas_group)[2]
 import os, sys
 from tempfile import TemporaryFile, NamedTemporaryFile, mkdtemp
 
@@ -78,11 +84,17 @@ class MICParticipant(Participant):
         print json.dumps(wi.to_h())
         if kickstart:
           self.mic2(id, name, type,  email, kickstart, wi, release)
-        
-if __name__ == "__main__":
-    print "Started a python participant"
+          
+def main ():    
     p = MICParticipant(ruote_queue="build_image", amqp_host=amqp_host,  amqp_user=amqp_user, amqp_pass=amqp_pass, amqp_vhost=amqp_vhost)
     p.register("build_image", {'queue':'build_image'})
     p.run()
     
-        
+if __name__ == "__main__":
+    print "Started image build participant"
+    logfile = "/var/log/imger.log.%s"%str(random())
+    uid = "imger"
+    gid = "imger"
+    log = open(logfile,'a+')
+    with daemon.DaemonContext(stdout=log, stderr=log, uid=uid, gid=gid):
+        main()

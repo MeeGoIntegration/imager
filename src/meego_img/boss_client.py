@@ -37,7 +37,7 @@ def submit(kickstart, type,  email, name, release):
     process = """
             Ruote.process_definition :name => 'test' do
               sequence do
-                get_image_from_kickstart
+                build_kickstart
                 notifier
               end
             end

@@ -20,7 +20,8 @@ except ImportError:
      import simplejson as json
 import subprocess as sub
 from subprocess import CalledProcessError
-import os, sys
+import os, sys, random, pwd, grp
+import daemon
 from tempfile import TemporaryFile, NamedTemporaryFile, mkdtemp
 import shutil
 import re
@@ -57,6 +58,19 @@ use_kvm = config.get('worker', 'use_kvm')
 reposerver = config.get('worker', 'reposerver')
 templates_dir = config.get('worker', 'templates_dir')
 
+# Daemon information
+participant_name = "build_image"
+d = config.get("", 'daemon')
+daemonize = False
+if d == "Yes":
+    daemonize = True
+
+config_logfile = config.get(participant_name, 'logfile')
+config_logfile = config_logfile+'.'+str(random.randint(1,65535))
+runas_user = config.get(participant_name, 'runas_user')
+runas_group = config.get(participant_name, 'runas_group')
+uid = pwd.getpwnam(runas_user)[2]
+gid = grp.getgrnam(runas_group)[2]
 # if not root...kick out
 if not os.geteuid()==0:
     sys.exit("\nOnly root can run this script\n")
@@ -155,11 +169,20 @@ def kickstarter_callback(msg):
     
     print "ks end"
     
-chan.basic_consume(queue='image_queue', no_ack=True, callback=mic2_callback)
-chan.basic_consume(queue='kickstarter_queue', no_ack=True, callback=kickstarter_callback)
-while True:
-    chan.wait()
-chan.basic_cancel("img")
-chan.basic_cancel("ks")
-chan.close()
-conn.close()
+def main():
+    chan.basic_consume(queue='image_queue', no_ack=True, callback=mic2_callback)
+    chan.basic_consume(queue='kickstarter_queue', no_ack=True, callback=kickstarter_callback)
+    while True:
+        chan.wait()
+    chan.basic_cancel("img")
+    chan.basic_cancel("ks")
+    chan.close()
+    conn.close()
+
+if __name__ == "__main__":
+    if daemonize:
+        log = open(config_logfile,'w+')
+        with daemon.DaemonContext(stdout=log, stderr=log, uid=uid, gid=gid):
+            main()
+    else:
+        main()

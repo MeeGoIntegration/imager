@@ -45,6 +45,7 @@ class ImageWorker(object):
         return random.randint(49152, 65535)
     def __init__(self, id, tmpname, type, logfile, dir, port=2222, chan=None, work_item=None, name=None, release=None, arch=None):
         print "init"
+        sys.stdout.flush()
         self._tmpname = tmpname
         self._type = type
         self._logfile = logfile
@@ -167,7 +168,7 @@ class ImageWorker(object):
                     sub.check_call(postscpargs, shell=False, stdout=sub.PIPE, stderr=sub.PIPE, stdin=sub.PIPE)
                     postsshargs.append(post)
                     sub.check_call(postsshargs, shell=False, stdout=sub.PIPE, stderr=sub.PIPE, stdin=sub.PIPE)
-		data = {'status':"DONE", "url":base_url+self._id, 'id':self._id, 'log':logurl, 'image':self._image}
+                data = {'status':"DONE", "url":base_url+self._id, 'id':self._id, 'log':logurl, 'image':self._image}
                 self._update_status(data)
             except CalledProcessError as err:
                 print "error %s"%err
@@ -192,9 +193,11 @@ class ImageWorker(object):
                 datadict["image"] = self._image
                 datadict['status'] = "DONE"
                 self._update_status(data)
+                sys.stdout.flush()
             except CalledProcessError as err:
                 print "error %s"%err
                 error = {'status':"ERROR","error":"%s"%err, 'id':str(self._id), 'url':base_url+self._id, 'log':logurl}
-                self._update_status(error)                
+                self._update_status(error)  
+                sys.stdout.flush()              
                 return 
         

@@ -20,7 +20,7 @@ import daemon
 
 from  RuoteAMQP.workitem import Workitem
 from  RuoteAMQP.participant import Participant
-
+import random
 from img.worker import ImageWorker
 
 try:
@@ -80,7 +80,8 @@ daemonize = False
 if d == "Yes":
     daemonize = True
 
-logfile = config.get(participant_name, 'logfile')
+config_logfile = config.get(participant_name, 'logfile')
+config_logfile = config_logfile+'.'+str(random.randint(1,65535))
 runas_user = config.get(participant_name, 'runas_user')
 runas_group = config.get(participant_name, 'runas_group')
 uid = pwd.getpwnam(runas_user)[2]
@@ -101,8 +102,17 @@ class MICParticipant(Participant):
     __job_pool = None
     def mic2(self, id, name,  type, email, kickstart, release, arch):
         dir = "%s/%s"%(base_dir, id)
-        os.mkdir(dir, 0775)    
-        tmp = open(dir+'/'+name+'.ks', mode='w+b')    
+        print dir
+        os.mkdir(dir, 0775)
+        
+        ksfilename = ""
+        if release:    
+            ksfilename = dir+'/meego-'+name+'-'+arch+'-'+release +'.ks' 
+        else:
+            ksfilename = dir+'/'+name+'.ks'
+        
+        tmp = open(ksfilename, mode='w+b')
+        print tmp.name   
         tmpname = tmp.name
         logfile_name = dir+'/'+name+"-log"
         tmp.write(kickstart)            
@@ -116,7 +126,7 @@ class MICParticipant(Participant):
         logfile.close()
         
     def consume(self):
-        try:
+        try:            
             wi = self.workitem
             email = wi.lookup('email')
             kickstart = wi.lookup('kickstart')
@@ -130,8 +140,7 @@ class MICParticipant(Participant):
             if kickstart:
               self.mic2(id, name, type,  email, kickstart, release, arch)
             result = True
-        except Exception as e:
-            print type(e)
+        except Exception as e:            
             print e
             traceback.print_exc(file=sys.stdout)
             result = False
@@ -149,7 +158,7 @@ def main():
 
 if __name__ == "__main__":
     if daemonize:
-        log = open(logfile,'a+')
+        log = open(config_logfile,'w+')
         with daemon.DaemonContext(stdout=log, stderr=log, uid=uid, gid=gid):
             main()
     else:

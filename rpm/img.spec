@@ -116,6 +116,9 @@ rm -rf %{buildroot}
 %{_bindir}/boss_img_client.py
 
 %changelog
+* Mon Oct 11 2010 Aleksi Suomalainen <aleksi.suomalainen@nomovok.com> 0.4
+- Daemonization code added
+- Code refactoring
 * Sun Sep 26 2010 Islam Amer <islam.amer@nokia.com> 0.3
 - Major restructure and themeing.
 * Thu Sep 23 2010 Islam Amer <islam.amer@nokia.com> 0.2

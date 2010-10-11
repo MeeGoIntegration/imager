@@ -1,0 +1,76 @@
+#! /bin/sh
+### BEGIN INIT INFO
+# Provides:          boss-template
+# Required-Start:    $remote_fs rabbitmq
+# Required-Stop:     $null
+# Default-Start:     2 3 4 5
+# Default-Stop:      S 0 1 6
+# Short-Description: Template service.
+# Description:       BOSS participant template.
+### END INIT INFO
+set -e
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+DESC="Template service"
+NAME=$0
+SCRIPTNAME=/etc/init.d/$NAME
+CONF=/etc/imager/img.conf
+PNAME=boss_build_image
+WORKERS=1
+#
+#       Function that starts the daemon/service.
+#
+d_start()
+{
+  for i in `seq 1 $WORKERS`; do
+        echo -n " $i, "
+        if [ -f /var/run/$PNAME.pid ]; then
+            echo -n " already running, "
+        else
+            startproc /usr/bin/$PNAME.py -c $CONF -n $i
+        fi
+  done
+}
+
+#
+#       Function that stops the daemon/service.
+#
+d_stop() {
+  for i in `seq 1 $WORKERS`; do
+        echo -n " $i, "
+        killproc /usr/bin/$PNAME.py \
+                          || echo -n " not running, "
+        if [ -f /var/run/$PNAME.pid ]; then
+           rm /var/run/$PNAME.pid
+        fi
+   done
+}
+
+ACTION="$1"
+case "$ACTION" in
+    start)
+        echo -n "Starting $DESC "
+        d_start
+        echo "."
+        ;;
+
+    stop)
+        echo -n "Stopping $DESC "
+        d_stop
+        echo "."
+        ;;
+
+    restart|force-reload)
+        echo -n "Restarting $DESC "
+        d_stop
+        sleep 1
+        d_start
+        echo "."
+        ;;
+    *)
+        echo "Usage: $NAME {start|stop|restart|force-reload}" >&2
+        exit 3
+        ;;
+esac
+
+exit 0
+

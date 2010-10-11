@@ -120,7 +120,7 @@ class MICParticipant(Participant):
             print "Workitem: "
             print json.dumps(wi.to_h())
             if kickstart:
-                mic2(id, name, type,  email, kickstart, release, arch)
+                mic2(id, name, type,  email, kickstart, release, arch,work_item=wi)
             result = True
         except Exception as e:            
             print e

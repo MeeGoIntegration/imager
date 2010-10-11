@@ -99,6 +99,10 @@ the IMGer service, using <kickstart.ks> as the kickstart file.
                       help="Kickstart file")
     parser.add_option("-r", "--release", dest="release", action="store", 
                       help="Release for mic2")
+    parser.add_option("-a", "--arch", dest="arch", action="store", 
+                      help="Target architecture (arm, i586)")
+    parser.add_option("-c", "--conf", dest="conf", action="store", 
+                      help="alternate configuration file")
     (options, args) = parser.parse_args()
     if not options.kickstart and not options.poll:
             parser.error("Missing <kickstart.ks> to parse")
@@ -107,7 +111,7 @@ the IMGer service, using <kickstart.ks> as the kickstart file.
     if not options.submit and not options.poll:
         parser.error("Missing --submit or --poll")
     if not options.poll:        
-        if options.submit and os.path.isfile(options.kickstart) and options.name and options.email and options.type and options.release:
+        if options.submit and os.path.isfile(options.kickstart) and options.name and options.email and options.type and options.arch:
             async_send(options.kickstart,options.email, options.name, options.type, options.release)
         else:
             print "<kickstart.ks> must be a file and you must specify a image name, email and image type"

@@ -1,5 +1,5 @@
 Name: img
-Version: 0.3
+Version: 0.4
 Release: 1
 
 Group: Applications/Engineering
@@ -87,7 +87,7 @@ rm -rf %{buildroot}
 python setup.py -q install --root=$RPM_BUILD_ROOT --prefix=%{_prefix} --record=INSTALLED_FILES
 install -D -m 755 rpm/img-web.init %{buildroot}/etc/init.d/img-web
 install -D -m 755 rpm/img-amqp.init %{buildroot}/etc/init.d/img-amqp
-
+install -D -m 700 ssh/id_rsa %{buildroot}/usr/share/img/id_rsa
 %clean
 rm -rf %{buildroot}
 
@@ -97,6 +97,7 @@ rm -rf %{buildroot}
 %{_sysconfdir}/imager
 %{python_sitelib}/img-0.1-py2.6.egg-info
 %{python_sitelib}/img
+/usr/share/img/id_rsa
 
 %files -n img-web
 %defattr(-,root,root,-)

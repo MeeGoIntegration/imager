@@ -100,6 +100,7 @@ rm -rf %{buildroot}
 %{python_sitelib}/img-0.1-py2.6.egg-info
 %{python_sitelib}/img
 /usr/share/img/id_rsa
+/usr/share/img
 
 %files -n img-web
 %defattr(-,root,root,-)

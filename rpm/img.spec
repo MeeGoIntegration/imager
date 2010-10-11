@@ -31,6 +31,7 @@ Requires: mic2
 Requires: python-amqplib
 Requires: bzip2
 Requires: sudo
+Requires: python-daemon
 Summary: Image creation service for MeeGo related products, core package
 %description -n img-core
 This package provides the core worker logic of imager. It builds images using mic2 optionally in a virtual machine.

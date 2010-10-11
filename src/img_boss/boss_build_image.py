@@ -58,7 +58,9 @@ mic_opts =
 
 parser = optparse.OptionParser()
 parser.add_option("-c", "--config", dest="filename",
-                  help="read configuration from CFILE", metavar="CFILE")
+                  help="Read configuration from CFILE", metavar="CFILE")
+parser.add_option("-n", "--num_worker", dest="num",
+                  help="Number for this worker", metavar="NUM")
 (options, args) = parser.parse_args()
 
 try:
@@ -81,10 +83,10 @@ if d == "Yes":
     daemonize = True
 
 config_logfile = config.get(participant_name, 'logfile')
-rand = str(random.randint(1, 65535))
-config_logfile = config_logfile+'.'+rand
+num = options.num if options.num else '0'
+config_logfile = config_logfile+'.'+num+'.log'
 config_pidfile = config.get(participant_name,'pidfile')
-config_pidfile = config_pidfile+'.'+rand
+config_pidfile = config_pidfile+'.'+num+'.pid'
 runas_user = config.get(participant_name, 'runas_user')
 runas_group = config.get(participant_name, 'runas_group')
 uid = pwd.getpwnam(runas_user)[2]
@@ -140,11 +142,11 @@ if __name__ == "__main__":
     if daemonize:
         log = open(config_logfile,'a+')
         pidf = open(config_pidfile,'a+')
-        os.fchown(log,uid,gid)
-        os.fchown(pidf,uid,gid)
+        #os.fchown(log,int(uid),int(gid))
+        #os.fchown(pidf,int(uid),int(gid))
         with daemon.DaemonContext(stdout=log, stderr=log, uid=uid, gid=gid, files_preserve=[pidf]):
-          pidf.write(os.getpid())
-          main()
+            pidf.write(str(os.getpid()))
+            main()
     else:
         main()
 

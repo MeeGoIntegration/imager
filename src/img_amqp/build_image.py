@@ -26,6 +26,7 @@ from tempfile import TemporaryFile, NamedTemporaryFile, mkdtemp
 import shutil
 import re
 import time
+import optparse
 from amqplib import client_0_8 as amqp
 from img.worker import ImageWorker
 from img.common import mic2
@@ -48,6 +49,11 @@ import ConfigParser
 config = ConfigParser.ConfigParser()
 config.read('/etc/imager/img.conf')
 
+parser = optparse.OptionParser()
+parser.add_option("-n", "--num_worker", dest="num",
+                  help="Number for this worker", metavar="NUM")
+(options, args) = parser.parse_args()
+
 amqp_host = config.get('amqp', 'amqp_host')
 amqp_user = config.get('amqp', 'amqp_user')
 amqp_pwd = config.get('amqp', 'amqp_pwd')
@@ -67,10 +73,9 @@ if d == "Yes":
     daemonize = True
 
 config_logfile = config.get(participant_name, 'logfile')
-rand = str(random.randint(1, 65535))
-config_logfile = config_logfile+'.'+rand
+config_logfile = config_logfile+'.'+options.num+'.log'
 config_pidfile = config.get(participant_name,'pidfile')
-config_pidfile = config_pidfile+'.'+rand
+config_pidfile = config_pidfile+'.'+options.num+'.log'
 runas_user = config.get(participant_name, 'runas_user')
 runas_group = config.get(participant_name, 'runas_group')
 uid = pwd.getpwnam(runas_user)[2]
@@ -168,12 +173,12 @@ def main():
 
 if __name__ == "__main__":
     if daemonize:
-        log = open(config_logfile)
+        log = open(config_logfile,'a+')
         pidf = open(config_pidfile,'a+')
-        os.fchown(log,uid,gid)
-        os.fchown(pidf,uid,gid)
+        #os.fchown(log,int(uid),int(gid))
+        #os.fchown(pidf,int(uid),int(gid))
         with daemon.DaemonContext(stdout=log, stderr=log, uid=uid, gid=gid, files_preserve=[pidf]):
-          pidf.write(os.getpid())
-          main()
+            pidf.write(str(os.getpid()))
+            main()
     else:
         main()

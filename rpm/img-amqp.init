@@ -15,57 +15,57 @@ PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
 DESC="Image Me Give service"
 NAME=$0
 SCRIPTNAME=/etc/init.d/$NAME
+WORKERS=1
 
 #
 #       Function that starts the daemon/service.
 #
 d_start()
 {
-    # Starting all Django FastCGI processes
-        echo -n "IMG service "
-        if [ -f /var/run/img_service.pid ]; then
-            echo -n " already running"
+     for i in `seq 1 $WORKERS`; do
+        echo -n " $i, "
+        if [ -f /var/run/build_image.$i.pid ]; then
+            echo -n " already running, "
         else
-            startproc -p /var/run/build_image.pid /usr/bin/build_image.py
+            startproc -p /var/run/build_image.$i.pid /usr/bin/build_image.py -n $i 
         fi
+     done
 }
 
 #
 #       Function that stops the daemon/service.
 #
 d_stop() {
-        echo -n ", img"
-        killproc -p /var/run/build_image.pid /usr/bin/build_image.py \
-                          || echo -n " not running"
-        if [ -f /var/run/build_image.pid ]; then
-           rm /var/run/build_image.pid
+    for i in `seq 1 $WORKERS`; do
+        echo -n " $i, "
+        killproc -p /var/run/build_image.$i.pid /usr/bin/build_image.py \
+                          || echo -n " not running, "
+        if [ -f /var/run/build_image.$i.pid ]; then
+           rm /var/run/build_image.$i.pid
         fi
+    done
 }
 
 ACTION="$1"
 case "$ACTION" in
     start)
-        echo -n "Starting $DESC: $NAME"
+        echo -n "Starting $DESC: "
         d_start
         echo "."
         ;;
 
     stop)
-        echo -n "Stopping $DESC: $NAME"
+        echo -n "Stopping $DESC: "
         d_stop
         echo "."
         ;;
 
     restart|force-reload)
-        echo -n "Restarting $DESC: $NAME"
+        echo -n "Restarting $DESC: "
         d_stop
         sleep 1
         d_start
         echo "."
-        ;;
-    status)
-        checkproc -p /var/run/build_image.pid /usr/bin/build_image.py
-        rc_status -v
         ;;
     *)
         echo "Usage: $NAME {start|stop|restart|force-reload}" >&2

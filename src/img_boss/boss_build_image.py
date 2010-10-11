@@ -22,7 +22,7 @@ from  RuoteAMQP.workitem import Workitem
 from  RuoteAMQP.participant import Participant
 import random
 from img.worker import ImageWorker
-
+from img.common import mic2
 try:
      import simplejson as json
 except ImportError:
@@ -100,30 +100,7 @@ if not os.path.exists('/dev/kvm') and use_kvm == "yes":
     
 class MICParticipant(Participant):
     __job_pool = None
-    def mic2(self, id, name,  type, email, kickstart, release, arch):
-        dir = "%s/%s"%(base_dir, id)
-        print dir
-        os.mkdir(dir, 0775)
-        
-        ksfilename = ""
-        if release:    
-            ksfilename = dir+'/meego-'+name+'-'+arch+'-'+release +'.ks' 
-        else:
-            ksfilename = dir+'/'+name+'.ks'
-        
-        tmp = open(ksfilename, mode='w+b')
-        print tmp.name   
-        tmpname = tmp.name
-        logfile_name = dir+'/'+name+"-log"
-        tmp.write(kickstart)            
-        tmp.close()
-        os.chmod(tmpname, 0644)
-        file = base_url+"%s"%id    
-        logfile = open(logfile_name,'w')
-        logurl = base_url+id+'/'+os.path.split(logfile.name)[-1]
-        worker = ImageWorker(id, tmpname, type, logfile, dir, work_item=self.workitem, name=name, release=release, arch=arch)
-        worker.build()
-        logfile.close()
+    
         
     def consume(self):
         try:            
@@ -138,7 +115,7 @@ class MICParticipant(Participant):
             print "Workitem: "
             print json.dumps(wi.to_h())
             if kickstart:
-              self.mic2(id, name, type,  email, kickstart, release, arch)
+                mic2(id, name, type,  email, kickstart, release, arch)
             result = True
         except Exception as e:            
             print e

@@ -28,6 +28,7 @@ import re
 import time
 from amqplib import client_0_8 as amqp
 from img.worker import ImageWorker
+from img.common import mic2
 from multiprocessing import Process, Queue, Pool
 
 import pykickstart.commands as kscommands
@@ -101,21 +102,6 @@ class KSHandlers(superclass):
     def __init__(self, mapping={}):
         superclass.__init__(self, mapping=commandMap[using_version])
 
-def mic2(id, name,type, email, kickstart, release, arch):
-    dir = "%s/%s"%(base_dir, id)
-    os.mkdir(dir, 0775)    
-    tmp = open(dir+'/'+name+'.ks', mode='w+b')    
-    tmpname = tmp.name
-    logfile_name = dir+'/'+name+"-log"
-    tmp.write(kickstart)            
-    tmp.close()
-    os.chmod(tmpname, 0644)
-    file = base_url+"%s"%id    
-    logfile = open(logfile_name,'w')
-    logurl = base_url+id+'/'+os.path.split(logfile.name)[-1]     
-    worker = ImageWorker(id, tmpname, type, logfile, dir, chan=chan, name=name, release=release, arch=arch)    
-    worker.build()
-    logfile.close()
     
 job_pool = Pool(num_workers)
 def mic2_callback(msg):  
@@ -133,9 +119,7 @@ def mic2_callback(msg):
     file = base_url+id
     data = json.dumps({"status":"IN QUEUE", "id":str(id), 'url':str(file)})
     statusmsg = amqp.Message(data)
-    chan.basic_publish(statusmsg, exchange="django_result_exchange", routing_key="status")  
-    args=(id, name, type, email, ksfile)
-    #job_pool.apply_async(mic2, args=args)
+    chan.basic_publish(statusmsg, exchange="django_result_exchange", routing_key="status")
     mic2(id, name, type, email, ksfile, release, arch)        
  
 def kickstarter_callback(msg):

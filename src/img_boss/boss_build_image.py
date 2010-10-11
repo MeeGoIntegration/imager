@@ -81,7 +81,10 @@ if d == "Yes":
     daemonize = True
 
 config_logfile = config.get(participant_name, 'logfile')
-config_logfile = config_logfile+'.'+str(random.randint(1,65535))
+rand = str(random.randint(1, 65535))
+config_logfile = config_logfile+'.'+rand
+config_pidfile = config.get(participant_name,'pidfile')
+config_pidfile = config_pidfile+'.'+rand
 runas_user = config.get(participant_name, 'runas_user')
 runas_group = config.get(participant_name, 'runas_group')
 uid = pwd.getpwnam(runas_user)[2]
@@ -135,9 +138,13 @@ def main():
 
 if __name__ == "__main__":
     if daemonize:
-        log = open(config_logfile,'w+')
-        with daemon.DaemonContext(stdout=log, stderr=log, uid=uid, gid=gid):
-            main()
+        log = open(config_logfile,'a+')
+        pidf = open(config_pidfile,'a+')
+        os.fchown(log,uid,gid)
+        os.fchown(pidf,uid,gid)
+        with daemon.DaemonContext(stdout=log, stderr=log, uid=uid, gid=gid, files_preserve=[pidf]):
+          pidf.write(os.getpid())
+          main()
     else:
         main()
 

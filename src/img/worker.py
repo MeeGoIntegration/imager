@@ -129,7 +129,7 @@ class ImageWorker(object):
                 self._kvmproc = sub.Popen(self._kvmargs, shell=False, stdin=sub.PIPE, stdout=sub.PIPE, stderr=sub.PIPE)
                 datadict["status"] = "VIRTUAL MACHINE, WAITING FOR VM"
                 self._update_status(datadict)
-                time.sleep(15)                        
+                time.sleep(60)                        
                 datadict["status"] = "VIRTUAL MACHINE, RUNNING MIC2"
                 print datadict
                 sys.stdout.flush() 

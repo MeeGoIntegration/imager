@@ -17,16 +17,13 @@ conf.close()
 
 base_url = config.get('worker', 'base_url')
 base_dir = config.get('worker', 'base_dir')
-def mic2(id, name,  type, email, kickstart, release, arch,work_item=None):
+def mic2(id, name,  type, email, kickstart, release, arch="i586", work_item=None):
         dir = "%s/%s"%(base_dir, id)
         print dir
         os.mkdir(dir, 0775)
         
         ksfilename = ""
-        if release:    
-            ksfilename = dir+'/meego-'+name+'-'+arch+'-'+release +'.ks' 
-        else:
-            ksfilename = dir+'/'+name+'.ks'
+        ksfilename = dir+'/'+name+'.ks'
         
         tmp = open(ksfilename, mode='w+b')
         print tmp.name   

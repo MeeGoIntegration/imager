@@ -28,7 +28,6 @@ from uuid import *
 from amqplib import client_0_8 as amqp
 from tempfile import TemporaryFile, NamedTemporaryFile, mkdtemp
 from django.core.servers.basehttp import FileWrapper
-from RuoteAMQP import Launcher
 import ConfigParser
 
 config = ConfigParser.ConfigParser()
@@ -68,7 +67,7 @@ def submit(request):
                 projects = request.POST['projects']
                 template = request.POST['template']                
                 conf = {} 
-                conf["Template"] =  str(settings.TEMPLATESDIR) + template
+                conf["Template"] =  open(str(settings.TEMPLATESDIR) + template).read()
 
                 if overlay == None:
                     overlay = ''

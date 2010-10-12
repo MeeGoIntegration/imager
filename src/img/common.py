@@ -17,7 +17,7 @@ conf.close()
 
 base_url = config.get('worker', 'base_url')
 base_dir = config.get('worker', 'base_dir')
-def mic2(id, name,  type, email, kickstart, release, arch="i686", work_item=None):
+def mic2(id, name,  type, email, kickstart, release, arch="i686", work_item=None, chan=None):
         dir = "%s/%s"%(base_dir, id)
         print dir
         os.mkdir(dir, 0775)
@@ -35,6 +35,6 @@ def mic2(id, name,  type, email, kickstart, release, arch="i686", work_item=None
         file = base_url+"%s"%id    
         logfile = open(logfile_name,'w')
         logurl = base_url+id+'/'+os.path.split(logfile.name)[-1]
-        worker = ImageWorker(id, tmpname, type, logfile, dir, work_item=work_item, name=name, release=release, arch=arch)
+        worker = ImageWorker(id, tmpname, type, logfile, dir, work_item=work_item, chan=chan, name=name, release=release, arch=arch)
         worker.build()
         logfile.close()

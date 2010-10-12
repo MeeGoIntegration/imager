@@ -130,7 +130,7 @@ def mic2_callback(msg):
     data = json.dumps({"status":"IN QUEUE", "id":str(id), 'url':str(file)})
     statusmsg = amqp.Message(data)
     chan.basic_publish(statusmsg, exchange="django_result_exchange", routing_key="status")
-    mic2(id, name, type, email, ksfile, release, arch)        
+    mic2(id, name, type, email, ksfile, release, arch, chan=chan)        
  
 def kickstarter_callback(msg):
     print "ks"

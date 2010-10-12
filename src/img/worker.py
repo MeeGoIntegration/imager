@@ -138,6 +138,11 @@ class ImageWorker(object):
                 if mic_args:
                     for micarg in mic_args.split(','):
                         sshargs.append(micarg)
+                mic2confargs = ['/etc/mic2/mic2.conf','root@127.0.0.1:/etc/mic2/']
+                scpmic2args = copy.copy(self._scpksargs)
+                for mic2arg in mic2confargs:
+                    scpmic2args.append(mic2arg)
+                sub.check_call(scpmic2args, shell=False, stdout=sub.PIPE, stderr=sub.PIPE, stdin=sub.PIPE)
                 mkdirargs = ['mkdir', '-p', self._dir]
                 mksshargs = copy.copy(self._sshargs)
                 for mkarg in mkdirargs:

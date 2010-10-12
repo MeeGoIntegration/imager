@@ -17,7 +17,7 @@ conf.close()
 
 base_url = config.get('worker', 'base_url')
 base_dir = config.get('worker', 'base_dir')
-def mic2(id, name,  type, email, kickstart, release, arch="i586", work_item=None):
+def mic2(id, name,  type, email, kickstart, release, arch="i686", work_item=None):
         dir = "%s/%s"%(base_dir, id)
         print dir
         os.mkdir(dir, 0775)

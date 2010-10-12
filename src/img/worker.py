@@ -125,12 +125,14 @@ class ImageWorker(object):
                 sub.check_call(self._imagecreate, shell=False, stdin=sub.PIPE, stdout=sub.PIPE, stderr=sub.PIPE)                        
                 self._update_status(datadict)
                 print self._kvmargs
+                sys.stdout.flush() 
                 self._kvmproc = sub.Popen(self._kvmargs, shell=False, stdin=sub.PIPE, stdout=sub.PIPE, stderr=sub.PIPE)
                 datadict["status"] = "VIRTUAL MACHINE, WAITING FOR VM"
                 self._update_status(datadict)
                 time.sleep(15)                        
                 datadict["status"] = "VIRTUAL MACHINE, RUNNING MIC2"
                 print datadict
+                sys.stdout.flush() 
                 self._update_status(datadict)
                 sshargs = copy.copy(self._sshargs)
                 for arg in self._micargs:
@@ -156,6 +158,7 @@ class ImageWorker(object):
                 for arg in toargs:
                     scptoargs.append(arg)
                 print scptoargs
+                sys.stdout.flush() 
                 sub.check_call(scptoargs, shell=False, stdout=sub.PIPE, stderr=sub.PIPE, stdin=sub.PIPE)            
                 sub.check_call(sshargs, shell=False, stdin=sub.PIPE, stdout=self._logfile, stderr=self._logfile, bufsize=-1)  
                 fromargs = ['-r',"root@127.0.0.1:"+self._dir+'/*', self._dir+'/']
@@ -164,6 +167,7 @@ class ImageWorker(object):
                     scpfromargs.append(arg)
                 datadict["status"] = "VIRTUAL MACHINE, COPYING IMAGE"
                 self._update_status(datadict)
+                sys.stdout.flush() 
                 sub.check_call(scpfromargs, shell=False, stdout=sub.PIPE, stderr=sub.PIPE, stdin=sub.PIPE)            
                 self._post_copying(datadict)
                 if post:
@@ -176,17 +180,19 @@ class ImageWorker(object):
                     postsshargs.append(post)
                     sub.check_call(postsshargs, shell=False, stdout=sub.PIPE, stderr=sub.PIPE, stdin=sub.PIPE)
                 data = {'status':"DONE", "url":base_url+self._id, 'id':self._id, 'log':logurl, 'image':self._image}
-                self._update_status(data)
+                self._update_status(data)  
+                sys.stdout.flush() 
             except CalledProcessError as err:
                 print "error %s"%err
                 error = {'status':"ERROR","error":"%s"%err, 'id':str(self._id), 'url':base_url+self._id, 'log':logurl}
                 self._update_status(error)
-                haltargs = copy.copy(self._sshargs)
-                haltargs.append('halt')
-                print haltargs
-                sub.check_call(haltargs, shell=False, stdout=sub.PIPE, stderr=sub.PIPE, stdin=sub.PIPE)
-                os.remove(self._kvmimage)
-                return   
+            haltargs = copy.copy(self._sshargs)
+            haltargs.append('halt')
+            print haltargs
+            sub.check_call(haltargs, shell=False, stdout=sub.PIPE, stderr=sub.PIPE, stdin=sub.PIPE)
+            os.remove(self._kvmimage)
+            sys.stdout.flush() 
+            return   
         else:
             try:
                 datadict = {'status':"RUNNING MIC2", "url":base_url+self._id, 'id':self._id, 'log':logurl}                

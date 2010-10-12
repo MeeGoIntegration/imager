@@ -207,7 +207,8 @@ def job(request, msgid):
         if imgjob.logfile.startswith('http'):
             res = urllib2.urlopen(imgjob.logfile).read()    
         elif imgjob.logfile.startswith('/'):
-            res = open(os.path.dirname(settings.IMGDIR) + imgjob.logfile).read()    
+            #res = open(os.path.dirname(settings.IMGDIR) + imgjob.logfile).read()    
+            res = open(imgjob.logfile).read()    
     chan.close()
     conn.close()
     return render_to_response('app/job_details.html', {'job':res}, context_instance=RequestContext(request))

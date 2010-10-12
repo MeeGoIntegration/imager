@@ -1,4 +1,4 @@
-#!/usr/bin/python2.6
+#!/usr/bin/python
 #~ Copyright (C) 2010 Nokia Corporation and/or its subsidiary(-ies).
 #~ Contact: Ramez Hanna <ramez.hanna@nokia.com>
 #~ This program is free software: you can redistribute it and/or modify
@@ -27,6 +27,7 @@ import shutil
 import re
 import time
 import optparse
+import tempfile
 from amqplib import client_0_8 as amqp
 from img.worker import ImageWorker
 from img.common import mic2
@@ -74,7 +75,7 @@ if d == "Yes":
 config_logfile = config.get(participant_name, 'logfile')
 config_logfile = config_logfile+'.'+options.num+'.log'
 config_pidfile = config.get(participant_name,'pidfile')
-config_pidfile = config_pidfile+'.'+options.num+'.log'
+config_pidfile = config_pidfile+'.'+options.num+'.pid'
 runas_user = config.get(participant_name, 'runas_user')
 runas_group = config.get(participant_name, 'runas_group')
 uid = pwd.getpwnam(runas_user)[2]
@@ -84,6 +85,8 @@ if not os.geteuid()==0:
     sys.exit("\nOnly root can run this script\n")
 if not os.path.exists('/dev/kvm') and use_kvm == "yes":
     sys.exit("\nYou must enable KVM kernel module\n")
+
+
 conn = amqp.Connection(host=amqp_host, userid=amqp_user, password=amqp_pwd, virtual_host=amqp_vhost, insist=False)
 chan = conn.channel()
 
@@ -138,10 +141,13 @@ def kickstarter_callback(msg):
     imagetype = kickstarter['imagetype']
     release = kickstarter['release']
     config = kickstarter['config']
-    print config
-    kstemplate = config['Template']
+    name = kickstarter['name']
+    kstemplate = tempfile.NamedTemporaryFile(delete=False)
+    kstemplate.write(config['Template'])
+    kstemplate.close()
     ks = ksparser.KickstartParser(KSHandlers())
-    ks.readKickstart(kstemplate)
+    ks.readKickstart(kstemplate.name)
+    kstemplate.close()
     if 'Packages' in config.keys():
         packages = config['Packages']
         ks.handler.packages.add(packages)
@@ -154,7 +160,7 @@ def kickstarter_callback(msg):
     # We got the damn thing published, move on
     ksfile = str(ks.handler)
 
-    data = json.dumps({'email':email, 'id':id, 'imagetype':imagetype, 'ksfile':ksfile, 'name':os.path.basename(kstemplate), 'release':release})
+    data = json.dumps({'email':email, 'id':id, 'imagetype':imagetype, 'ksfile':ksfile, 'name':name, 'release':release})
     msg2 = amqp.Message(data)        
     chan.basic_publish(msg2, exchange="image_exchange", routing_key="img")        
     
@@ -174,10 +180,11 @@ if __name__ == "__main__":
     if daemonize:
         log = open(config_logfile,'a+')
         pidf = open(config_pidfile,'a+')
-        #os.fchown(log,int(uid),int(gid))
-        #os.fchown(pidf,int(uid),int(gid))
-        with daemon.DaemonContext(stdout=log, stderr=log, uid=uid, gid=gid, files_preserve=[pidf]):
+        os.chown(config_logfile,int(uid),int(gid))
+        os.chown(config_pidfile,int(uid),int(gid))
+        with daemon.DaemonContext(stdout=log, stderr=log, uid=uid, gid=gid, files_preserve=[pidf,chan,conn]):
             pidf.write(str(os.getpid()))
+            pidf.close()
             main()
     else:
         main()

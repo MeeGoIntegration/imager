@@ -63,7 +63,7 @@ class ImageWorker(object):
         self._scpksargs = [ '/usr/bin/scp', '-o','UserKnownHostsFile=/dev/null','-o','StrictHostKeyChecking=no','-P%s'%self._port, '-i/usr/share/img/id_rsa']
         self._imagecreate = ['/usr/bin/qemu-img', 'create', '-b','/usr/share/img/base.img','-o','preallocation=metadata', '-o', 'cluster_size=2M', '-f','qcow2', "%s"%self._kvmimage]        
         self._cachecreate = ['/usr/bin/qemu-img', 'create', '-f','raw', self._cacheimage, '3G']
-        self._kvmargs = ['/usr/bin/sudo','/usr/bin/kvm']        
+        self._kvmargs = ['/usr/bin/qemu-kvm']        
         self._kvmargs.append('-nographic')
         self._kvmargs.append('-net')
         self._kvmargs.append('nic,model=virtio')        
@@ -121,8 +121,10 @@ class ImageWorker(object):
             try:
                 datadict = {'status':"VIRTUAL MACHINE, IMAGE CREATION", "url":base_url+self._id, 'id':self._id}
                 self._update_status(datadict)
+                print self._imagecreate
                 sub.check_call(self._imagecreate, shell=False, stdin=sub.PIPE, stdout=sub.PIPE, stderr=sub.PIPE)                        
                 self._update_status(datadict)
+                print self._kvmargs
                 self._kvmproc = sub.Popen(self._kvmargs, shell=False, stdin=sub.PIPE, stdout=sub.PIPE, stderr=sub.PIPE)
                 datadict["status"] = "VIRTUAL MACHINE, WAITING FOR VM"
                 self._update_status(datadict)

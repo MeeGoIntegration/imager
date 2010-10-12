@@ -87,6 +87,8 @@ rm -rf %{buildroot}
 python setup.py -q install --root=$RPM_BUILD_ROOT --prefix=%{_prefix} --record=INSTALLED_FILES
 install -D -m 755 rpm/img-web.init %{buildroot}/etc/init.d/img-web
 install -D -m 755 rpm/img-amqp.init %{buildroot}/etc/init.d/img-amqp
+install -D -m 755 rpm/boss-participant-build_image.init %{buildroot}/etc/init.d/boss-participant-build_image
+install -D -m 755 rpm/boss-participant-build_ks.init %{buildroot}/etc/init.d/boss-participant-build_ks
 install -D -m 700 ssh/id_rsa %{buildroot}/usr/share/img/id_rsa
 %clean
 rm -rf %{buildroot}
@@ -98,6 +100,7 @@ rm -rf %{buildroot}
 %{python_sitelib}/img-0.1-py2.6.egg-info
 %{python_sitelib}/img
 /usr/share/img/id_rsa
+/usr/share/img
 
 %files -n img-web
 %defattr(-,root,root,-)
@@ -116,6 +119,8 @@ rm -rf %{buildroot}
 %{_bindir}/boss_build_image.py
 %{_bindir}/boss_build_ks.py 
 %{_bindir}/boss_img_client.py
+%{_sysconfdir}/init.d/boss-participant-build_image
+%{_sysconfdir}/init.d/boss-participant-build_ks
 
 %changelog
 * Mon Oct 11 2010 Aleksi Suomalainen <aleksi.suomalainen@nomovok.com> 0.4

@@ -1,4 +1,4 @@
-#!/usr/bin/python2.6
+#!/usr/bin/python
 #~ Copyright (C) 2010 Nokia Corporation and/or its subsidiary(-ies).
 #~ Contact: Ramez Hanna <ramez.hanna@nokia.com>
 #~ This program is free software: you can redistribute it and/or modify
@@ -26,12 +26,7 @@ from uuid import uuid1
 from optparse import OptionParser
 import ConfigParser
 
-config = ConfigParser.ConfigParser()
-config.read('/etc/imager/img.conf')
-amqp_host = config.get('boss', 'amqp_host')
-amqp_user = config.get('boss', 'amqp_user')
-amqp_pass = config.get('boss', 'amqp_pwd')
-amqp_vhost = config.get('boss', 'amqp_vhost')
+
 
 defaultconf = """[boss]
 amqp_host = 127.0.0.1:5672
@@ -112,7 +107,10 @@ as the kickstart file.
         amqp_vhost = options.amqp_vhost
     else:
         try:
-            conf = open(options.conf)
+            if options.conf:
+                conf = open(options.conf)
+            else:
+                conf = open('/etc/imager/img.conf')
         except:
             # Fallback
             print "Warning! falling back to default configuration."

@@ -27,7 +27,7 @@ d_start()
         if [ -f /var/run/build_image.$i.pid ]; then
             echo -n " already running, "
         else
-            startproc -f /usr/bin/build_image.py -n $i 
+            /usr/bin/build_image.py -n $i 
         fi
      done
 }

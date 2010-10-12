@@ -1,16 +1,16 @@
 #! /bin/sh
 ### BEGIN INIT INFO
-# Provides:          boss-template
+# Provides:          boss-build_image
 # Required-Start:    $remote_fs rabbitmq
 # Required-Stop:     $null
 # Default-Start:     2 3 4 5
 # Default-Stop:      S 0 1 6
-# Short-Description: Template service.
-# Description:       BOSS participant template.
+# Short-Description: BOSS build_image service.
+# Description:       BOSS participant build_image.
 ### END INIT INFO
 set -e
 PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
-DESC="Template service"
+DESC="BOSS build_image service"
 NAME=$0
 SCRIPTNAME=/etc/init.d/$NAME
 CONF=/etc/imager/img.conf
@@ -26,7 +26,7 @@ d_start()
         if [ -f /var/run/$PNAME.pid ]; then
             echo -n " already running, "
         else
-            startproc /usr/bin/$PNAME.py -c $CONF -n $i
+            /usr/bin/$PNAME.py -c $CONF -n $i
         fi
   done
 }

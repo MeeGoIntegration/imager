@@ -1,4 +1,4 @@
-#!/usr/bin/python2.6
+#!/usr/bin/python
 #~ Copyright (C) 2010 Nokia Corporation and/or its subsidiary(-ies).
 #~ Contact: Ramez Hanna <ramez.hanna@nokia.com>
 #~ This program is free software: you can redistribute it and/or modify
@@ -84,9 +84,9 @@ if d == "Yes":
 
 config_logfile = config.get(participant_name, 'logfile')
 num = options.num if options.num else '0'
-config_logfile = config_logfile+'.'+num+'.log'
+config_logfile = config_logfile+'.boss.'+num+'.log'
 config_pidfile = config.get(participant_name,'pidfile')
-config_pidfile = config_pidfile+'.'+num+'.pid'
+config_pidfile = config_pidfile+'.boss.'+num+'.pid'
 runas_user = config.get(participant_name, 'runas_user')
 runas_group = config.get(participant_name, 'runas_group')
 uid = pwd.getpwnam(runas_user)[2]
@@ -139,8 +139,8 @@ if __name__ == "__main__":
     if daemonize:
         log = open(config_logfile,'a+')
         pidf = open(config_pidfile,'a+')
-        #os.fchown(log,int(uid),int(gid))
-        #os.fchown(pidf,int(uid),int(gid))
+        os.chown(config_logfile,int(uid),int(gid))
+        os.chown(config_pidfile,int(uid),int(gid))
         with daemon.DaemonContext(stdout=log, stderr=log, uid=uid, gid=gid, files_preserve=[pidf]):
             pidf.write(str(os.getpid()))
             main()

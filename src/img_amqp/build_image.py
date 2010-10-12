@@ -86,10 +86,15 @@ if not os.geteuid()==0:
 if not os.path.exists('/dev/kvm') and use_kvm == "yes":
     sys.exit("\nYou must enable KVM kernel module\n")
 
+conn = ""
+chan = ""
+
 def img_amqp_init():
+    global conn 
     conn = amqp.Connection(host=amqp_host, userid=amqp_user, password=amqp_pwd, virtual_host=amqp_vhost, insist=False)
+    global chan 
     chan = conn.channel()
-    
+
     chan.queue_declare(queue="image_queue", durable=True, exclusive=False, auto_delete=False)
     chan.queue_declare(queue="kickstarter_queue", durable=True, exclusive=False, auto_delete=False)
     chan.queue_declare(queue="status_queue", durable=False, exclusive=False, auto_delete=False)

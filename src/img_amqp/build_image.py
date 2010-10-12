@@ -58,7 +58,7 @@ amqp_host = config.get('amqp', 'amqp_host')
 amqp_user = config.get('amqp', 'amqp_user')
 amqp_pwd = config.get('amqp', 'amqp_pwd')
 amqp_vhost = config.get('amqp', 'amqp_vhost')
-num_workers = config.getint('worker', 'num_workers')
+#num_workers = config.getint('worker', 'num_workers')
 base_dir = config.get('worker', 'base_dir')
 base_url = config.get('worker', 'base_url')
 use_kvm = config.get('worker', 'use_kvm')
@@ -86,21 +86,23 @@ if not os.geteuid()==0:
 if not os.path.exists('/dev/kvm') and use_kvm == "yes":
     sys.exit("\nYou must enable KVM kernel module\n")
 
+def img_amqp_init():
+    conn = amqp.Connection(host=amqp_host, userid=amqp_user, password=amqp_pwd, virtual_host=amqp_vhost, insist=False)
+    chan = conn.channel()
+    
+    chan.queue_declare(queue="image_queue", durable=True, exclusive=False, auto_delete=False)
+    chan.queue_declare(queue="kickstarter_queue", durable=True, exclusive=False, auto_delete=False)
+    chan.queue_declare(queue="status_queue", durable=False, exclusive=False, auto_delete=False)
+    
+    chan.exchange_declare(exchange="image_exchange", type="direct", durable=True, auto_delete=False,)
+    chan.exchange_declare(exchange="django_result_exchange", type="direct", durable=True, auto_delete=False,)
+    
+    chan.queue_bind(queue="image_queue", exchange="image_exchange", routing_key="img")
+    chan.queue_bind(queue="kickstarter_queue", exchange="image_exchange", routing_key="ks")
+    chan.queue_bind(queue="status_queue", exchange="django_result_exchange", routing_key="status")
 
-conn = amqp.Connection(host=amqp_host, userid=amqp_user, password=amqp_pwd, virtual_host=amqp_vhost, insist=False)
-chan = conn.channel()
-
-chan.queue_declare(queue="image_queue", durable=True, exclusive=False, auto_delete=False)
-chan.queue_declare(queue="kickstarter_queue", durable=True, exclusive=False, auto_delete=False)
-chan.queue_declare(queue="status_queue", durable=False, exclusive=False, auto_delete=False)
-
-chan.exchange_declare(exchange="image_exchange", type="direct", durable=True, auto_delete=False,)
-chan.exchange_declare(exchange="django_result_exchange", type="direct", durable=True, auto_delete=False,)
-
-chan.queue_bind(queue="image_queue", exchange="image_exchange", routing_key="img")
-chan.queue_bind(queue="kickstarter_queue", exchange="image_exchange", routing_key="ks")
-chan.queue_bind(queue="status_queue", exchange="django_result_exchange", routing_key="status")
-
+    return conn, chan
+    
 using_version = ksversion.DEVEL
 commandMap[using_version]["desktop"] = desktop.Moblin_Desktop
 commandMap[using_version]["repo"] = moblinrepo.Moblin_Repo
@@ -167,6 +169,7 @@ def kickstarter_callback(msg):
     print "ks end"
     
 def main():
+    conn, chan = img_amqp_init()
     chan.basic_consume(queue='image_queue', no_ack=True, callback=mic2_callback)
     chan.basic_consume(queue='kickstarter_queue', no_ack=True, callback=kickstarter_callback)
     while True:
@@ -182,7 +185,7 @@ if __name__ == "__main__":
         pidf = open(config_pidfile,'a+')
         os.chown(config_logfile,int(uid),int(gid))
         os.chown(config_pidfile,int(uid),int(gid))
-        with daemon.DaemonContext(stdout=log, stderr=log, uid=uid, gid=gid, files_preserve=[pidf,chan,conn]):
+        with daemon.DaemonContext(stdout=log, stderr=log, uid=uid, gid=gid, files_preserve=[pidf]):
             pidf.write(str(os.getpid()))
             pidf.close()
             main()

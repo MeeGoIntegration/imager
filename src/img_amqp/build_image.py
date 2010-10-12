@@ -30,7 +30,6 @@ import optparse
 from amqplib import client_0_8 as amqp
 from img.worker import ImageWorker
 from img.common import mic2
-from multiprocessing import Process, Queue, Pool
 
 import pykickstart.commands as kscommands
 import pykickstart.constants as ksconstants
@@ -111,7 +110,7 @@ class KSHandlers(superclass):
         superclass.__init__(self, mapping=commandMap[using_version])
 
     
-job_pool = Pool(num_workers)
+
 def mic2_callback(msg):  
     print "mic2"
     job = json.loads(msg.body)    

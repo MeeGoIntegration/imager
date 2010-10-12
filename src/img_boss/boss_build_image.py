@@ -28,7 +28,7 @@ try:
 except ImportError:
      import json
 
-from multiprocessing import Process, Queue, Pool
+
 
 
 participant_name = "build_image"
@@ -103,10 +103,7 @@ if not os.geteuid()==0:
 if not os.path.exists('/dev/kvm') and use_kvm == "yes":
     sys.exit("\nYou must enable KVM kernel module\n")
     
-class MICParticipant(Participant):
-    __job_pool = None
-    
-        
+class MICParticipant(Participant):    
     def consume(self):
         try:            
             wi = self.workitem

@@ -163,8 +163,6 @@ def queue(request):
                   job.logfile = data['log']
               job.save()
               chan.basic_ack(msg.delivery_tag)
-      else:
-          break
     chan.close()
     conn.close()
     q = ImageJob.objects.all().order_by('created').reverse()

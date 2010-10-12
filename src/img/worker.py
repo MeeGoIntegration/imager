@@ -116,7 +116,6 @@ class ImageWorker(object):
                     shutil.move(self._imagepath, self._dir+'/'+self._name+'.'+self._type)
                     self._image = base_url+self._id+'/'+self._name+'.'+self._type
     def build(self):
-        logurl = base_url+self._id+'/'+str(os.path.split(self._logfile.name)[-1])
         if use_kvm == "yes":
             try:
                 datadict = {'status':"VIRTUAL MACHINE, IMAGE CREATION", "url":base_url+self._id, 'id':self._id}
@@ -179,12 +178,12 @@ class ImageWorker(object):
                     sub.check_call(postscpargs, shell=False, stdout=sub.PIPE, stderr=sub.PIPE, stdin=sub.PIPE)
                     postsshargs.append(post)
                     sub.check_call(postsshargs, shell=False, stdout=sub.PIPE, stderr=sub.PIPE, stdin=sub.PIPE)
-                data = {'status':"DONE", "url":base_url+self._id, 'id':self._id, 'log':logurl, 'image':self._image}
+                data = {'status':"DONE", "url":base_url+self._id, 'id':self._id,'image':self._image}
                 self._update_status(data)  
                 sys.stdout.flush() 
             except CalledProcessError as err:
                 print "error %s"%err
-                error = {'status':"ERROR","error":"%s"%err, 'id':str(self._id), 'url':base_url+self._id, 'log':logurl}
+                error = {'status':"ERROR","error":"%s"%err, 'id':str(self._id), 'url':base_url+self._id}
                 self._update_status(error)
             haltargs = copy.copy(self._sshargs)
             haltargs.append('halt')
@@ -195,7 +194,7 @@ class ImageWorker(object):
             return   
         else:
             try:
-                datadict = {'status':"RUNNING MIC2", "url":base_url+self._id, 'id':self._id, 'log':logurl}                
+                datadict = {'status':"RUNNING MIC2", "url":base_url+self._id, 'id':self._id}                
                 self._update_status(datadict)
                 micargs = copy.copy(self._micargs)
                 if mic_args:
@@ -209,7 +208,7 @@ class ImageWorker(object):
                 sys.stdout.flush()
             except CalledProcessError as err:
                 print "error %s"%err
-                error = {'status':"ERROR","error":"%s"%err, 'id':str(self._id), 'url':base_url+self._id, 'log':logurl}
+                error = {'status':"ERROR","error":"%s"%err, 'id':str(self._id), 'url':base_url+self._id}
                 self._update_status(error)  
                 sys.stdout.flush()              
                 return 

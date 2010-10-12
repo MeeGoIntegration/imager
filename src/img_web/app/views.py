@@ -141,26 +141,30 @@ def get_or_none(model, **kwargs):
 def queue(request):
     conn = amqp.Connection(host=amqp_host, userid=amqp_user, password=amqp_pwd, virtual_host=amqp_vhost, insist=False)
     chan = conn.channel()
-    msg = chan.basic_get("status_queue")
-    file = ""
-    id = ""
-    error = ""
-    if msg:
-        data = json.loads(msg.body)
-        print data
-        job = get_or_none(ImageJob, task_id__exact=data['id'])
-        if job:
-            print "Matched %s job with %s"%(job.task_id, data['id'])
-            if "status" in data:
-                job.status = data['status']
-            if "url" in data:
-                job.imagefile = data['url']
-            if "error" in data:
-                job.error = data['error']
-            if "log" in data:
-                job.logfile = data['log']
-            job.save()
-            chan.basic_ack(msg.delivery_tag)
+    #get 10 messages at a time if any
+    for round in range(1,10):
+      msg = chan.basic_get("status_queue")
+      file = ""
+      id = ""
+      error = ""
+      if msg:
+          data = json.loads(msg.body)
+          print data
+          job = get_or_none(ImageJob, task_id__exact=data['id'])
+          if job:
+              print "Matched %s job with %s"%(job.task_id, data['id'])
+              if "status" in data:
+                  job.status = data['status']
+              if "url" in data:
+                  job.imagefile = data['url']
+              if "error" in data:
+                  job.error = data['error']
+              if "log" in data:
+                  job.logfile = data['log']
+              job.save()
+              chan.basic_ack(msg.delivery_tag)
+      else:
+          break
     chan.close()
     conn.close()
     q = ImageJob.objects.all().order_by('created').reverse()

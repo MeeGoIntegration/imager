@@ -30,14 +30,20 @@ rabbitmqctl add_user img imgpwd
 rabbitmqctl add_vhost imgvhost
 rabbitmqctl set_permissions -p imgvhost img "" ".*" ".*"
 
-If you want to run in lighttpd, check out debian/img-lighttpd.conf and make sure you modify the paths in that file to reflect your setup.
+If you want to run in lighttpd, check out debian/img-lighttpd.conf and make 
+sure you modify the paths in that file to reflect your setup.
 
 Run:
 bin/django syncdb
 
 Running the creator service:
-cd src/meego_img/
-python image_creator.py
+cd src/img_amqp/
+python build_image.py
+
+Run the django project
+
+cd src/img_web
+./manage.py runserver
 
 WEB SERVER INSTALL FROM RPM/DEB:
 
@@ -63,4 +69,5 @@ server.modules              = (
 
             "mod_accesslog",
 
-And then just start the IMG service.
+And then just start the IMG Django project. The initscript is img-web, like
+/etc/init.d/img-web start for both DEB and RPM based distributions.

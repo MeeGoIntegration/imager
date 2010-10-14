@@ -1,20 +1,21 @@
-MeeGo-IMG : Image Me Get
+IMGer : Image Me Give
 ========================
-IMG (Image Me Give) is a small python client/server application suite, its sole
-job is to get a POST'd kickstart file from a user and then run Moblin-Image-Creator. 
-It is also possible to use kickstarter yaml files to create a tailor-made image or 
-using the default selection of yaml templates. 
+IMG (Image Me Give) is a small python client/server application suite, its sole 
+job is to get a kickstart file from a user, via a web interface, command line 
+or BOSS process. Then it runs Moblin-Image-Creator, either in a host or in a 
+VM. IMG also has the capability to run as a BOSS participant and thus be a 
+part of a build process.
 
 Source tree structure:
 
    |-debian : Debian files
-   |-kickstarter : Custom kickstarter with scripts
-   |---custom
-   |-----part
-   |-----scripts
    |-rpm : RPM related files
+   |-ssh : SSH related files
    |-src : Sources
-   |---meego_img : Main source tree
+   |---img : Main components for IMGer
+   |---img-boss : BOSS components (participant, client) for IMGer
+   |---img-amqp : AMQP components (server, client) for IMGer
+   |---img-web : Django project
    |-----app : Django application
    |-----templates : Django Templates
    |-------app
@@ -22,29 +23,25 @@ Source tree structure:
 Main scripts
 ============
 
-src/meego_img/image_creator.py
+src/img_amqp/build_image.py
 
-Service which taps into 2 RabbitMQ queues, image_queue and kickstarter_queue 
+Service which taps into 2 AMQP queues, image_queue and kickstarter_queue 
 and executes image builds.
 
-src/meego_img/worker.py
+src/img/worker.py
 
 The actual dirty work handler, fires up KVM virtual machine on request and 
 executes mic2 in it (for obvious cleanup reasons)
 
-src/meego_img/participant.py
+src/img_boss/boss_build_image.py
 
 BOSS participant that listens for workitems from Ruote. For more information 
 about BOSS see http://wiki.meego.com/Infrastructure/BOSS.
 
-src/meego_img/boss_client.py
+src/img_boss/boss_img_client.py
 
 BOSS workitem submitter.
 
-src/meego_img/dumper.py
-
-Another dummy participant that just listens for workitems from the participant
-to be handed back to the Ruote workflow.
 
 Django application
 ==================

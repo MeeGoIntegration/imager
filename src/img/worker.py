@@ -105,16 +105,22 @@ class ImageWorker(object):
                 self._work_item.set_result(True)
             if "log" in datadict:
                 self._work_item.set_field("Log", datadict['log'])
-    def _post_copying(self, datadict):
-        for file in os.listdir(self._dir):                
-            if os.path.isdir(self._dir+'/'+file):
-                for cont in os.listdir(self._dir+'/'+file):                        
-                    if not cont.endswith('.xml'):                            
-                        self._imagepath = self._dir+'/'+file+'/'+cont
-                        self._image = base_url+self._id+'/'+file+'/'+cont
-                if self._imagepath and self._name:
-                    shutil.move(self._imagepath, self._dir+'/'+self._name+'.'+self._type)
-                    self._image = base_url+self._id+'/'+self._name+'.'+self._type
+    def _post_copying(self):
+        fmap = {}
+        for path,dirs,files in os.walk(self._dir):    
+            for file_ in files:
+                fullpath = os.path.join(path,file_)
+                size = int(os.path.getsize(fullpath))
+                fmap[fullpath] = size
+        items = fmap.items()
+        # Map back the items and sort using size, largest will be the last
+        backitems = [ [v[1],v[0]] for v in items]
+        backitems.sort()
+        sizesortedlist=[ backitems[i][1] for i in range(0,len(backitems))]
+        # Its a path, don't worry
+        largest_file = sizesortedlist[-1].split(self._dir)
+        self._image = base_url+self._id+'/'+largest_file
+
     def build(self):
         if use_kvm == "yes":
             try:
@@ -168,7 +174,7 @@ class ImageWorker(object):
                 self._update_status(datadict)
                 sys.stdout.flush() 
                 sub.check_call(scpfromargs, shell=False, stdout=sub.PIPE, stderr=sub.PIPE, stdin=sub.PIPE)            
-                self._post_copying(datadict)
+                self._post_copying()
                 if post:
                     postsshargs = copy.copy(self._sshargs)
                     postscpargs = copy.copy(self._scpksargs)
@@ -201,7 +207,7 @@ class ImageWorker(object):
                     for micarg in mic_args.split(','):
                         micargs.append(micarg)
                 sub.check_call(micargs, shell=False, stdin=sub.PIPE, stdout=self._logfile, stderr=self._logfile, bufsize=-1) 
-                self._post_copying(datadict)
+                self._post_copying()
                 datadict["image"] = self._image
                 datadict['status'] = "DONE"
                 self._update_status(data)

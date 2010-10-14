@@ -42,7 +42,7 @@ def mic2(id, name,  type, email, kickstart, release, arch="i686", work_item=None
         logurl = base_url+id+'/'+os.path.split(logfile.name)[-1]
         if chan:
             data = json.dumps({"status":"WORKER BEGIN", "id":str(id), 'url':str(file), 'log':str(logfile_name)})
-	    statusmsg = amqp.Message(data)
+            statusmsg = amqp.Message(data)
             chan.basic_publish(statusmsg, exchange="django_result_exchange", routing_key="status")
         worker = ImageWorker(id, tmpname, type, logfile, dir, work_item=work_item, chan=chan, name=name, release=release, arch=arch)
         worker.build()

@@ -143,6 +143,7 @@ if __name__ == "__main__":
         os.chown(config_pidfile,int(uid),int(gid))
         with daemon.DaemonContext(stdout=log, stderr=log, uid=uid, gid=gid, files_preserve=[pidf]):
             pidf.write(str(os.getpid()))
+            pidf.close()
             main()
     else:
         main()

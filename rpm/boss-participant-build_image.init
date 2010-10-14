@@ -14,8 +14,8 @@ DESC="BOSS build_image service"
 NAME=$0
 SCRIPTNAME=/etc/init.d/$NAME
 CONF=/etc/imager/img.conf
-PNAME=boss_build_image
-WORKERS=1
+PNAME=build_image
+WORKERS=4
 #
 #       Function that starts the daemon/service.
 #
@@ -23,10 +23,10 @@ d_start()
 {
   for i in `seq 1 $WORKERS`; do
         echo -n " $i, "
-        if [ -f /var/run/$PNAME.pid ]; then
+        if [ -f /var/run/$PNAME.boss.$i.pid ]; then
             echo -n " already running, "
         else
-            /usr/bin/$PNAME.py -c $CONF -n $i
+            /usr/bin/boss_$PNAME.py -c $CONF -n $i
         fi
   done
 }
@@ -37,10 +37,10 @@ d_start()
 d_stop() {
   for i in `seq 1 $WORKERS`; do
         echo -n " $i, "
-        killproc /usr/bin/$PNAME.py \
+        pkill -f "boss_$PNAME.py -c $CONF -n $i" \
                           || echo -n " not running, "
-        if [ -f /var/run/$PNAME.pid ]; then
-           rm /var/run/$PNAME.pid
+        if [ -f /var/run/$PNAME.boss.$i.pid ]; then
+           rm /var/run/$PNAME.boss.$i.pid
         fi
    done
 }

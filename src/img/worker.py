@@ -118,7 +118,7 @@ class ImageWorker(object):
         backitems.sort()
         sizesortedlist=[ backitems[i][1] for i in range(0,len(backitems))]
         # Its a path, don't worry
-        largest_file = sizesortedlist[-1].split(self._dir)
+        largest_file = sizesortedlist[-1].split(self._dir)[-1]
         self._image = base_url+self._id+'/'+largest_file
 
     def build(self):

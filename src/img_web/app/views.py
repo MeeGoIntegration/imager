@@ -21,6 +21,7 @@ from django.shortcuts import render_to_response
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.decorators import permission_required
 from django.core.paginator import Paginator, InvalidPage, EmptyPage
+import django.views.generic.simple
 import img_web.settings as settings
 from img_web.app.forms import *
 from img_web.app.models import ImageJob
@@ -29,6 +30,8 @@ from amqplib import client_0_8 as amqp
 from tempfile import TemporaryFile, NamedTemporaryFile, mkdtemp
 from django.core.servers.basehttp import FileWrapper
 import ConfigParser
+from RuoteAMQP.launcher import Launcher
+
 
 config = ConfigParser.ConfigParser()
 config.read(settings.IMGCONF)
@@ -37,6 +40,18 @@ amqp_host = config.get('amqp', 'amqp_host')
 amqp_user = config.get('amqp', 'amqp_user')
 amqp_pwd = config.get('amqp', 'amqp_pwd')
 amqp_vhost = config.get('amqp', 'amqp_vhost')
+
+if settings.USE_BOSS:
+  boss_host = config.get('boss', 'amqp_host')
+  boss_user = config.get('boss', 'amqp_user')
+  boss_pwd = config.get('boss', 'amqp_pwd')
+  boss_vhost = config.get('boss', 'amqp_vhost')
+  notify_process = """Ruote.process_definition :name => 'notification' do
+              sequence do
+                notify :template => '%s', :subject => 'Image creation request'
+              end
+            end"""
+
 
 import urllib2
 import os
@@ -95,13 +110,12 @@ def submit(request):
                 imgjob.task_id = msg.message_id
                 imgjob.email = email
                 imgjob.type = imagetype
+                if settings.USE_BOSS:
+                  imgjob.notify = request.POST['notify']
+                  imgjob.test = request.POST['test_image']
                 imgjob.save()
                 #chan.queue_purge("result_queue")
-                if settings.COMM_METHOD == "amqp":
-                    chan.basic_publish(msg,exchange="image_exchange",routing_key="ks")
-                if settings.COMM_METHOD == "boss":
-                    l = Launcher()
-                    l.launch()
+                chan.basic_publish(msg,exchange="image_exchange",routing_key="ks")
             elif 'ksfile' in request.FILES and request.POST['overlay'] == '': 
                 ksfile = request.FILES['ksfile']
                 id = str(uuid1())
@@ -112,13 +126,11 @@ def submit(request):
                 imgjob.email = email
                 imgjob.type = imagetype
                 imgjob.status = "IN QUEUE"
+                if settings.USE_BOSS:
+                  imgjob.notify = request.POST['notify'] if 'notify' in request.POST else ""
+                  imgjob.test = request.POST['test_image'] if 'test_image' in request.POST else ""
                 imgjob.save()
-                if settings.COMM_METHOD == "amqp":
-                    chan.basic_publish(msg, exchange="image_exchange", routing_key="img")
-                if settings.COMM_METHOD == "boss":
-                    l = Launcher()
-                    l.launch()
-                
+                chan.basic_publish(msg, exchange="image_exchange", routing_key="img")
             else:
                 form = UploadFileForm()
                 return render_to_response('app/upload.html', {'form': form, 'formerror':"Can't specify an overlay and a kickstart file!"})
@@ -137,16 +149,18 @@ def get_or_none(model, **kwargs):
     except model.DoesNotExist:
         return None
 
-@login_required
-def queue(request):
-    conn = amqp.Connection(host=amqp_host, userid=amqp_user, password=amqp_pwd, virtual_host=amqp_vhost, insist=False)
-    chan = conn.channel()
+
+def update_status():
     #get 10 messages at a time if any
+    msg = None
     for round in range(1,10):
+      conn = amqp.Connection(host=amqp_host, userid=amqp_user, password=amqp_pwd, virtual_host=amqp_vhost, insist=False)
+      chan = conn.channel()
       msg = chan.basic_get("status_queue")
-      file = ""
-      id = ""
-      error = ""
+      if msg:
+          chan.basic_ack(msg.delivery_tag)
+      chan.close()
+      conn.close()
       if msg:
           data = json.loads(msg.body)
           print data
@@ -162,9 +176,28 @@ def queue(request):
               if "log" in data:
                   job.logfile = data['log']
               job.save()
-              chan.basic_ack(msg.delivery_tag)
-    chan.close()
-    conn.close()
+              if settings.USE_BOSS:
+                  if job.status == "DONE":
+                      if job.notify:
+                        l = Launcher(amqp_host=boss_host,  amqp_user=boss_user, amqp_pass=boss_pwd, amqp_vhost=boss_vhost)
+                        l.launch(notify_process % ("image_created"), { 'email' : job.email, 'Status' : job.status, 'URL' : job.url, 'Image' :data['image'], 'name' : data['name'], 'arch' : data["arch"]})
+                      if job.test:
+                        print "foo"
+                  if job.status == "ERROR":
+                      if job.notify or job.test:
+                        print notify_process % ("image_failed")
+                        l = Launcher(amqp_host=boss_host,  amqp_user=boss_user, amqp_pass=boss_pwd, amqp_vhost=boss_vhost)
+                        l.launch(notify_process % ("image_failed"), { 'email' : job.email, 'Status' : job.status, 'URL' : data['url'], 'name' : data['name'],  'arch' : data["arch"]})
+
+
+
+def update(request):
+    update_status()
+    return HttpResponse("") 
+
+@login_required
+def queue(request):
+    update_status()
     q = ImageJob.objects.all().order_by('created').reverse()
     p = Paginator(q, 10)
     try:
@@ -175,7 +208,7 @@ def queue(request):
         queue = p.page(page)
     except (EmptyPage, InvalidPage):
         queue = p.page(p.num_pages)
-    return render_to_response('app/queue.html', {'queue':queue, 'error':error}, context_instance=RequestContext(request))
+    return render_to_response('app/queue.html', {'queue':queue}, context_instance=RequestContext(request))
     
 @permission_required('app.delete_imagejob')
 def clear(request):

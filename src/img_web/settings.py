@@ -23,22 +23,13 @@ import ConfigParser
 config = ConfigParser.ConfigParser()
 config.readfp(open(IMGCONF))
 url_prefix = config.get('web','url_prefix')
-COMM_METHOD = config.get('web','comm_method')
+USE_BOSS = config.getboolean('web','use_boss')
 IMGURL = config.get('worker','base_url')
 IMGDIR = config.get('worker','base_dir')
 TEMPLATESDIR = config.get('worker','templates_dir')
 USE_LDAP = config.get('web','use_ldap')
-if USE_LDAP == "yes":
-  import ldap
-  from django_auth_ldap.config import LDAPSearch
-  LDAP_SERVER = config.get('web','ldap_server')
-  LDAP_DN_TEMPLATE = config.get('web','ldap_dn_template',raw=True)
-  AUTH_LDAP_SERVER_URI = LDAP_SERVER
-  AUTH_LDAP_USER_DN_TEMPLATE = LDAP_DN_TEMPLATE
-  AUTHENTICATION_BACKENDS = (
-    'django_auth_ldap.backend.LDAPBackend',
-    'django.contrib.auth.backends.ModelBackend',
-  )
+LDAP_SERVER = config.get('web','ldap_server')
+LDAP_DN_TEMPLATE = config.get('web','ldap_dn_template',raw=True)
 
 DEBUG = True
 TEMPLATE_DEBUG = DEBUG
@@ -124,9 +115,28 @@ INSTALLED_APPS = (
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.sites',
+    'django.contrib.admin',
     'img_web.app',
 )
 FORCE_SCRIPT_NAME = ''
 
 LOGIN_URL='/' + url_prefix + "/login/"
 LOGIN_REDIRECT_URL='/' + url_prefix + "/"
+
+if USE_LDAP == "yes":
+  import ldap
+  from django_auth_ldap.config import LDAPSearch
+  import logging
+  
+  logger = logging.getLogger('django_auth_ldap')
+  logger.addHandler(logging.StreamHandler())
+  logger.setLevel(logging.DEBUG)
+
+  AUTH_LDAP_SERVER_URI = LDAP_SERVER
+  AUTH_LDAP_USER_DN_TEMPLATE = LDAP_DN_TEMPLATE
+
+  AUTHENTICATION_BACKENDS = (
+    'django_auth_ldap.backend.LDAPBackend',
+    'django.contrib.auth.backends.ModelBackend',
+  )
+

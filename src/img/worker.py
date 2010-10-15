@@ -81,6 +81,7 @@ class ImageWorker(object):
         self._micargs.append('--cache='+mic_cache_dir)
         self._micargs.append('--outdir='+dir)
         if arch:
+            self._arch = arch
             self._micargs.append('--arch='+arch)
         if self._release:
             self._micargs.append('--release='+self._release)
@@ -134,7 +135,7 @@ class ImageWorker(object):
                 self._kvmproc = sub.Popen(self._kvmargs, shell=False, stdin=sub.PIPE, stdout=sub.PIPE, stderr=sub.PIPE)
                 datadict["status"] = "VIRTUAL MACHINE, WAITING FOR VM"
                 self._update_status(datadict)
-                time.sleep(60)                        
+                time.sleep(45)                        
                 datadict["status"] = "VIRTUAL MACHINE, RUNNING MIC2"
                 print datadict
                 sys.stdout.flush() 
@@ -184,12 +185,12 @@ class ImageWorker(object):
                     sub.check_call(postscpargs, shell=False, stdout=sub.PIPE, stderr=sub.PIPE, stdin=sub.PIPE)
                     postsshargs.append(post)
                     sub.check_call(postsshargs, shell=False, stdout=sub.PIPE, stderr=sub.PIPE, stdin=sub.PIPE)
-                data = {'status':"DONE", "url":base_url+self._id, 'id':self._id,'image':self._image}
+                data = {'status':"DONE", "url":base_url+self._id, 'id':self._id,'image':self._image, "arch":self._arch, "name":self._tmpname}
                 self._update_status(data)  
                 sys.stdout.flush() 
             except CalledProcessError as err:
                 print "error %s"%err
-                error = {'status':"ERROR","error":"%s"%err, 'id':str(self._id), 'url':base_url+self._id}
+                error = {'status':"ERROR","error":"%s"%err, 'id':str(self._id), 'url':base_url+self._id, "arch":self._arch, "name":self._tmpname}
                 self._update_status(error)
             haltargs = copy.copy(self._sshargs)
             haltargs.append('halt')

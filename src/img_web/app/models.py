@@ -27,6 +27,8 @@ class ImageJob(models.Model):
     error = models.CharField(max_length=500)
     type = models.CharField(max_length=10)
     status = models.CharField(max_length=30)
+    test_image = models.BooleanField(blank=True, default=False)
+    notify = models.BooleanField(blank=True, default=False)
     def delete(self, *args, **kwargs): 
         if self.logfile:
             if os.path.exists(self.logfile):

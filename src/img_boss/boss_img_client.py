@@ -21,11 +21,9 @@ except ImportError:
      import json
 import sys
 import os
-import io
 from uuid import uuid1
 from optparse import OptionParser
 import ConfigParser
-
 
 
 defaultconf = """[boss]
@@ -87,7 +85,7 @@ as the kickstart file.
                       help="Target architecture (arm, i586)")
     parser.add_option("-c", "--conf", dest="conf", action="store", 
                       help="alternate configuration file")
-    parser.add_option("-o", "--host", dest="amqp_host", action="store", 
+    parser.add_option("-h", "--host", dest="amqp_host", action="store", 
                       help="BOSS AMQP host")
     parser.add_option("-u", "--user", dest="amqp_user", action="store", 
                       help="BOSS AMQP user")
@@ -107,10 +105,7 @@ as the kickstart file.
         amqp_vhost = options.amqp_vhost
     else:
         try:
-            if options.conf:
-                conf = open(options.conf)
-            else:
-                conf = open('/etc/imager/img.conf')
+            conf = open(options.conf)
         except:
             # Fallback
             print "Warning! falling back to default configuration."
@@ -130,7 +125,7 @@ as the kickstart file.
     if not options.submit:
         parser.error("Missing --submit")
     if options.submit:
-        if options.submit and os.path.isfile(path) and options.name and options.email and options.type and options.arch:
+        if options.submit and os.path.isfile(path) and options.name and options.email and options.type and options.release and options.arch:
             submit(path,options.type,options.email, options.name, options.release, options.arch)
         else:
-            print "<kickstart.ks> must be a file and along with this file, you must supply a image name, email, image type and architecture"
+            print "<kickstart.ks> must be a file and you must supply a image name, email and image type"

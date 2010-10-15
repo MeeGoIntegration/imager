@@ -29,11 +29,6 @@ class ImageJob(models.Model):
     status = models.CharField(max_length=30)
     test_image = models.BooleanField(blank=True, default=False)
     notify = models.BooleanField(blank=True, default=False)
-    def delete(self, *args, **kwargs): 
-        if self.logfile:
-            if os.path.exists(self.logfile):
-                os.remove(self.logfile)
-                os.remove(self.logfile.replace("-log", ""))
-                print "Removed %s"%self.logfile
+    def delete(self, *args, **kwargs):
         super(ImageJob, self).delete(*args, **kwargs)
-        
+

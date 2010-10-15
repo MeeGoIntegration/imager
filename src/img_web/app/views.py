@@ -180,7 +180,7 @@ def update_status():
                   if job.status == "DONE":
                       if job.notify:
                         l = Launcher(amqp_host=boss_host,  amqp_user=boss_user, amqp_pass=boss_pwd, amqp_vhost=boss_vhost)
-                        l.launch(notify_process % ("image_created"), { 'email' : job.email, 'Status' : job.status, 'URL' : job.url, 'Image' :data['image'], 'name' : data['name'], 'arch' : data["arch"]})
+                        l.launch(notify_process % ("image_created"), { 'email' : job.email, 'Status' : job.status, 'URL' : data['url'], 'Image' :data['image'], 'name' : data['name'], 'arch' : data["arch"]})
                       if job.test:
                         print "foo"
                   if job.status == "ERROR":

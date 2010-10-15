@@ -30,7 +30,7 @@ import optparse
 import tempfile
 from amqplib import client_0_8 as amqp
 from img.worker import ImageWorker
-from img.common import mic2
+from img.common import mic2,build_kickstart
 
 import pykickstart.commands as kscommands
 import pykickstart.constants as ksconstants
@@ -152,18 +152,11 @@ def kickstarter_callback(msg):
     kstemplate = tempfile.NamedTemporaryFile(delete=False)
     kstemplate.write(config['Template'])
     kstemplate.close()
-    ks = ksparser.KickstartParser(KSHandlers())
-    ks.readKickstart(kstemplate.name)
-    kstemplate.close()
     if 'Packages' in config.keys():
         packages = config['Packages']
-        ks.handler.packages.add(packages)
     if 'Projects' in config.keys():
-        projects = config['Projects']
-        for project in projects:
-            project_uri = project.replace(":", ":/")
-            base_url = reposerver+'/'+project_uri
-            ks.handler.repo.repoList.append(moblinrepo.Moblin_RepoData(baseurl=base_url,name=project))
+        project = config['Projects']
+    ks = build_kickstart(kstemplate, packages,project=project)
     # We got the damn thing published, move on
     ksfile = str(ks.handler)
 

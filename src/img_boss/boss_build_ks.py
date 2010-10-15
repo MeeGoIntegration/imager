@@ -1,15 +1,6 @@
 #!/usr/bin/python
-import pykickstart.commands as kscommands
-import pykickstart.constants as ksconstants
-import pykickstart.errors as kserrors
-import pykickstart.parser as ksparser
-import pykickstart.version as ksversion
-from pykickstart.handlers.control import commandMap
-from pykickstart.handlers.control import dataMap
 
-from mic.imgcreate.kscommands import desktop 
-from mic.imgcreate.kscommands import moblinrepo
-from mic.imgcreate.kscommands import micboot 
+ 
 from  RuoteAMQP.workitem import Workitem
 from  RuoteAMQP.participant import Participant
 try:
@@ -19,7 +10,7 @@ except ImportError:
 from uuid import uuid1
 import os, sys, traceback, ConfigParser, optparse, io, pwd, grp
 import daemon
-
+from img.common import build_kickstart
 participant_name = "build_ks"
 
 # Fallback configuration. If you need to customize it, copy it somewhere 
@@ -72,19 +63,7 @@ gid = grp.getgrnam(runas_group)[2]
 ksfile = config.get(participant_name, "ksfile")
 reposerver = config.get(participant_name, "reposerver")
 
-using_version = ksversion.DEVEL
-commandMap[using_version]["desktop"] = desktop.Moblin_Desktop
-commandMap[using_version]["repo"] = moblinrepo.Moblin_Repo
-commandMap[using_version]["bootloader"] = micboot.Moblin_Bootloader
-dataMap[using_version]["RepoData"] = moblinrepo.Moblin_RepoData
-superclass = ksversion.returnClassForVersion(version=using_version)
 
-
-
-class KSHandlers(superclass):
-    def __init__(self, mapping={}):
-        superclass.__init__(self, mapping=commandMap[using_version])
-    
 
 packages= {}
 class KickstartBuilderParticipant(Participant):    
@@ -96,13 +75,7 @@ class KickstartBuilderParticipant(Participant):
             project = fields["project"] 
             repo = fields["repository"]
             print str(fields["packages"])
-            ks = ksparser.KickstartParser(KSHandlers())
-            ks.readKickstart(ksfile)
-            ks.handler.packages.add(fields["packages"])
-            project_uri = project.replace(":", ":/")
-            repo = repo.replace(":", ":/")
-            base_url = reposerver+'/'+project_uri+'/'+repo
-            ks.handler.repo.repoList.append(moblinrepo.Moblin_RepoData(baseurl=base_url,name=project))
+            ks = build_kickstart(ksfile, fields["package"], repo=repo, project=project)
             # We got the damn thing published, move on
             wi.set_field("kickstart", str(ks.handler))
             wi.set_field("id", str(uuid1()))

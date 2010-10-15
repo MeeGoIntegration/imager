@@ -15,6 +15,18 @@ from amqplib import client_0_8 as amqp
 from worker import ImageWorker
 import ConfigParser
 
+import pykickstart.commands as kscommands
+import pykickstart.constants as ksconstants
+import pykickstart.errors as kserrors
+import pykickstart.parser as ksparser
+import pykickstart.version as ksversion
+from pykickstart.handlers.control import commandMap
+from pykickstart.handlers.control import dataMap
+
+from mic.imgcreate.kscommands import desktop 
+from mic.imgcreate.kscommands import moblinrepo
+from mic.imgcreate.kscommands import micboot
+
 conf = open("/etc/imager/img.conf")
 config = ConfigParser.ConfigParser()
 config.readfp(conf)
@@ -22,6 +34,38 @@ conf.close()
 
 base_url = config.get('worker', 'base_url')
 base_dir = config.get('worker', 'base_dir')
+reposerver = config.get('worker','reposerver')
+using_version = ksversion.DEVEL
+commandMap[using_version]["desktop"] = desktop.Moblin_Desktop
+commandMap[using_version]["repo"] = moblinrepo.Moblin_Repo
+commandMap[using_version]["bootloader"] = micboot.Moblin_Bootloader
+dataMap[using_version]["RepoData"] = moblinrepo.Moblin_RepoData
+superclass = ksversion.returnClassForVersion(version=using_version)
+
+
+
+class KSHandlers(superclass):
+    def __init__(self, mapping={}):
+        superclass.__init__(self, mapping=commandMap[using_version])
+    
+def build_kickstart(base_ks,packages,repo=None,project=None):
+    ks = ksparser.KickstartParser(KSHandlers())
+    ks.readKickstart(base_ks)
+    ks.handler.packages.add(packages)
+    if project:
+        project_uri = project.replace(":", ":/")
+        if isinstance(project,list):
+            for project_ in project:
+                ks.handler.repo.repoList.append(moblinrepo.Moblin_RepoData(baseurl=base_url,name=project_))
+    if repo:
+        repo = repo.replace(":", ":/")    
+        base_url = reposerver+'/'+project_uri+'/'+repo
+    else:
+        base_url = reposerver+'/'+project_uri
+    if not isinstance(project,list):
+        ks.handler.repo.repoList.append(moblinrepo.Moblin_RepoData(baseurl=base_url,name=project))
+    return ks
+
 def mic2(id, name,  type, email, kickstart, release, arch="i686", work_item=None, chan=None):
         dir = "%s/%s"%(base_dir, id)
         print dir

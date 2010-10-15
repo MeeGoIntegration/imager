@@ -43,7 +43,7 @@ mic_cache_dir = config.get('worker', 'mic_cache_dir')
 class ImageWorker(object):
     def _getport(self):
         return random.randint(49152, 65535)
-    def __init__(self, id, tmpname, type, logfile, dir, port=2222, chan=None, work_item=None, name=None, release=None, arch=None):
+    def __init__(self, id, tmpname, type, logfile, dir, port=2222, chan=None, work_item=None, name=None, release=None, arch='i686'):
         print "init"
         sys.stdout.flush()
         self._tmpname = tmpname
@@ -56,7 +56,7 @@ class ImageWorker(object):
         self._name = name
         self._port = self._getport()
         self._work_item = work_item
-        self._amqp_chan = chan
+        self._amqp_chan = chan        
         self._kvmimage = '/tmp/overlay-%s-port-%s'%(self._id, self._port)
         self._cacheimage = '/tmp/cache-image'#%self._id
         self._sshargs = ['/usr/bin/ssh','-o','ConnectTimeout=60', '-o', 'ConnectionAttempts=4','-o','UserKnownHostsFile=/dev/null','-o','StrictHostKeyChecking=no','-p%s'%self._port, '-lroot', '-i/usr/share/img/id_rsa', '127.0.0.1']        
@@ -121,7 +121,15 @@ class ImageWorker(object):
         # Its a path, don't worry
         largest_file = sizesortedlist[-1].split(self._dir)[-1]
         self._image = base_url+self._id+'/'+largest_file
-
+    def _append_to_base_command_and_run(self,base,command,execute=True,verbose=False):
+        copy_base = copy.copy(base)        
+        copy_base = copy_base + command
+        if verbose:
+            print copy_base
+            sys.stdout.flush()
+        if execute:
+            sub.check_call(copy_base, shell=False, stdout=self._logfile, stderr=self._logfile, stdin=sub.PIPE)
+    
     def build(self):
         if use_kvm == "yes":
             try:
@@ -130,15 +138,14 @@ class ImageWorker(object):
                 print self._imagecreate
                 sub.check_call(self._imagecreate, shell=False, stdin=sub.PIPE, stdout=sub.PIPE, stderr=sub.PIPE)                        
                 self._update_status(datadict)
-                print self._kvmargs
-                sys.stdout.flush() 
+                print self._kvmargs                 
                 self._kvmproc = sub.Popen(self._kvmargs, shell=False, stdin=sub.PIPE, stdout=sub.PIPE, stderr=sub.PIPE)
                 datadict["status"] = "VIRTUAL MACHINE, WAITING FOR VM"
                 self._update_status(datadict)
                 time.sleep(45)                        
                 datadict["status"] = "VIRTUAL MACHINE, RUNNING MIC2"
                 print datadict
-                sys.stdout.flush() 
+                 
                 self._update_status(datadict)
                 sshargs = copy.copy(self._sshargs)
                 for arg in self._micargs:
@@ -147,55 +154,36 @@ class ImageWorker(object):
                     for micarg in mic_args.split(','):
                         sshargs.append(micarg)
                 mic2confargs = ['/etc/mic2/mic2.conf','root@127.0.0.1:/etc/mic2/']
-                scpmic2args = copy.copy(self._scpksargs)
-                for mic2arg in mic2confargs:
-                    scpmic2args.append(mic2arg)
-                sub.check_call(scpmic2args, shell=False, stdout=sub.PIPE, stderr=sub.PIPE, stdin=sub.PIPE)
-                mkdirargs = ['mkdir', '-p', self._dir]
-                mksshargs = copy.copy(self._sshargs)
-                for mkarg in mkdirargs:
-                    mksshargs.append(mkarg)            
-                sub.check_call(mksshargs, shell=False, stdin=sub.PIPE, stdout=sub.PIPE, stderr=sub.PIPE)
-                print mksshargs
-                print self._scpksargs
-                print sshargs            
+                self._append_to_base_command_and_run(self._scpksargs, mic2confargs)                
+                mkdirargs = ['mkdir', '-p', self._dir]                
+                self._append_to_base_command_and_run(self._sshargs, mkdirargs)         
                 toargs = [self._tmpname, "root@127.0.0.1:"+self._dir+"/"]
-                scptoargs = copy.copy(self._scpksargs)
-                for arg in toargs:
-                    scptoargs.append(arg)
-                print scptoargs
-                sys.stdout.flush() 
-                sub.check_call(scptoargs, shell=False, stdout=sub.PIPE, stderr=sub.PIPE, stdin=sub.PIPE)            
-                sub.check_call(sshargs, shell=False, stdin=sub.PIPE, stdout=self._logfile, stderr=self._logfile, bufsize=-1)  
+                self._append_to_base_command_and_run(self._scpksargs, toargs)
+                if mic_args:
+                    custom_args = copy.copy(self._micargs)
+                    for arg in mic_args.split(','):
+                        custom_args.append(arg)
+                    self._append_to_base_command_and_run(self._sshargs, custom_args,verbose=True)
+                else:
+                    self._append_to_base_command_and_run(self._sshargs, self._micargs, verbose=True) 
+                
                 fromargs = ['-r',"root@127.0.0.1:"+self._dir+'/*', self._dir+'/']
-                scpfromargs = copy.copy(self._scpksargs)
-                for arg in fromargs:
-                    scpfromargs.append(arg)
+                self._append_to_base_command_and_run(self._scpksargs, fromargs, verbose=True)
                 datadict["status"] = "VIRTUAL MACHINE, COPYING IMAGE"
-                self._update_status(datadict)
-                sys.stdout.flush() 
-                sub.check_call(scpfromargs, shell=False, stdout=sub.PIPE, stderr=sub.PIPE, stdin=sub.PIPE)            
+                self._update_status(datadict)           
                 self._post_copying()
                 if post:
-                    postsshargs = copy.copy(self._sshargs)
-                    postscpargs = copy.copy(self._scpksargs)
-                    post_toargs = [post, "root@127.0.0.1:"+post]
-                    for arg in post_toargs:
-                        postscpargs.append(arg)
-                    sub.check_call(postscpargs, shell=False, stdout=sub.PIPE, stderr=sub.PIPE, stdin=sub.PIPE)
-                    postsshargs.append(post)
-                    sub.check_call(postsshargs, shell=False, stdout=sub.PIPE, stderr=sub.PIPE, stdin=sub.PIPE)
+                    post_toargs = [post, "root@127.0.0.1:"+post]                    
+                    self._append_to_base_command_and_run(self._scpksargs, post_toargs,verbose=True)
+                    self._append_to_base_command_and_run(self._sshargs, post,verbose=True)
                 data = {'status':"DONE", "url":base_url+self._id, 'id':self._id,'image':self._image, "arch":self._arch, "name":self._tmpname}
                 self._update_status(data)  
                 sys.stdout.flush() 
-            except CalledProcessError as err:
+            except Exception,err:
                 print "error %s"%err
-                error = {'status':"ERROR","error":"%s"%err, 'id':str(self._id), 'url':base_url+self._id, "arch":self._arch, "name":self._tmpname}
+                error = {'status':"ERROR","error":"%s"%err, 'id':str(self._id), 'url':base_url+self._id, "arch": self._arch, "name":self._tmpname}
                 self._update_status(error)
-            haltargs = copy.copy(self._sshargs)
-            haltargs.append('halt')
-            print haltargs
-            sub.check_call(haltargs, shell=False, stdout=sub.PIPE, stderr=sub.PIPE, stdin=sub.PIPE)
+            self._append_to_base_command_and_run(self._sshargs, ['halt'], verbose=True)
             os.remove(self._kvmimage)
             sys.stdout.flush() 
             return   
@@ -203,17 +191,16 @@ class ImageWorker(object):
             try:
                 datadict = {'status':"RUNNING MIC2", "url":base_url+self._id, 'id':self._id}                
                 self._update_status(datadict)
-                micargs = copy.copy(self._micargs)
                 if mic_args:
-                    for micarg in mic_args.split(','):
-                        micargs.append(micarg)
-                sub.check_call(micargs, shell=False, stdin=sub.PIPE, stdout=self._logfile, stderr=self._logfile, bufsize=-1) 
+                    self._append_to_base_command_and_run(self._micargs, [''], verbose=True)
+                else:
+                    self._append_to_base_command_and_run(self._micargs, mic_args,verbose=True)                 
                 self._post_copying()
                 datadict["image"] = self._image
                 datadict['status'] = "DONE"
-                self._update_status(data)
+                self._update_status(datadict)
                 sys.stdout.flush()
-            except CalledProcessError as err:
+            except Exception,err:
                 print "error %s"%err
                 error = {'status':"ERROR","error":"%s"%err, 'id':str(self._id), 'url':base_url+self._id}
                 self._update_status(error)  

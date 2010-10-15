@@ -53,6 +53,7 @@ def async_send(fname, email, name, imagetype, release):
 
 def check_message(id, message, chan):
     data = json.loads(message.body)
+    print data
     if data["id"] == id:
         if "status" in data:
             print "Image build status: %s"%data["status"]

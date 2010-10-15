@@ -52,6 +52,11 @@ if settings.USE_BOSS:
               end
             end"""
 
+  test_image = """Ruote.process_definition :name => 'testing' do
+              sequence do
+                test_image
+              end
+            end"""
 
 import urllib2
 import os
@@ -111,8 +116,8 @@ def submit(request):
                 imgjob.email = email
                 imgjob.type = imagetype
                 if settings.USE_BOSS:
-                  imgjob.notify = request.POST['notify']
-                  imgjob.test = request.POST['test_image']
+                  imgjob.notify = request.POST['notify'] if 'notify' in request.POST else False 
+                  imgjob.test = request.POST['test_image'] if 'test_image' in request.POST else False
                 imgjob.save()
                 #chan.queue_purge("result_queue")
                 chan.basic_publish(msg,exchange="image_exchange",routing_key="ks")
@@ -127,8 +132,8 @@ def submit(request):
                 imgjob.type = imagetype
                 imgjob.status = "IN QUEUE"
                 if settings.USE_BOSS:
-                  imgjob.notify = request.POST['notify'] if 'notify' in request.POST else ""
-                  imgjob.test = request.POST['test_image'] if 'test_image' in request.POST else ""
+                  imgjob.notify = request.POST['notify'] if 'notify' in request.POST else False
+                  imgjob.test = request.POST['test_image'] if 'test_image' in request.POST else False
                 imgjob.save()
                 chan.basic_publish(msg, exchange="image_exchange", routing_key="img")
             else:
@@ -178,16 +183,22 @@ def update_status():
               job.save()
               if settings.USE_BOSS:
                   if job.status == "DONE":
+                      print "Done"
                       if job.notify:
+                        print "going to notify"
                         l = Launcher(amqp_host=boss_host,  amqp_user=boss_user, amqp_pass=boss_pwd, amqp_vhost=boss_vhost)
                         l.launch(notify_process % ("image_created"), { 'email' : job.email, 'Status' : job.status, 'URL' : data['url'], 'Image' :data['image'], 'name' : data['name'], 'arch' : data["arch"]})
-                      if job.test:
-                        print "foo"
+                      if job.test_image:
+                        l = Launcher(amqp_host=boss_host,  amqp_user=boss_user, amqp_pass=boss_pwd, amqp_vhost=boss_vhost)
+                        l.launch(test_image, { 'email' : job.email, 'image' :data['image'], 'id' : data['id'], 'product' : 'ilmatar'})
                   if job.status == "ERROR":
-                      if job.notify or job.test:
+                      if job.notify or job.test_image:
+                        print "Error"
                         print notify_process % ("image_failed")
                         l = Launcher(amqp_host=boss_host,  amqp_user=boss_user, amqp_pass=boss_pwd, amqp_vhost=boss_vhost)
+                        print "connected"
                         l.launch(notify_process % ("image_failed"), { 'email' : job.email, 'Status' : job.status, 'URL' : data['url'], 'name' : data['name'],  'arch' : data["arch"]})
+                        print "Launched"
 
 
 

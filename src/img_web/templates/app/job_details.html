@@ -5,16 +5,15 @@
 {% block title %}Log view{% endblock %}
 
 {% block content %}
-<meta http-equiv="refresh" content="20">
-
 <div id="logtext" class="logtext"> 
 {% autoescape off %}
 {{job}}
 {% endautoescape %}
 </div>
-<a name="bottom"></a>
+<a name="bottom" href="#bottom" onclick="if (refTimeoutID) window.clearTimeout(refTimeoutID)">Stop auto-refresh</a>
 <script type="text/javascript">
   window.location="#bottom";
+  var refTimeoutID = window.setTimeout('location.reload();', 20000);
 </script>
 {% endblock %}
 {% block sidebar_title %}
@@ -23,5 +22,8 @@ Help
 {% block sidebar_content %}
 <li>
 This page will refresh automatically every 20 seconds.
+</li>
+<li>
+<a name="bottom" href="#bottom" onclick="if (refTimeoutID) window.clearTimeout(refTimeoutID)">Stop auto-refresh</a>
 </li>
 {% endblock %} 

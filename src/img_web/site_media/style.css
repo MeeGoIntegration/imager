@@ -453,3 +453,12 @@ hr {
 
 #footer a {
 }
+
+div.logtext {
+          font-family:    Monaco,
+                        "Bitstream Vera Sans Mono",
+                        "Lucida Console",
+                        Terminal,
+                        monospace;
+        font-size:      10;
+}

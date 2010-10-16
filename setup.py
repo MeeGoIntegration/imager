@@ -23,7 +23,7 @@ setup(
     author = 'Aleksi Suomalainen <aleksi.suomalainen@nomovok.com>',
     scripts = ['src/img_boss/boss_build_ks.py', 'src/img_boss/boss_build_image.py', 'src/img_boss/boss_img_client.py', 'src/img_amqp/img_client.py', 'src/img_amqp/build_image.py'],
     packages = ['img', 'img_web', 'img_web.app'],    
-    package_dir = {'img':'src/img', 'img_web':'src/img_web', 'img_web.app':'src/img_web/app'},
+    package_dir = {'img':'src/img', 'img_web':'src/img_web', 'img_web.app':'src/img_web/app', 'img_web.utils':'src/img_web/utils'},
     package_data = { 'img_web' : ['templates/*.html', 'templates/app/*.html', 'templates/registration/*.html'] },
     data_files = static_files,
 )

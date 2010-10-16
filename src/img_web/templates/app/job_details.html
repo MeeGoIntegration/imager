@@ -5,10 +5,17 @@
 {% block title %}Log view{% endblock %}
 
 {% block content %}
-<!-- <meta http-equiv="refresh" content="10"> -->
-      <textarea id="textarea" rows="30" style="width: 100%;">
-            {{job}}
-      </textarea><br/>
+<meta http-equiv="refresh" content="20">
+
+<div id="logtext" class="logtext"> 
+{% autoescape off %}
+{{job}}
+{% endautoescape %}
+</div>
+<a name="bottom"></a>
+<script type="text/javascript">
+  window.location="#bottom";
+</script>
 {% endblock %}
 {% block sidebar_title %}
 Help

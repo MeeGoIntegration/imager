@@ -29,6 +29,7 @@ from uuid import *
 from amqplib import client_0_8 as amqp
 from tempfile import TemporaryFile, NamedTemporaryFile, mkdtemp
 from django.core.servers.basehttp import FileWrapper
+from img_web.utils.a2html import plaintext2html 
 import ConfigParser
 from RuoteAMQP.launcher import Launcher
 
@@ -233,30 +234,14 @@ def download(request, msgid):
     
 @login_required
 def job(request, msgid): 
-    conn = amqp.Connection(host=amqp_host, userid=amqp_user, password=amqp_pwd, virtual_host=amqp_vhost, insist=False)
-    chan = conn.channel()  
     imgjob = ImageJob.objects.get(task_id__exact=msgid)
-    msg = chan.basic_get("status_queue")
-    res = ''
-    if msg:
-        data = json.loads(msg.body)
-        print data        
-        if (imgjob.task_id==data['id']):
-            if 'log' in data:
-                print "matched: %s to %s with %s file" %(imgjob.task_id, data['id'], data['log'])
-                imgjob.logfile = data['log']
-                imgjob.save() 
-                print data['log']
-                chan.basic_ack(msg.delivery_tag)
     if imgjob.logfile:
         print imgjob.logfile
         if imgjob.logfile.startswith('http'):
             res = urllib2.urlopen(imgjob.logfile).read()    
         elif imgjob.logfile.startswith('/'):
-            #res = open(os.path.dirname(settings.IMGDIR) + imgjob.logfile).read()    
-            res = open(imgjob.logfile).read()    
-    chan.close()
-    conn.close()
+            res = open(imgjob.logfile).read() 
+    res = plaintext2html(res)
     return render_to_response('app/job_details.html', {'job':res}, context_instance=RequestContext(request))
 
 def index(request):

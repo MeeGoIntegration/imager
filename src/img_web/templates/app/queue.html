@@ -53,7 +53,15 @@
 Help
 {% endblock %}
 {% block sidebar_content %}
+<li>If your image fails to build check the log file in the download directory to find out about the reason it failed. Usually it is a depndency problem in one of the packages.
+</li>
 <li>
-<p>If your image fails to build check the log file in the download directory to find out about the reason it failed. Usually it is a depndency problem in one of the packages.</p>
+This page will auto-refresh every 60 seconds.
+</li>
+<li>
+<a name="bottom" href="#bottom" onclick="if (refTimeoutID) window.clearTimeout(refTimeoutID)">Stop auto-refresh</a>
+<script type="text/javascript">
+  var refTimeoutID = window.setTimeout('location.reload();', 60000);
+</script>
 </li>
 {% endblock %}

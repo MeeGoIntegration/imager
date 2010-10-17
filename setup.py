@@ -16,7 +16,7 @@ static_files.append((os.path.join('/etc','imager'), ['img.conf']))
 print static_files
 setup(
     name = "img",
-    version = "0.3",
+    version = "0.4",
     url = 'http://meego.gitorious.org/meego-infrastructure-tools/imger',
     license = 'GPLv2',
     description = "Meego Image creation service",

@@ -97,7 +97,7 @@ rm -rf %{buildroot}
 %defattr(-,root,root)
 %config %{_sysconfdir}/imager/img.conf
 %{_sysconfdir}/imager
-%{python_sitelib}/img-0.1-py2.6.egg-info
+%{python_sitelib}/img-0.4-py2.6.egg-info
 %{python_sitelib}/img
 /usr/share/img/id_rsa
 /usr/share/img

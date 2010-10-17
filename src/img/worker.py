@@ -172,10 +172,10 @@ class ImageWorker(object):
                 datadict["status"] = "VIRTUAL MACHINE, COPYING IMAGE"
                 self._update_status(datadict)           
                 self._post_copying()
-                if post:
-                    post_toargs = [post, "root@127.0.0.1:"+post]                    
-                    self._append_to_base_command_and_run(self._scpksargs, post_toargs,verbose=True)
-                    self._append_to_base_command_and_run(self._sshargs, post,verbose=True)
+                #if post:
+                #    post_toargs = [post, "root@127.0.0.1:"+post]                    
+                #    self._append_to_base_command_and_run(self._scpksargs, post_toargs,verbose=True)
+                #    self._append_to_base_command_and_run(self._sshargs, post,verbose=True)
                 data = {'status':"DONE", "url":base_url+self._id, 'id':self._id,'image':self._image, "arch":self._arch, "name":self._tmpname}
                 self._update_status(data)  
                 sys.stdout.flush() 

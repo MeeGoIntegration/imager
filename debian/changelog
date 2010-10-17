@@ -1,3 +1,14 @@
+img (0.4) unstable; urgency=low
+
+  * img-web : boss integration for email notification, and ots testing. Better log view. 
+              Better upload validation with clear errors. 
+              Can add extra packages and repos to uploaded ks.
+  * img-amqp : refactoring and multiple workers, using vm workers. Command line client.
+  * img-core : refactoring and cleanup.
+  * img-boss : multiple workers, command line client.
+
+ -- Islam Amer <islam.amer@nokia.com>  Sun, 17 Oct 2010 08:16:53 +0300
+
 img (0.3) unstable; urgency=low
 
   * Updated version.

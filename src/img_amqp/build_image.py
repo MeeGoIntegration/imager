@@ -147,20 +147,20 @@ def kickstarter_callback(msg):
     id = kickstarter['id']
     imagetype = kickstarter['imagetype']
     release = kickstarter['release']
+    arch = kickstarter['arch']
     config = kickstarter['config']
     name = kickstarter['name']
     kstemplate = tempfile.NamedTemporaryFile(delete=False)
     kstemplate.write(config['Template'])
     kstemplate.close()
-    if 'Packages' in config.keys():
-        packages = config['Packages']
-    if 'Projects' in config.keys():
-        project = config['Projects']
-    ks = build_kickstart(kstemplate, packages,project=project)
+    packages = config['Packages'] if 'Packages' in config.keys() else None
+    groups = config['Groups'] if 'Groups' in config.keys() else None
+    projects = config['Projects'] if 'Projects' in config.keys() else None
+    ks = build_kickstart(kstemplate, packages = packages, groups = groups, projects = projects)
     # We got the damn thing published, move on
     ksfile = str(ks.handler)
-
-    data = json.dumps({'email':email, 'id':id, 'imagetype':imagetype, 'ksfile':ksfile, 'name':name, 'release':release})
+    os.remove(kstemplate)
+    data = json.dumps({'email':email, 'id':id, 'imagetype':imagetype, 'ksfile':ksfile, 'name':name, 'release':release, 'arch':arch})
     msg2 = amqp.Message(data)        
     chan.basic_publish(msg2, exchange="image_exchange", routing_key="img")        
     

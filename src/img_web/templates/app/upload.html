@@ -5,8 +5,19 @@
 {% block title %}IMG image uploader{% endblock %}
 
 {% block content %}
-{% if formerror%}
-<h1 style="color: red;">{{formerror}}</h1>
+<script type="text/javascript">
+    $(function() {
+        $('#id_extra_repos_table tbody tr').formset({
+            extraClasses: ['row1', 'row2', 'row3']
+        })
+    })
+</script>
+{% if formerror %}
+<div class="errors">
+  {% for label, errors in formerror.items %}
+    {{ label }} : {{ errors|join:", " }}
+  {% endfor %}
+</div>
 {% endif%}
 <form action="{%url img-app-submit%}" method="post" enctype="multipart/form-data">
     <table>
@@ -21,6 +32,23 @@
         </tr>
     {% endfor %}
     </table>
+    <table id="id_extra_repos_table" border="0" cellpadding="0" cellspacing="5">
+         <thead>
+             <tr>
+                 <th scope="col">OBS</th>
+                 <th scope="col">Repository</th>
+             </tr>
+         </thead>
+         <tbody>
+             {% for f in formset.forms %}
+             <tr id="{{ f.prefix }}-row">
+                 <td>{{ f.obs }}</td>
+                 <td>{{ f.repo }}</td>
+             </tr>
+             {% endfor %}
+         </tbody>
+     </table>
+    {{ formset.management_form }}
 <p><input type="submit" value="Submit" /></p>
 </form>
 
@@ -31,5 +59,10 @@ Help
 {% block sidebar_content %}
     {% for field in form %}
     <li>{{ field.help_text }}</li>
+    {% endfor %}
+    {% for f in formset.forms %}
+      {% for field in f %}
+        <li>{{ field.help_text }}</li>
+      {% endfor %}
     {% endfor %}
 {% endblock %}

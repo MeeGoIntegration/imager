@@ -32,7 +32,7 @@ from django.core.servers.basehttp import FileWrapper
 from img_web.utils.a2html import plaintext2html 
 import ConfigParser
 from RuoteAMQP.launcher import Launcher
-
+import sys
 
 config = ConfigParser.ConfigParser()
 config.read(settings.IMGCONF)
@@ -73,81 +73,86 @@ queue = Queue.Queue()
 
 @login_required
 def submit(request):    
-    if request.method == 'POST':        
+    if request.method == 'POST':
         form = UploadFileForm(request.POST, request.FILES)
-        if form.is_valid():
-            print request.POST
-            email = request.POST['email']
-            imagetype = request.POST['imagetype']
-            arch = request.POST['architecture']
-            release = request.POST['release']
+        formset = extraReposFormset(request.POST)
+        if form.is_valid() and formset.is_valid():
+            if 'ksfile' in request.FILES and request.POST['template'] != 'None':
+                return render_to_response('app/upload.html', {'form': form, 'formset' : formset, 'formerror': {"Error" : ["Please choose a template or upload a kickstart, not both!"]} }, context_instance=RequestContext(request))
+            if 'ksfile' not in request.FILES and request.POST['template'] == 'None': 
+                return render_to_response('app/upload.html', {'form': form, 'formset' : formset, 'formerror': {"Error" : ["Please choose either a template or upload a kickstart file."]} }, context_instance=RequestContext(request))
+
+            data = form.cleaned_data 
+            data2 = formset.cleaned_data
+
+            conf = {'Template' : '', 'Projects' : [], 'Groups' : [], 'Packages' : []} 
+            for prj in data2:
+                if prj['obs'] == 'None':
+                    continue
+                if prj['obs'] != 'None' and prj['repo'] == '':
+                    return render_to_response('app/upload.html', {'form': form, 'formset' : formset, 'formerror': {"Error" : ["You choose an extra OBS without adding a corresponding repository."]} }, context_instance=RequestContext(request))
+                
+                repo = prj['obs'] + prj['repo'].replace(':',':/')
+                conf["Projects"].append(repo)
+
+            if data['template'] != 'None':
+                template = data['template']
+                conf["Template"] =  open(str(settings.TEMPLATESDIR) + template).read()
+                if template.endswith('.ks'):
+                    template = template[0:-3]
+            elif 'ksfile' in request.FILES:
+                conf["Template"] =  data['ksfile'].read()
+                template = data['ksfile'].name
+                if template.endswith('.ks'):
+                    template = template[0:-3]
+
+            overlay = data['overlay']
+            if overlay == None:
+                overlay = ''
+
+            packages = overlay.split(',')
+            for pkg in packages:
+                if pkg: 
+                    if pkg.startswith('@'):
+                        conf["Groups"].append(pkg)
+                    else:
+                        conf["Packages"].append(pkg)
+
+            email = data['email']
+            imagetype = data['imagetype']
+            arch = data['architecture']
+            release = data['release']
+            uuid = str(uuid1())
+
+            params = {'email':email, 'imagetype':imagetype, 'id':uuid, 'name':template, 'release':release, 'arch':arch, 'config':conf}
+            print params
+            sys.stdout.flush()
+            data = json.dumps(params)
+            msg = amqp.Message(data, message_id=uuid)
             conn = amqp.Connection(host=amqp_host, userid=amqp_user, password=amqp_pwd, virtual_host=amqp_vhost, insist=False)
             chan = conn.channel() 
-            if  request.POST['template'] != 'None':
-                overlay = request.POST['overlay']
-                projects = request.POST['projects']
-                template = request.POST['template']                
-                conf = {} 
-                conf["Template"] =  open(str(settings.TEMPLATESDIR) + template).read()
-
-                if overlay == None:
-                    overlay = ''
-                if projects == None:
-                    projects = ''
-
-                packages = overlay.split(',')
-                prjs = projects.split(',')
-
-                for pkg in packages:
-                    if pkg: 
-                        if pkg[0] != '@':
-                            conf["Packages"].append(pkg)
-                        else:
-                            conf["Groups"].append(pkg)
-                for prj in prjs:
-                    if prj: 
-                        conf["Projects"].append(prj)
-
-                uuid = str(uuid1())        
-                params = {'email':email, 'imagetype':imagetype, 'id':uuid, 'name':template, 'release':release, 'config':conf}
-                data = json.dumps(params)
-                msg = amqp.Message(data, message_id=uuid)    
-                imgjob = ImageJob()
-                imgjob.task_id = msg.message_id
-                imgjob.email = email
-                imgjob.type = imagetype
-                if settings.USE_BOSS:
-                  imgjob.notify = request.POST['notify'] if 'notify' in request.POST else False 
-                  imgjob.test = request.POST['test_image'] if 'test_image' in request.POST else False
-                imgjob.save()
-                #chan.queue_purge("result_queue")
-                chan.basic_publish(msg,exchange="image_exchange",routing_key="ks")
-            elif 'ksfile' in request.FILES and request.POST['overlay'] == '': 
-                ksfile = request.FILES['ksfile']
-                id = str(uuid1())
-                data = json.dumps({'email':email, 'id':id, 'imagetype':imagetype, 'ksfile':ksfile.read(), 'release':release, 'name': ksfile.name, 'arch':arch})
-                msg = amqp.Message(data, message_id=id) 
-                imgjob = ImageJob()                
-                imgjob.task_id = msg.message_id
-                imgjob.email = email
-                imgjob.type = imagetype
-                imgjob.status = "IN QUEUE"
-                if settings.USE_BOSS:
-                  imgjob.notify = request.POST['notify'] if 'notify' in request.POST else False
-                  imgjob.test = request.POST['test_image'] if 'test_image' in request.POST else False
-                imgjob.save()
-                chan.basic_publish(msg, exchange="image_exchange", routing_key="img")
-            else:
-                form = UploadFileForm()
-                return render_to_response('app/upload.html', {'form': form, 'formerror':"Can't specify an overlay and a kickstart file!"})
+            chan.basic_publish(msg,exchange="image_exchange",routing_key="ks")
             chan.close()
             conn.close()
+            imgjob = ImageJob()
+            imgjob.task_id = uuid 
+            imgjob.email = email
+            imgjob.type = imagetype
+            imgjob.status = "IN QUEUE"
+            if settings.USE_BOSS:
+                imgjob.notify = request.POST['notify'] if 'notify' in request.POST else False 
+                imgjob.test = request.POST['test_image'] if 'test_image' in request.POST else False
+            imgjob.save()
+
             return HttpResponseRedirect(reverse('img-app-queue')) # Redirect after POST
+        else:
+            form.errors['Error'] = ["Invalid data, please try again."]
+            return render_to_response('app/upload.html', {'form': form, 'formset' : formset, 'formerror': form.errors}, context_instance=RequestContext(request))
+            
     else:
         form = UploadFileForm()
-        
-
-    return render_to_response('app/upload.html', {'form': form},context_instance=RequestContext(request))
+        formset = extraReposFormset()
+    return render_to_response('app/upload.html', {'form' : form, 'formset' : formset}, context_instance=RequestContext(request))
 
 def get_or_none(model, **kwargs):
     try:

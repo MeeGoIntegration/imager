@@ -462,3 +462,31 @@ div.logtext {
                         monospace;
         font-size:      10;
 }
+div.errors {
+    border: 1px solid;
+    margin: 10px 0px;
+    padding:15px 10px 15px 50px;
+    background-repeat: no-repeat;
+    background-position: 10px center;
+    line-height: 150%;
+    color: #D8000C;
+    background-color: #FFBABA;
+    background-image: url('images/error.png');
+}
+.add-row {
+    padding-left:18px;
+    background:url(images/formset/add.png) no-repeat left center;
+}
+.delete-row {
+    float:right;
+    display:block;
+    margin:5px 0 0 5px;
+    text-indent:-6000px;
+    background:url(images/formset/delete.png) no-repeat left center;
+    width:16px;
+    height:16px;
+}
+tr.row1 td { background-color: #f9f9f9; }
+tr.row2 td { background-color: #f3f3f3; }
+tr.row3 td { background-color: #ededed; }
+

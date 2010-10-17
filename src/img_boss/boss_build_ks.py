@@ -75,7 +75,11 @@ class KickstartBuilderParticipant(Participant):
             project = fields["project"] 
             repo = fields["repository"]
             print str(fields["packages"])
-            ks = build_kickstart(ksfile, fields["package"], repo=repo, project=project)
+            project_uri = project.replace(":", ":/")
+            repo = repo.replace(":", ":/")
+            base_url = reposerver+'/'+project_uri+'/'+repo
+            projects = [ base_url ]
+            ks = build_kickstart(ksfile, packages=fields["packages"], projects=projects)
             # We got the damn thing published, move on
             wi.set_field("kickstart", str(ks.handler))
             wi.set_field("id", str(uuid1()))

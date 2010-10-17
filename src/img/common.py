@@ -15,6 +15,8 @@ from amqplib import client_0_8 as amqp
 from worker import ImageWorker
 import ConfigParser
 
+from urlparse import urlparse
+
 import pykickstart.commands as kscommands
 import pykickstart.constants as ksconstants
 import pykickstart.errors as kserrors
@@ -48,22 +50,19 @@ class KSHandlers(superclass):
     def __init__(self, mapping={}):
         superclass.__init__(self, mapping=commandMap[using_version])
     
-def build_kickstart(base_ks,packages,repo=None,project=None):
+def build_kickstart(base_ks, packages=None, groups=None, projects=None):
     ks = ksparser.KickstartParser(KSHandlers())
     ks.readKickstart(base_ks)
-    ks.handler.packages.add(packages)
-    if project:
-        project_uri = project.replace(":", ":/")
-        if isinstance(project,list):
-            for project_ in project:
-                ks.handler.repo.repoList.append(moblinrepo.Moblin_RepoData(baseurl=base_url,name=project_))
-    if repo:
-        repo = repo.replace(":", ":/")    
-        base_url = reposerver+'/'+project_uri+'/'+repo
-    else:
-        base_url = reposerver+'/'+project_uri
-    if not isinstance(project,list):
-        ks.handler.repo.repoList.append(moblinrepo.Moblin_RepoData(baseurl=base_url,name=project))
+    if packages:
+        ks.handler.packages.add(packages)
+    if groups:
+        ks.handler.packages.add(groups)
+    if projects:
+        for prj in project:
+            name = urlparse(prj).path
+            name = name.replace(":/","_")
+            name = name.replace("/","_")
+            ks.handler.repo.repoList.append(moblinrepo.Moblin_RepoData(baseurl=prj, name=name))
     return ks
 
 def mic2(id, name,  type, email, kickstart, release, arch="i686", work_item=None, chan=None):

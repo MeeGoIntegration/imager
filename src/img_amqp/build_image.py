@@ -156,10 +156,10 @@ def kickstarter_callback(msg):
     packages = config['Packages'] if 'Packages' in config.keys() else None
     groups = config['Groups'] if 'Groups' in config.keys() else None
     projects = config['Projects'] if 'Projects' in config.keys() else None
-    ks = build_kickstart(kstemplate, packages = packages, groups = groups, projects = projects)
+    ks = build_kickstart(kstemplate.name, packages = packages, groups = groups, projects = projects)
     # We got the damn thing published, move on
     ksfile = str(ks.handler)
-    os.remove(kstemplate)
+    os.remove(kstemplate.name)
     data = json.dumps({'email':email, 'id':id, 'imagetype':imagetype, 'ksfile':ksfile, 'name':name, 'release':release, 'arch':arch})
     msg2 = amqp.Message(data)        
     chan.basic_publish(msg2, exchange="image_exchange", routing_key="img")        

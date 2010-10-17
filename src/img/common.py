@@ -58,7 +58,7 @@ def build_kickstart(base_ks, packages=None, groups=None, projects=None):
     if groups:
         ks.handler.packages.add(groups)
     if projects:
-        for prj in project:
+        for prj in projects:
             name = urlparse(prj).path
             name = name.replace(":/","_")
             name = name.replace("/","_")

@@ -74,7 +74,7 @@ queue = Queue.Queue()
 @login_required
 def submit(request):    
     if request.method == 'POST':
-        form = UploadFileForm(request.POST, request.FILES)
+        form = UploadFileForm(request.POST)
         formset = extraReposFormset(request.POST)
         if form.is_valid() and formset.is_valid():
             if 'ksfile' in request.FILES and request.POST['template'] != 'None':
@@ -242,12 +242,16 @@ def job(request, msgid):
     imgjob = ImageJob.objects.get(task_id__exact=msgid)
     if imgjob.logfile:
         print imgjob.logfile
-        if imgjob.logfile.startswith('http'):
-            res = urllib2.urlopen(imgjob.logfile).read()    
-        elif imgjob.logfile.startswith('/'):
-            res = open(imgjob.logfile).read() 
-    res = plaintext2html(res)
-    return render_to_response('app/job_details.html', {'job':res}, context_instance=RequestContext(request))
+        try:
+            if imgjob.logfile.startswith('http'):
+                res = urllib2.urlopen(imgjob.logfile).read()    
+            elif imgjob.logfile.startswith('/'):
+                res = open(imgjob.logfile).read() 
+            res = plaintext2html(res)
+            return render_to_response('app/job_details.html', {'job':res}, context_instance=RequestContext(request))
+        except IOError, e:
+            pass
+    return render_to_response('app/job_details.html', {'errors': {'Error' : ['No logfile has been created yet.']}}, context_instance=RequestContext(request)) 
 
 def index(request):
     return render_to_response('index.html', context_instance=RequestContext(request))

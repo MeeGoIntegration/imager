@@ -5,6 +5,14 @@
 {% block title %}Log view{% endblock %}
 
 {% block content %}
+{% if errors %}
+<div class="errors">
+  {% for label, e in errors.items %}
+    {{ label }} : {{ e|join:", " }}
+  {% endfor %}
+</div>
+{% endif%}
+
 <div id="logtext" class="logtext"> 
 {% autoescape off %}
 {{job}}

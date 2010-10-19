@@ -9,7 +9,20 @@
     $(function() {
         $('#id_extra_repos_table tbody tr').formset({
             extraClasses: ['row1', 'row2', 'row3']
-        })
+        });
+        $('#ksfile').attr("checked","checked");
+        $('#id_template').attr("disabled","disabled");
+        $('#ksfile , #template').change(function(e){
+            var enid = '' + $(e.target).attr('id');
+            var dissel = 'input:radio:not([id=' + enid + '])';
+            var disid = $(dissel).attr('id');
+            $('#id_'+enid).removeAttr("disabled");
+            $('#id_'+disid).attr("disabled","disabled");
+        });
+        $("#uploadform").submit( function () {
+           $('#id_ksfile , #id_template').each(function(){ $(this).removeAttr("disabled")});
+           return true; 
+        } );
     })
 </script>
 {% if formerror %}
@@ -19,17 +32,26 @@
   {% endfor %}
 </div>
 {% endif%}
-<form action="{%url img-app-submit%}" method="post" enctype="multipart/form-data">
-    <table>
+<form id="uploadform" action="{%url img-app-submit%}" method="post" enctype="multipart/form-data">
+    <table width="100%">
     {% for field in form %}
         <tr>
             <td>
+            {% if field.name == "ksfile" or field.name == "template"%}
+              <input type="radio" name="choice" id="{{ field.name }}"/>
+            {% endif %}
             {{ field.label_tag }} 
             </td>
             <td>
             {{ field }}
             </td>
         </tr>
+        {% if field.name == "ksfile" %}
+        <tr border="15px">
+        <td>-OR-</td>
+        <td></td>
+        </tr>
+        {% endif %}
     {% endfor %}
     </table>
     <table id="id_extra_repos_table" border="0" cellpadding="0" cellspacing="5">

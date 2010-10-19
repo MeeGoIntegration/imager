@@ -28,8 +28,14 @@ IMGURL = config.get('worker','base_url')
 IMGDIR = config.get('worker','base_dir')
 TEMPLATESDIR = config.get('worker','templates_dir')
 USE_LDAP = config.get('web','use_ldap')
-LDAP_SERVER = config.get('web','ldap_server')
-LDAP_DN_TEMPLATE = config.get('web','ldap_dn_template',raw=True)
+if USE_LDAP == "yes":
+  LDAP_SERVER = config.get('web','ldap_server')
+  LDAP_DN_TEMPLATE = config.get('web','ldap_dn_template',raw=True)
+  
+  mail_attr = config.get('web','ldap_mail_attr',raw=True)
+  fname_attr = config.get('web','ldap_fname_attr',raw=True)
+  lname_attr = config.get('web','ldap_lname_attr',raw=True)
+  AUTH_LDAP_USER_ATTR_MAP = {"first_name":fname_attr,"last_name":lname_attr,"email":mail_attr}
 
 DEBUG = True
 TEMPLATE_DEBUG = DEBUG

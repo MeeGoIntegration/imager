@@ -20,7 +20,6 @@ from img_web import settings
 
 EXTRA_OBSES = (
     ('None', 'None'),
-    ('http://maemo-repo.europe.nokia.com/', 'Nokia'),
     ('http://download.meego.com/', 'Meego'),
     ('http://download.opensuse.org/repositories/', 'Suse'),
 )

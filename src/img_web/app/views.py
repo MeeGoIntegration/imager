@@ -74,7 +74,7 @@ queue = Queue.Queue()
 @login_required
 def submit(request):    
     if request.method == 'POST':
-        form = UploadFileForm(request.POST)
+        form = UploadFileForm(request.POST, request.FILES)
         formset = extraReposFormset(request.POST)
         if form.is_valid() and formset.is_valid():
             if 'ksfile' in request.FILES and request.POST['template'] != 'None':
@@ -143,14 +143,13 @@ def submit(request):
                 imgjob.notify = request.POST['notify'] if 'notify' in request.POST else False 
                 imgjob.test = request.POST['test_image'] if 'test_image' in request.POST else False
             imgjob.save()
-
             return HttpResponseRedirect(reverse('img-app-queue')) # Redirect after POST
         else:
             form.errors['Error'] = ["Invalid data, please try again."]
             return render_to_response('app/upload.html', {'form': form, 'formset' : formset, 'formerror': form.errors}, context_instance=RequestContext(request))
             
     else:
-        form = UploadFileForm()
+        form = UploadFileForm({'email':request.user.email})
         formset = extraReposFormset()
     return render_to_response('app/upload.html', {'form' : form, 'formset' : formset}, context_instance=RequestContext(request))
 

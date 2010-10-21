@@ -69,5 +69,39 @@ server.modules              = (
 
             "mod_accesslog",
 
+and configure lighttpd for fastcgi in /etc/lighttpd/vhosts.d/img_web.conf , for example :
+
+"""
+var.namebasedir = "/img"
+
+$HTTP["url"] =~ "^" + namebasedir {
+        dir-listing.activate = "disable"
+}
+
+alias.url += (
+  namebasedir + "/site_media" => "/usr/share/img_web/site_media/",
+  namebasedir + "/media" => "/usr/lib/python2.6/site-packages/django/contrib/admin/media/",
+  "/images" => "/srv/www/build/images/",
+)
+
+url.redirect += (
+  "^" + namebasedir + "$" => namebasedir + "/"
+)
+
+fastcgi.server += (
+    "/img.fcgi" => (
+        "main" => (
+            "socket" => "/var/run/img_web" + ".socket",
+            "check-local" => "disable",
+        )
+    ),
+)
+
+url.rewrite-if-not-file += (
+   "^(" + namebasedir + "/.*)$" => "/img.fcgi/$1"
+)
+"""
+
+
 And then just start the IMG Django project. The initscript is img-web, like
 /etc/init.d/img-web start for both DEB and RPM based distributions.

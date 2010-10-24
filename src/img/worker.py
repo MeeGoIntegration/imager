@@ -92,10 +92,8 @@ class ImageWorker(object):
             msg = amqp.Message(data)
             self._amqp_chan.basic_publish(msg, exchange="django_result_exchange", routing_key="status") 
         if self._work_item:
-            if "status" in datadict:
-                fields = self._work_item.fields()
-                fields["Status"] = datadict["status"]
-                self._work_item.set_fields(fields)
+            if "status" in datadict and datadict["status"] == "ERROR":
+                self._work_item.set_field("status", datadict['status'])
             if "url" in datadict:
                 self._work_item.set_field("url", datadict['url'])
             if "error" in datadict:

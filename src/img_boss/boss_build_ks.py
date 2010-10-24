@@ -26,7 +26,7 @@ daemon = Yes
 logfile = /var/log/%s.log
 runas_user = nobody
 runas_group = nogroup
-ksfile = /srv/BOSS/ks/meego-handset-armv7l.ks
+ksfile = /srv/BOSS/ks
 reposerver = http://download.meego.com
 """ % ( participant_name, participant_name ) 
 
@@ -60,7 +60,7 @@ runas_group = config.get(participant_name, 'runas_group')
 uid = pwd.getpwnam(runas_user)[2]
 gid = grp.getgrnam(runas_group)[2]
 
-ksfile = config.get(participant_name, "ksfile")
+ksstore = config.get(participant_name, "ksstore")
 reposerver = config.get(participant_name, "reposerver")
 
 
@@ -72,6 +72,7 @@ class KickstartBuilderParticipant(Participant):
             wi = self.workitem
             print json.dumps(wi.to_h(), sort_keys=True, indent=4)
             fields = wi.fields()
+            ksfile = os.path.join(ksstore, fields["ksfile"])
             project = fields["project"] 
             repo = fields["repository"]
             print str(fields["packages"])

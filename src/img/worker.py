@@ -97,15 +97,15 @@ class ImageWorker(object):
                 fields["Status"] = datadict["status"]
                 self._work_item.set_fields(fields)
             if "url" in datadict:
-                self._work_item.set_field("URL", datadict['url'])
+                self._work_item.set_field("url", datadict['url'])
             if "error" in datadict:
-                self._work_item.set_field("Error", datadict['error'])
+                self._work_item.set_field("error", datadict['error'])
                 self._work_item.set_result(None)
             if "image" in datadict:
-                self._work_item.set_field("Image", datadict['image'])
+                self._work_item.set_field("image", datadict['image'])
                 self._work_item.set_result(True)
             if "log" in datadict:
-                self._work_item.set_field("Log", datadict['log'])
+                self._work_item.set_field("log", datadict['log'])
     def _post_copying(self):
         fmap = {}
         for path,dirs,files in os.walk(self._dir):    

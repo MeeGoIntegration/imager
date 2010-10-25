@@ -71,6 +71,7 @@ class KickstartBuilderParticipant(Participant):
         try:
             wi = self.workitem
             print json.dumps(wi.to_h(), sort_keys=True, indent=4)
+            sys.stdout.flush()
             fields = wi.fields()
             ksfile = os.path.join(ksstore, fields["ksfile"])
             project = fields["project"] 
@@ -86,11 +87,13 @@ class KickstartBuilderParticipant(Participant):
             wi.set_field("id", str(uuid1()))
             wi.set_field("name", os.path.basename(ksfile)[0:-3])
             print json.dumps(wi.to_h(), sort_keys=True, indent=4)
+            sys.stdout.flush()
             result = True
         except Exception as e:
             print type(e)
             print e
             traceback.print_exc(file=sys.stdout)
+            wi.set_field("status", "FAILED")
             result = False
             pass
         wi.set_result(result)

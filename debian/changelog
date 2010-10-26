@@ -1,3 +1,9 @@
+img (0.41) unstable; urgency=low
+
+  * More boss and OTS adjustments.
+
+ -- Islam Amer <islam.amer@nokia.com>  Tue, 26 Oct 2010 03:19:38 +0300
+
 img (0.4) unstable; urgency=low
 
   * img-web : boss integration for email notification, and ots testing. Better log view. 

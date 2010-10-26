@@ -24,6 +24,8 @@ config = ConfigParser.ConfigParser()
 config.readfp(open(IMGCONF))
 url_prefix = config.get('web','url_prefix')
 USE_BOSS = config.getboolean('web','use_boss')
+if USE_BOSS:
+    DEVICEGROUP = config.get('web','devicegroup')
 IMGURL = config.get('worker','base_url')
 IMGDIR = config.get('worker','base_dir')
 TEMPLATESDIR = config.get('worker','templates_dir')

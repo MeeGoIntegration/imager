@@ -153,9 +153,9 @@ def kickstarter_callback(msg):
     kstemplate = tempfile.NamedTemporaryFile(delete=False)
     kstemplate.write(config['Template'])
     kstemplate.close()
-    packages = config['Packages'] if 'Packages' in config.keys() else None
-    groups = config['Groups'] if 'Groups' in config.keys() else None
-    projects = config['Projects'] if 'Projects' in config.keys() else None
+    packages = config['Packages'] if 'Packages' in config.keys() else []
+    groups = config['Groups'] if 'Groups' in config.keys() else []
+    projects = config['Projects'] if 'Projects' in config.keys() else []
     ks = build_kickstart(kstemplate.name, packages = packages, groups = groups, projects = projects)
     # We got the damn thing published, move on
     ksfile = str(ks.handler)

@@ -49,12 +49,14 @@ if settings.USE_BOSS:
   boss_vhost = config.get('boss', 'amqp_vhost')
   notify_process = """Ruote.process_definition :name => 'notification' do
               sequence do
+                set 'status' => 'SUCCESS'
                 notify :template => '%s', :subject => 'Image creation request'
               end
             end"""
 
   test_image = """Ruote.process_definition :name => 'testing' do
               sequence do
+                set 'status' => 'SUCCESS'
                 test_image
               end
             end"""
@@ -125,10 +127,9 @@ def submit(request):
             uuid = str(uuid1())
 
             params = {'email':email, 'imagetype':imagetype, 'id':uuid, 'name':template, 'release':release, 'arch':arch, 'config':conf}
-            print params
             sys.stdout.flush()
-            data = json.dumps(params)
-            msg = amqp.Message(data, message_id=uuid)
+            msgdata = json.dumps(params)
+            msg = amqp.Message(msgdata, message_id=uuid)
             conn = amqp.Connection(host=amqp_host, userid=amqp_user, password=amqp_pwd, virtual_host=amqp_vhost, insist=False)
             chan = conn.channel() 
             chan.basic_publish(msg,exchange="image_exchange",routing_key="ks")
@@ -150,7 +151,7 @@ def submit(request):
             return render_to_response('app/upload.html', {'form': form, 'formset' : formset, 'formerror': form.errors}, context_instance=RequestContext(request))
             
     else:
-        form = UploadFileForm({'email':request.user.email})
+        form = UploadFileForm({'devicegroup':settings.DEVICEGROUP, 'email':request.user.email})
         formset = extraReposFormset()
     return render_to_response('app/upload.html', {'form' : form, 'formset' : formset}, context_instance=RequestContext(request))
 
@@ -162,9 +163,9 @@ def get_or_none(model, **kwargs):
 
 
 def update_status():
-    #get 10 messages at a time if any
+    #get 5 messages at a time if any
     msg = None
-    for round in range(1,10):
+    for round in range(1,5):
       conn = amqp.Connection(host=amqp_host, userid=amqp_user, password=amqp_pwd, virtual_host=amqp_vhost, insist=False)
       chan = conn.channel()
       msg = chan.basic_get("status_queue")
@@ -203,7 +204,7 @@ def update_status():
                         print notify_process % ("image_failed")
                         l = Launcher(amqp_host=boss_host,  amqp_user=boss_user, amqp_pass=boss_pwd, amqp_vhost=boss_vhost)
                         print "connected"
-                        l.launch(notify_process % ("image_failed"), { 'email' : job.email, 'Status' : job.status, 'URL' : data['url'], 'name' : data['name'],  'arch' : data["arch"]})
+                        l.launch(notify_process % ("image_failed"), { 'email' : job.email, 'status' : job.status, 'URL' : data['url'], 'name' : data['name'],  'arch' : data["arch"]})
                         print "Launched"
 
 
@@ -216,7 +217,7 @@ def update(request):
 def queue(request):
     update_status()
     q = ImageJob.objects.all().order_by('created').reverse()
-    p = Paginator(q, 10)
+    p = Paginator(q, 30)
     try:
         page = int(request.GET.get('page', '1'))
     except ValueError:

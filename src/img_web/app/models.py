@@ -28,7 +28,7 @@ class ImageJob(models.Model):
     type = models.CharField(max_length=10)
     status = models.CharField(max_length=30)
     test_image = models.BooleanField(blank=True, default=False)
-    devicegroup = models.CharField(blank=True, default="")
+    devicegroup = models.CharField(blank=True, default="", max_length=100)
     notify = models.BooleanField(blank=True, default=False)
     def delete(self, *args, **kwargs):
         super(ImageJob, self).delete(*args, **kwargs)

@@ -140,8 +140,9 @@ def submit(request):
             imgjob.type = imagetype
             imgjob.status = "IN QUEUE"
             if settings.USE_BOSS:
-                imgjob.notify = request.POST['notify'] if 'notify' in request.POST else False 
-                imgjob.test = request.POST['test_image'] if 'test_image' in request.POST else False
+                imgjob.notify = data['notify'] if 'notify' in data else False 
+                imgjob.devicegroup = data['devicegroup'] if 'devicegroup' in data else False 
+                imgjob.test = data['test_image'] if 'test_image' in data else False
             imgjob.save()
             return HttpResponseRedirect(reverse('img-app-queue')) # Redirect after POST
         else:
@@ -192,10 +193,10 @@ def update_status():
                       if job.notify:
                         print "going to notify"
                         l = Launcher(amqp_host=boss_host,  amqp_user=boss_user, amqp_pass=boss_pwd, amqp_vhost=boss_vhost)
-                        l.launch(notify_process % ("image_created"), { 'email' : job.email, 'Status' : job.status, 'URL' : data['url'], 'Image' :data['image'], 'name' : data['name'], 'arch' : data["arch"]})
+                        l.launch(notify_process % ("image_created"), { 'email' : job.email, 'status' : job.status, 'url' : data['url'], 'image' :data['image'], 'name' : data['name'], 'arch' : data["arch"]})
                       if job.test_image:
                         l = Launcher(amqp_host=boss_host,  amqp_user=boss_user, amqp_pass=boss_pwd, amqp_vhost=boss_vhost)
-                        l.launch(test_image, { 'email' : job.email, 'image' :data['image'], 'id' : data['id'], 'product' : 'ilmatar'})
+                        l.launch(test_image, { 'email' : job.email, 'image' :data['image'], 'id' : data['id'], 'product' : 'ilmatar', 'devicegroup' : job.devicegroup })
                   if job.status == "ERROR":
                       if job.notify or job.test_image:
                         print "Error"

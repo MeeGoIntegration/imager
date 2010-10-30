@@ -26,7 +26,7 @@ daemon = Yes
 logfile = /var/log/%s.log
 runas_user = nobody
 runas_group = nogroup
-ksfile = /srv/BOSS/ks
+ksstore = /srv/BOSS/ksstore
 reposerver = http://download.meego.com
 """ % ( participant_name, participant_name ) 
 
@@ -71,16 +71,16 @@ class KickstartBuilderParticipant(Participant):
         try:
             wi = self.workitem
             print json.dumps(wi.to_h(), sort_keys=True, indent=4)
-            sys.stdout.flush()
             fields = wi.fields()
-            ksfile = os.path.join(ksstore, fields["ksfile"])
             project = fields["project"] 
             repo = fields["repository"]
             print str(fields["packages"])
+            sys.stdout.flush()
             project_uri = project.replace(":", ":/")
             repo = repo.replace(":", ":/")
             base_url = reposerver+'/'+project_uri+'/'+repo
             projects = [ base_url ]
+            ksfile = os.path.join(ksstore, fields["ksfile"])
             ks = build_kickstart(ksfile, packages=fields["packages"], projects=projects)
             # We got the damn thing published, move on
             wi.set_field("kickstart", str(ks.handler))
@@ -93,13 +93,15 @@ class KickstartBuilderParticipant(Participant):
             print type(e)
             print e
             traceback.print_exc(file=sys.stdout)
-            wi.set_field("status", "FAILED")
+            sys.stdout.flush()
             result = False
+            wi.set_field("status", "FAILED")
             pass
         wi.set_result(result)
   
 def main():
     print "Kickstart building participant running"
+    sys.stdout.flush()
     # Create an instance
     p = KickstartBuilderParticipant(ruote_queue=participant_name, amqp_host=amqp_host,  amqp_user=amqp_user, amqp_pass=amqp_pwd, amqp_vhost=amqp_vhost)
     # Register with BOSS

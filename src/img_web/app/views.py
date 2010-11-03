@@ -49,8 +49,7 @@ if settings.USE_BOSS:
   boss_vhost = config.get('boss', 'amqp_vhost')
   notify_process = """Ruote.process_definition :name => 'notification' do
               sequence do
-                set 'status' => 'SUCCESS'
-                notify :template => '%s', :subject => 'Image creation request'
+                notify :template => '%s', :subject => 'Image creation request', :debug_dump => 'True'
               end
             end"""
 
@@ -143,7 +142,7 @@ def submit(request):
             if settings.USE_BOSS:
                 imgjob.notify = data['notify'] if 'notify' in data else False 
                 imgjob.devicegroup = data['devicegroup'] if 'devicegroup' in data else False 
-                imgjob.test = data['test_image'] if 'test_image' in data else False
+                imgjob.test_image = data['test_image'] if 'test_image' in data else False
             imgjob.save()
             return HttpResponseRedirect(reverse('img-app-queue')) # Redirect after POST
         else:
@@ -194,7 +193,7 @@ def update_status():
                       if job.notify:
                         print "going to notify"
                         l = Launcher(amqp_host=boss_host,  amqp_user=boss_user, amqp_pass=boss_pwd, amqp_vhost=boss_vhost)
-                        l.launch(notify_process % ("image_created"), { 'email' : job.email, 'status' : job.status, 'url' : data['url'], 'image' :data['image'], 'name' : data['name'], 'arch' : data["arch"]})
+                        l.launch(notify_process % ("image_created"), { 'email' : [job.email], 'status' : job.status, 'url' : data['url'], 'image' :data['image'], 'name' : data['name'], 'arch' : data["arch"], 'status' : 'SUCCESS'})
                       if job.test_image:
                         l = Launcher(amqp_host=boss_host,  amqp_user=boss_user, amqp_pass=boss_pwd, amqp_vhost=boss_vhost)
                         l.launch(test_image, { 'email' : job.email, 'image' :data['image'], 'id' : data['id'], 'product' : 'ilmatar', 'devicegroup' : job.devicegroup })
@@ -204,7 +203,7 @@ def update_status():
                         print notify_process % ("image_failed")
                         l = Launcher(amqp_host=boss_host,  amqp_user=boss_user, amqp_pass=boss_pwd, amqp_vhost=boss_vhost)
                         print "connected"
-                        l.launch(notify_process % ("image_failed"), { 'email' : job.email, 'status' : job.status, 'URL' : data['url'], 'name' : data['name'],  'arch' : data["arch"]})
+                        l.launch(notify_process % ("image_failed"), { 'email' : [job.email], 'status' : job.status, 'url' : data['url'], 'name' : data['name'],  'arch' : data["arch"], 'status' : 'FAILED'})
                         print "Launched"
 
 

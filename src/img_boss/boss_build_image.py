@@ -125,7 +125,7 @@ class MICParticipant(Participant):
             result = False
             pass
         msg = self.workitem.lookup('msg') if 'msg' in self.workitem.fields() else []
-        msg.append('Test image build was %s, details can be viewed here: %s ' % (wi.lookup['status'], wi.lookup['url']))
+        msg.append('Test image build was %s, details can be viewed here: %s ' % (wi.lookup('status'), wi.lookup('url')))
         self.workitem.set_field('msg', msg)
         wi.set_result(result)
 

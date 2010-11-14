@@ -21,6 +21,7 @@ except ImportError:
      import json
 import sys
 import os
+import io
 from uuid import uuid1
 from optparse import OptionParser
 import ConfigParser
@@ -85,7 +86,7 @@ as the kickstart file.
                       help="Target architecture (arm, i586)")
     parser.add_option("-c", "--conf", dest="conf", action="store", 
                       help="alternate configuration file")
-    parser.add_option("-h", "--host", dest="amqp_host", action="store", 
+    parser.add_option("-H", "--host", dest="amqp_host", action="store", 
                       help="BOSS AMQP host")
     parser.add_option("-u", "--user", dest="amqp_user", action="store", 
                       help="BOSS AMQP user")

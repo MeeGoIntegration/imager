@@ -39,6 +39,11 @@ post = config.get('worker', 'post_creation')
 use_kvm = config.get('worker', 'use_kvm')
 mic_args = config.get('worker', 'mic_opts')
 mic_cache_dir = config.get('worker', 'mic_cache_dir')
+img_home = config.get('worker', 'img_home')
+img_tmp = config.get('worker', 'img_tmp')
+
+id_rsa = os.path.join(img_home, 'id_rsa')
+base_img = os.path.join(img_home, 'base.img')
 
 class ImageWorker(object):
     def _getport(self):
@@ -57,11 +62,11 @@ class ImageWorker(object):
         self._port = self._getport()
         self._work_item = work_item
         self._amqp_chan = chan        
-        self._kvmimage = '/tmp/overlay-%s-port-%s'%(self._id, self._port)
-        self._cacheimage = '/tmp/cache-image'#%self._id
-        self._sshargs = ['/usr/bin/ssh','-o','ConnectTimeout=60', '-o', 'ConnectionAttempts=4','-o','UserKnownHostsFile=/dev/null','-o','StrictHostKeyChecking=no','-p%s'%self._port, '-lroot', '-i/usr/share/img/id_rsa', '127.0.0.1']        
-        self._scpksargs = [ '/usr/bin/scp', '-o','UserKnownHostsFile=/dev/null','-o','StrictHostKeyChecking=no','-P%s'%self._port, '-i/usr/share/img/id_rsa']
-        self._imagecreate = ['/usr/bin/qemu-img', 'create', '-b','/usr/share/img/base.img','-o','preallocation=metadata', '-o', 'cluster_size=2M', '-f','qcow2', "%s"%self._kvmimage]        
+        self._kvmimage = os.path.join(img_tmp, 'overlay-%s-port-%s'%(self._id, self._port))
+        self._cacheimage = os.path.join(img_tmp, 'cache-image')#%self._id
+        self._sshargs = ['/usr/bin/ssh','-o','ConnectTimeout=60', '-o', 'ConnectionAttempts=4','-o','UserKnownHostsFile=/dev/null','-o','StrictHostKeyChecking=no','-p%s'%self._port, '-lroot', '-i%s'%id_rsa, '127.0.0.1']        
+        self._scpksargs = [ '/usr/bin/scp', '-o','UserKnownHostsFile=/dev/null','-o','StrictHostKeyChecking=no','-P%s'%self._port, '-i%s'%id_rsa]
+        self._imagecreate = ['/usr/bin/qemu-img', 'create', '-b', base_img ,'-o','preallocation=metadata', '-o', 'cluster_size=2048', '-f','qcow2', "%s"%self._kvmimage]        
         self._cachecreate = ['/usr/bin/qemu-img', 'create', '-f','raw', self._cacheimage, '3G']
         self._kvmargs = ['/usr/bin/qemu-kvm']        
         self._kvmargs.append('-nographic')

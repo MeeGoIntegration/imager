@@ -156,7 +156,14 @@ def kickstarter_callback(msg):
     packages = config['Packages'] if 'Packages' in config.keys() else []
     groups = config['Groups'] if 'Groups' in config.keys() else []
     projects = config['Projects'] if 'Projects' in config.keys() else []
-    ks = build_kickstart(kstemplate.name, packages = packages, groups = groups, projects = projects)
+    try:
+        ks = build_kickstart(kstemplate.name, packages = packages, groups = groups, projects = projects)
+    except e, error:
+        data = json.dumps({"status":"ERROR", "error":"%s"%error, "id":str(id)})
+        statusmsg = amqp.Message(data)
+        chan.basic_publish(statusmsg, exchange="django_result_exchange", routing_key="status")
+        os.remove(kstemplate.name)
+        return
     # We got the damn thing published, move on
     ksfile = str(ks.handler)
     os.remove(kstemplate.name)

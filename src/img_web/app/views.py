@@ -196,7 +196,7 @@ def update_status():
                         l.launch(notify_process % ("image_created"), { 'email' : [job.email], 'status' : job.status, 'url' : data['url'], 'image' :data['image'], 'name' : data['name'], 'arch' : data["arch"], 'status' : 'SUCCESS'})
                       if job.test_image:
                         l = Launcher(amqp_host=boss_host,  amqp_user=boss_user, amqp_pass=boss_pwd, amqp_vhost=boss_vhost)
-                        l.launch(test_image, { 'email' : job.email, 'image' :data['image'], 'id' : data['id'], 'product' : 'ilmatar', 'devicegroup' : job.devicegroup })
+                        l.launch(test_image, { 'email' : [job.email], 'image' :data['image'], 'id' : data['id'], 'product' : 'ilmatar', 'devicegroup' : job.devicegroup })
                   if job.status == "ERROR":
                       if job.notify or job.test_image:
                         print "Error"
@@ -235,7 +235,7 @@ def clear(request):
     
 @login_required
 def download(request, msgid):
-    return HttpResponseRedirect(settings.IMGURL + "/" + msgid)
+    return HttpResponseRedirect(settings.REPOURL + "/" + settings.IMGURL + "/" + msgid)
     
 @login_required
 def job(request, msgid): 
@@ -251,6 +251,8 @@ def job(request, msgid):
             return render_to_response('app/job_details.html', {'job':res}, context_instance=RequestContext(request))
         except IOError, e:
             pass
+    elif imgjob.error and imgjob.error != "":
+        return render_to_response('app/job_details.html', {'errors': {'Error' : [imgjob.error]}}, context_instance=RequestContext(request)) 
     return render_to_response('app/job_details.html', {'errors': {'Error' : ['No logfile has been created yet.']}}, context_instance=RequestContext(request)) 
 
 def index(request):

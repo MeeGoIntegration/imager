@@ -278,9 +278,8 @@ hr {
 }
 
 .post .title a {
-	letter-spacing: -2px;
 	text-decoration: none;
-	font-size: 36px;
+	font-size: 18px;
 	color: #424242;
 }
 

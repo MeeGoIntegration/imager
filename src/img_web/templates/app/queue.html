@@ -2,7 +2,9 @@
 
 {% block pagetitle %}IMG Queue{% endblock %}
 
-{% block title %}IMG Queue{% endblock %}
+{% block title %}
+IMG Queue : Display <a href="{%url img-app-queue %}">all images</a> or <a href="{%url img-app-queue-filter %}">my images only</a>
+{% endblock %}
 
 {% block content %}
 

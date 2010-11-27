@@ -213,9 +213,12 @@ def update(request):
     return HttpResponse("") 
 
 @login_required
-def queue(request):
+def queue(request, filter=False):
     update_status()
-    q = ImageJob.objects.all().order_by('created').reverse()
+    if filter:
+        q = ImageJob.objects.filter(email=request.user.email).order_by('created').reverse()
+    else:
+        q = ImageJob.objects.all().order_by('created').reverse()
     p = Paginator(q, 30)
     try:
         page = int(request.GET.get('page', '1'))

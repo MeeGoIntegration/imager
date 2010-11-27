@@ -1,5 +1,7 @@
 {% extends 'base.html' %}
 
+{% load app_tags %}
+
 {% block pagetitle %}IMG Queue{% endblock %}
 
 {% block title %}
@@ -12,7 +14,7 @@ IMG Queue : Display <a href="{%url img-app-queue %}">all images</a> or <a href="
 <meta http-equiv="refresh" content="60">
 <table id="queue">
 <thead><tr>
-<th>Created on</th>
+<th>Created since</th>
 <th>Email</th>
 <th>Status</th>
 <th>Type</th>
@@ -22,8 +24,8 @@ IMG Queue : Display <a href="{%url img-app-queue %}">all images</a> or <a href="
 <tbody>
     {% for obj in queue.object_list %}
         <tr>
-                <td>{{obj.created|date:"H:i:s d.m.Y"}}</td>
-                <td>{{obj.email}}</td> 
+                <td>{{obj.created|timesince}}</td>
+                <td>{{obj.email|split:"@"}}</td> 
                 <td>{{obj.status}} </td> 
                 <td>{{obj.type}} </td>
                 <td><a href="{% url img-app-job obj.task_id %}">Log file</a></td>

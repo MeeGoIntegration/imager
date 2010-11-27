@@ -20,7 +20,7 @@ except ImportError:
      import simplejson as json
 import subprocess as sub
 from subprocess import CalledProcessError
-import os, sys, random, pwd, grp
+import os, sys, random, pwd, grp, traceback
 import daemon
 from tempfile import TemporaryFile, NamedTemporaryFile, mkdtemp
 import shutil
@@ -138,6 +138,7 @@ def mic2_callback(msg):
     statusmsg = amqp.Message(data)
     chan.basic_publish(statusmsg, exchange="django_result_exchange", routing_key="status")
     mic2(id, name, type, email, ksfile, release, arch, chan=chan)        
+    sys.stdout.flush()
  
 def kickstarter_callback(msg):
     print "ks"
@@ -157,12 +158,16 @@ def kickstarter_callback(msg):
     groups = config['Groups'] if 'Groups' in config.keys() else []
     projects = config['Projects'] if 'Projects' in config.keys() else []
     try:
+        print "Trying to construct KS"
         ks = build_kickstart(kstemplate.name, packages = packages, groups = groups, projects = projects)
-    except e, error:
+    except Exception, error:
+        print "KS validation error"
         data = json.dumps({"status":"ERROR", "error":"%s"%error, "id":str(id)})
         statusmsg = amqp.Message(data)
         chan.basic_publish(statusmsg, exchange="django_result_exchange", routing_key="status")
         os.remove(kstemplate.name)
+        traceback.print_exc(file=sys.stdout)
+        sys.stdout.flush()
         return
     # We got the damn thing published, move on
     ksfile = str(ks.handler)
@@ -172,6 +177,7 @@ def kickstarter_callback(msg):
     chan.basic_publish(msg2, exchange="image_exchange", routing_key="img")        
     
     print "ks end"
+    sys.stdout.flush()
     
 def main():
     conn, chan = img_amqp_init()

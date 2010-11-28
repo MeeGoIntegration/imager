@@ -72,16 +72,21 @@ class KickstartBuilderParticipant(Participant):
             wi = self.workitem
             print json.dumps(wi.to_h(), sort_keys=True, indent=4)
             fields = wi.fields()
+            params = wi.params()
             project = fields["project"] 
             repo = fields["repository"]
-            print str(fields["packages"])
+            if 'from' in params.keys():
+              packages = str(fields[params['from']])
+            else:
+              packages = str(fields["packages"])
+            print packages
             sys.stdout.flush()
             project_uri = project.replace(":", ":/")
             repo = repo.replace(":", ":/")
             base_url = reposerver+'/'+project_uri+'/'+repo
             projects = [ base_url ]
             ksfile = os.path.join(ksstore, fields["ksfile"])
-            ks = build_kickstart(ksfile, packages=fields["packages"], projects=projects)
+            ks = build_kickstart(ksfile, packages=packages, projects=projects)
             # We got the damn thing published, move on
             wi.set_field("kickstart", str(ks.handler))
             wi.set_field("id", str(uuid1()))

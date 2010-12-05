@@ -23,14 +23,19 @@ import ConfigParser
 config = ConfigParser.ConfigParser()
 config.readfp(open(IMGCONF))
 url_prefix = config.get('web','url_prefix')
+db_engine = config.get('web','db_engine')
+db_name = config.get('web','db_name')
+db_user = config.get('web','db_user')
+db_pass = config.get('web','db_pass')
+
 USE_BOSS = config.getboolean('web','use_boss')
 if USE_BOSS:
     DEVICEGROUP = config.get('web','devicegroup')
 IMGURL = config.get('worker','base_url')
 IMGDIR = config.get('worker','base_dir')
 TEMPLATESDIR = config.get('worker','templates_dir')
-USE_LDAP = config.get('web','use_ldap')
-if USE_LDAP == "yes":
+USE_LDAP = config.getboolean('web','use_ldap')
+if USE_LDAP:
   LDAP_SERVER = config.get('web','ldap_server')
   LDAP_DN_TEMPLATE = config.get('web','ldap_dn_template',raw=True)
   
@@ -48,10 +53,10 @@ ADMINS = (
 
 MANAGERS = ADMINS
 
-DATABASE_ENGINE = 'sqlite3'           # 'postgresql_psycopg2', 'postgresql', 'mysql', 'sqlite3' or 'oracle'.
-DATABASE_NAME = join(PROJECT_DIR,'test.db')             # Or path to database file if using sqlite3.
-DATABASE_USER = ''             # Not used with sqlite3.
-DATABASE_PASSWORD = ''         # Not used with sqlite3.
+DATABASE_ENGINE = db_engine          # 'postgresql_psycopg2', 'postgresql', 'mysql', 'sqlite3' or 'oracle'.
+DATABASE_NAME = db_name             # Or path to database file if using sqlite3.
+DATABASE_USER = db_user             # Not used with sqlite3.
+DATABASE_PASSWORD = db_pass        # Not used with sqlite3.
 DATABASE_HOST = ''             # Set to empty string for localhost. Not used with sqlite3.
 DATABASE_PORT = ''             # Set to empty string for default. Not used with sqlite3.
 

@@ -90,6 +90,7 @@ install -D -m 755 rpm/img-amqp.init %{buildroot}/etc/init.d/img-amqp
 install -D -m 755 rpm/boss-participant-build_image.init %{buildroot}/etc/init.d/boss-participant-build_image
 install -D -m 755 rpm/boss-participant-build_ks.init %{buildroot}/etc/init.d/boss-participant-build_ks
 install -D -m 700 ssh/id_rsa %{buildroot}/usr/share/img/id_rsa
+install    -m 755 -d %{buildroot}/var/lib/img
 %clean
 rm -rf %{buildroot}
 
@@ -107,6 +108,7 @@ rm -rf %{buildroot}
 %{python_sitelib}/img_web
 %{_datadir}/img_web
 %{_sysconfdir}/init.d/img-web
+/var/lib/img
 
 %files -n img-amqp
 %defattr(-,root,root,-)

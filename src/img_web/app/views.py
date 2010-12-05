@@ -31,7 +31,6 @@ from tempfile import TemporaryFile, NamedTemporaryFile, mkdtemp
 from django.core.servers.basehttp import FileWrapper
 from img_web.utils.a2html import plaintext2html 
 import ConfigParser
-from RuoteAMQP.launcher import Launcher
 import sys
 
 config = ConfigParser.ConfigParser()
@@ -43,6 +42,7 @@ amqp_pwd = config.get('amqp', 'amqp_pwd')
 amqp_vhost = config.get('amqp', 'amqp_vhost')
 
 if settings.USE_BOSS:
+  from RuoteAMQP.launcher import Launcher
   boss_host = config.get('boss', 'amqp_host')
   boss_user = config.get('boss', 'amqp_user')
   boss_pwd = config.get('boss', 'amqp_pwd')

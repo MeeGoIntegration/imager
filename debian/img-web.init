@@ -17,7 +17,7 @@
 # ...and altered further for img
 
 #### SERVER SPECIFIC CONFIGURATION
-DJANGO_SITES="img"
+DJANGO_SITES="img_web"
 LOGDIR="/var/log"
 RUNFILES_PATH=/var/run
 RUN_AS=www-data
@@ -43,11 +43,11 @@ d_start()
             echo -n " already running"
         else
             start-stop-daemon --start --pidfile $RUNFILES_PATH/$SITE.pid \
-            --exec /usr/bin/django-admin runfcgi --settings=$SITE.settings method=threaded \
+            --exec /usr/bin/django-admin -- runfcgi --settings=$SITE.settings method=threaded \
             socket=$RUNFILES_PATH/$SITE.socket pidfile=$RUNFILES_PATH/$SITE.pid \
-	    daemonize=True outlog=$LOGDIR/$SITE.log errlog=$LOGDIR/$SITE.err
+      	    daemonize=True outlog=$LOGDIR/$SITE.log errlog=$LOGDIR/$SITE.err
             chmod 400 $RUNFILES_PATH/$SITE.pid
-	    chmod 0777 $RUNFILES_PATH/$SITE.socket
+	          chmod 0777 $RUNFILES_PATH/$SITE.socket
         fi
     done
 }

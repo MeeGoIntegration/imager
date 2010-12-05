@@ -13,30 +13,35 @@ DAEMON="build_image"
 PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
 NAME=$0
 SCRIPTNAME=/etc/init.d/$NAME
+WORKERS=1
 
 #
 #       Function that starts the daemon/service.
 #
 d_start()
 {
-        echo -n "IMG service "
-        if [ -f /var/run/$DAEMON.pid ]; then
-            echo -n " already running"
-        else
-            start-stop-daemon -b --start --exec /usr/bin/$DAEMON.py --pidfile /var/run/$DAEMON.pid
-        fi
+        for i in `seq 1 $WORKERS`; do
+            echo -n " $i, "
+            if [ -f /var/run/$DAEMON.$i.pid ]; then
+                echo -n " already running"
+            else
+                start-stop-daemon -b --start --exec /usr/bin/$DAEMON.py --pidfile /var/run/$DAEMON.$i.pid -- -n $i
+            fi
+        done
 }
 
 #
 #       Function that stops the daemon/service.
 #
 d_stop() {
-        echo -n ", img"
-        start-stop-daemon --stop --quiet --pidfile /var/run/$DAEMON.pid \
+        for i in `seq 1 $WORKERS`; do
+            echo -n " $i, "
+            start-stop-daemon --stop --quiet --pidfile /var/run/$DAEMON.$i.pid \
                           || echo -n " not running"
-        if [ -f /var/run/$DAEMON.pid ]; then
-           rm /var/run/$DAEMON.pid
-        fi
+          if [ -f /var/run/$DAEMON.$i.pid ]; then
+             rm /var/run/$DAEMON.$i.pid
+          fi
+        done
 }
 
 ACTION="$1"

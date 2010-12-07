@@ -25,7 +25,7 @@ import django.views.generic.simple
 import img_web.settings as settings
 from img_web.app.forms import *
 from img_web.app.models import ImageJob
-from uuid import *
+import time
 from amqplib import client_0_8 as amqp
 from tempfile import TemporaryFile, NamedTemporaryFile, mkdtemp
 from django.core.servers.basehttp import FileWrapper
@@ -120,12 +120,13 @@ def submit(request):
                         conf["Packages"].append(pkg)
 
             email = data['email']
+            username = request.user.username
             imagetype = data['imagetype']
             arch = data['architecture']
             release = data['release']
-            uuid = str(uuid1())
+            uuid = time.strftime('%Y%m%d-%H%M%S') 
 
-            params = {'email':email, 'imagetype':imagetype, 'id':uuid, 'name':template, 'release':release, 'arch':arch, 'config':conf}
+            params = {'email':email, 'username':username, 'imagetype':imagetype, 'id':uuid, 'name':template, 'release':release, 'arch':arch, 'config':conf}
             sys.stdout.flush()
             msgdata = json.dumps(params)
             msg = amqp.Message(msgdata, message_id=uuid)

@@ -7,7 +7,7 @@ try:
      import json
 except ImportError:
      import simplejson as json
-from uuid import uuid1
+import time
 import os, sys, traceback, ConfigParser, optparse, io, pwd, grp
 import daemon
 from img.common import build_kickstart
@@ -89,7 +89,7 @@ class KickstartBuilderParticipant(Participant):
             ks = build_kickstart(ksfile, packages=packages, projects=projects)
             # We got the damn thing published, move on
             wi.set_field("kickstart", str(ks.handler))
-            wi.set_field("id", str(uuid1()))
+            wi.set_field("id", str(fields['rid']) + '-' + time.strftime('%Y%m%d-%H%M%S'))
             wi.set_field("name", os.path.basename(ksfile)[0:-3])
             print json.dumps(wi.to_h(), sort_keys=True, indent=4)
             sys.stdout.flush()

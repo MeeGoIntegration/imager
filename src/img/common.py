@@ -65,10 +65,10 @@ def build_kickstart(base_ks, packages=None, groups=None, projects=None):
             ks.handler.repo.repoList.append(moblinrepo.Moblin_RepoData(baseurl=prj, name=name))
     return ks
 
-def mic2(id, name,  type, email, kickstart, release, arch="i686", work_item=None, chan=None):
-        dir = "%s/%s"%(base_dir, id)
+def mic2(id, name,  type, email, kickstart, release, arch="i686", dir_prefix="unknown", work_item=None, chan=None):
+        dir = "%s/%s/%s"%(base_dir, dir_prefix, id)
         print dir
-        os.mkdir(dir, 0775)
+        os.makedirs(dir, 0775)
         
         ksfilename = ""
         ksfilename = dir+'/'+name+'.ks'

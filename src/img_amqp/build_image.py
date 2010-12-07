@@ -130,6 +130,7 @@ def mic2_callback(msg):
     ksfile = job['ksfile']   
     name = job['name']
     release = job['release']
+    username = job['username']
     arch = None
     if 'arch' in job:
         arch = job['arch']
@@ -137,20 +138,21 @@ def mic2_callback(msg):
     data = json.dumps({"status":"IN QUEUE", "id":str(id), 'url':str(file)})
     statusmsg = amqp.Message(data)
     chan.basic_publish(statusmsg, exchange="django_result_exchange", routing_key="status")
-    mic2(id, name, type, email, ksfile, release, arch, chan=chan)        
+    mic2(id, name, type, email, ksfile, release, arch, dir_prefix=username, chan=chan)        
     sys.stdout.flush()
  
 def kickstarter_callback(msg):
     print "ks"
     kickstarter = json.loads(msg.body)    
     config = kickstarter["config"]
-    email = kickstarter["email"]    
+    email = kickstarter["email"]
     id = kickstarter['id']
     imagetype = kickstarter['imagetype']
     release = kickstarter['release']
     arch = kickstarter['arch']
     config = kickstarter['config']
     name = kickstarter['name']
+    username = kickstarter['username']
     kstemplate = tempfile.NamedTemporaryFile(delete=False)
     kstemplate.write(config['Template'])
     kstemplate.close()
@@ -172,9 +174,9 @@ def kickstarter_callback(msg):
     # We got the damn thing published, move on
     ksfile = str(ks.handler)
     os.remove(kstemplate.name)
-    data = json.dumps({'email':email, 'id':id, 'imagetype':imagetype, 'ksfile':ksfile, 'name':name, 'release':release, 'arch':arch})
+    data = json.dumps({'email':email, 'id':id, 'imagetype':imagetype, 'ksfile':ksfile, 'name':name, 'release':release, 'arch':arch, 'username':username})
     msg2 = amqp.Message(data)        
-    chan.basic_publish(msg2, exchange="image_exchange", routing_key="img")        
+    chan.basic_publish(msg2, exchange="image_exchange", routing_key="img")
     
     print "ks end"
     sys.stdout.flush()

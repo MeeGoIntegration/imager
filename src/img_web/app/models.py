@@ -15,6 +15,8 @@
 
 from django.db import models
 import os
+import img_web.settings as settings
+import shutil
 
 # Create your models here.
 class ImageJob(models.Model):    
@@ -31,5 +33,8 @@ class ImageJob(models.Model):
     devicegroup = models.CharField(blank=True, default="", max_length=100)
     notify = models.BooleanField(blank=True, default=False)
     def delete(self, *args, **kwargs):
-        super(ImageJob, self).delete(*args, **kwargs)
+        topdir = os.path.join(settings.IMGDIR, self.task_id) + os.sep
+        if os.path.exists(topdir):
+            shutil.rmtree(topdir)
+            super(ImageJob, self).delete(*args, **kwargs)
 

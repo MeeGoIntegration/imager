@@ -33,6 +33,7 @@
 </div>
 {% endif%}
 <form id="uploadform" action="{%url img-app-submit%}" method="post" enctype="multipart/form-data">
+    {% csrf_token %}
     <table width="100%">
     {% for field in form %}
         <tr>

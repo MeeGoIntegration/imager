@@ -31,7 +31,7 @@ from tempfile import TemporaryFile, NamedTemporaryFile, mkdtemp
 from django.core.servers.basehttp import FileWrapper
 from img_web.utils.a2html import plaintext2html 
 import ConfigParser
-import sys
+import sys, os
 
 config = ConfigParser.ConfigParser()
 config.read(settings.IMGCONF)
@@ -150,7 +150,10 @@ def submit(request):
             return render_to_response('app/upload.html', {'form': form, 'formset' : formset, 'formerror': form.errors}, context_instance=RequestContext(request))
             
     else:
-        form = UploadFileForm({'devicegroup':settings.DEVICEGROUP, 'email':request.user.email})
+        if settings.USE_BOSS:
+            form = UploadFileForm({'devicegroup':settings.DEVICEGROUP, 'email':request.user.email})
+        else:
+            form = UploadFileForm({'email':request.user.email})
         formset = extraReposFormset()
     return render_to_response('app/upload.html', {'form' : form, 'formset' : formset}, context_instance=RequestContext(request))
 
@@ -240,6 +243,47 @@ def clear(request):
 def download(request, msgid):
     return HttpResponseRedirect(settings.REPOURL + "/" + settings.IMGURL + "/" + msgid)
     
+@login_required
+def remove(request): 
+    if request.method == 'POST':
+      for key in request.POST.keys():
+        if key.startswith("job-"):
+          obj_id = request.POST[key]
+          try:
+            imgjob = ImageJob.objects.get(task_id__exact=obj_id)
+            if not request.user.is_superuser and request.user.email != imgjob.email :
+              return render_to_response('app/remove.html', {'errors': {'Error' : ['You are not authorized to delete this job!']}}, context_instance=RequestContext(request)) 
+          except:
+            return render_to_response('app/remove.html', {'errors': {'Error' : ['No job with this id was found!']}}, context_instance=RequestContext(request)) 
+          try:
+            imgjob.delete()
+          except Exception, e :
+            return render_to_response('app/remove.html', {'errors': {'Error' : ['There was an error removing this job! %s' % e]}}, context_instance=RequestContext(request)) 
+            
+
+    return HttpResponseRedirect(reverse('img-app-queue'))
+
+@login_required
+def confirm_remove(request, msgid): 
+    try:
+      job = ImageJob.objects.get(task_id__exact=msgid)
+    except:
+      return render_to_response('app/remove.html', {'errors': {'Error' : ['No job with this id was found!']}}, context_instance=RequestContext(request)) 
+    if not request.user.is_superuser and request.user.email != imgjob.email :
+      return render_to_response('app/remove.html', {'errors': {'Error' : ['You are not authorized to delete this job!']}}, context_instance=RequestContext(request)) 
+    try:
+      topdir = os.path.join(settings.IMGDIR, job.task_id) + os.sep
+      if os.path.exists(topdir):
+        walker = os.walk(topdir)
+        file_list=[]
+        for dirpath, dirnames, filenames in walker:
+          for filename in filenames:
+            file_list.append(os.path.join(dirpath.replace(topdir,"") , filename))
+        return render_to_response('app/remove.html', {'jobid' : job.task_id, 'file_list' : file_list}, context_instance=RequestContext(request))
+    except:
+      pass
+    return render_to_response('app/remove.html', {'errors': {'Error' : ['The job directory is not accessible, please contact the administrator to remove this job.']}}, context_instance=RequestContext(request)) 
+
 @login_required
 def job(request, msgid): 
     imgjob = ImageJob.objects.get(task_id__exact=msgid)

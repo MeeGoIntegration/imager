@@ -18,8 +18,9 @@ IMG Queue : Display <a href="{%url img-app-queue %}">all images</a> or <a href="
 <th>Email</th>
 <th>Status</th>
 <th>Type</th>
-<th>Log file</th>
-<th>Build directory</th>
+<th>Log</th>
+<th>Files</th>
+<th>Remove</th>
 </tr></thead>
 <tbody>
     {% for obj in queue.object_list %}
@@ -28,8 +29,15 @@ IMG Queue : Display <a href="{%url img-app-queue %}">all images</a> or <a href="
                 <td>{{obj.email|split:"@"}}</td> 
                 <td>{{obj.status}} </td> 
                 <td>{{obj.type}} </td>
-                <td><a href="{% url img-app-job obj.task_id %}">Log file</a></td>
-                <td><a href="{% url img-app-download obj.task_id %}">Build directory</a></td>                
+                <td><a href="{% url img-app-job obj.task_id %}">Log</a></td>
+                <td><a href="{% url img-app-download obj.task_id %}">Files</a></td>                
+                <td>
+                  {% if user.email == obj.email or user.is_superuser %} 
+                    {% if obj.status == "DONE" or obj.status == "ERROR" %}
+                      <a href="{% url img-app-confirm-remove obj.task_id %}"><img class="remove_icon" src="{{ MEDIA_URL }}images/error.png" /></a>
+                    {% endif %}
+                  {% endif %}
+                </td>
         </tr>
     {% endfor %}
 </tbody>
@@ -40,7 +48,7 @@ IMG Queue : Display <a href="{%url img-app-queue %}">all images</a> or <a href="
             <a href="?page={{ queue.previous_page_number }}">previous</a>
         {% endif %}
         </td>
-        <td colspan="4">
+        <td colspan="5">
             Page {{ queue.number }} of {{ queue.paginator.num_pages }}.
         </td>
         <td>

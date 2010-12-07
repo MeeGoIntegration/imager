@@ -52,3 +52,5 @@ class UploadFileForm(forms.Form):
     ksfile = forms.FileField(label="Kickstart file", required=False, help_text="Kickstart: customized kickstart file, if the templates don't fit your needs.")
     template = forms.ChoiceField(label='Template', choices=[('None','None')], help_text="Template: Choose a base template ontop of which your packages will be added. Each template is targeted at a certain device and architecture so the architecture and kickstart fields will be ignored.")
     overlay = forms.CharField(label="Packages", required=False, widget=forms.Textarea(attrs={'rows':'4'}), help_text='Packages: comma separated list of packages you want to include in the image built from the chosen template. A packagename prefixed wtith "-" is excluded. Package groups are denoted by "@" prefix.')
+
+

@@ -1,3 +1,9 @@
+img (0.42) unstable; urgency=low
+
+  * Allow deleting own images.
+
+ -- Islam Amer <iamer@solitude>  Tue, 07 Dec 2010 21:22:41 +0200
+
 img (0.41) unstable; urgency=low
 
   * More boss and OTS adjustments.

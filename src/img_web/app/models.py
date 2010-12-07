@@ -17,9 +17,12 @@ from django.db import models
 import os
 import img_web.settings as settings
 import shutil
+from django.contrib.auth.models import User
+
 
 # Create your models here.
 class ImageJob(models.Model):    
+    user = models.ForeignKey(User, null=True)
     email = models.CharField(max_length=40)
     filename = models.CharField(max_length=40)
     logfile = models.CharField(max_length=50)
@@ -33,7 +36,10 @@ class ImageJob(models.Model):
     devicegroup = models.CharField(blank=True, default="", max_length=100)
     notify = models.BooleanField(blank=True, default=False)
     def delete(self, *args, **kwargs):
-        topdir = os.path.join(settings.IMGDIR, self.task_id) + os.sep
+        d = self.task_id
+        if self.user:
+          d = os.path.join(self.user.username, d)
+        topdir = os.path.join(settings.IMGDIR, d) + os.sep
         if os.path.exists(topdir):
             shutil.rmtree(topdir)
             super(ImageJob, self).delete(*args, **kwargs)

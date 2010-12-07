@@ -45,6 +45,7 @@ Requires: lighttpd
 Requires: python-django
 Requires: python-flup
 Requires: python-yaml
+Requires: python-django-south
 Summary: Image creation service for MeeGo related products, django web interface
 %description -n img-web
 This package provides a django based web interface for imager. It can work with a standalone imager installation communicating over AMQP, or an installation that is part of BOSS.

@@ -33,6 +33,7 @@ if USE_BOSS:
     DEVICEGROUP = config.get('web','devicegroup')
 IMGURL = config.get('worker','base_url')
 IMGDIR = config.get('worker','base_dir')
+REPOURL = config.get('worker','reposerver')
 TEMPLATESDIR = config.get('worker','templates_dir')
 USE_LDAP = config.getboolean('web','use_ldap')
 if USE_LDAP:
@@ -130,6 +131,7 @@ INSTALLED_APPS = (
     'django.contrib.sessions',
     'django.contrib.sites',
     'django.contrib.admin',
+    'south',
     'img_web.app',
 )
 FORCE_SCRIPT_NAME = ''

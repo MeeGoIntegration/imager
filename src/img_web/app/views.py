@@ -139,6 +139,7 @@ def submit(request):
             imgjob.task_id = uuid 
             imgjob.email = email
             imgjob.type = imagetype
+            imgjob.user = request.user
             imgjob.status = "IN QUEUE"
             if settings.USE_BOSS:
                 imgjob.notify = data['notify'] if 'notify' in data else False 
@@ -242,7 +243,11 @@ def clear(request):
     
 @login_required
 def download(request, msgid):
-    return HttpResponseRedirect(settings.REPOURL + "/" + settings.IMGURL + "/" + msgid)
+    d = msgid
+    job = ImageJob.objects.get(task_id__exact=d)
+    if job.user:
+      d = os.path.join(job.user.username , d)
+    return HttpResponseRedirect(settings.REPOURL + "/" + settings.IMGURL + "/" + d)
     
 @login_required
 def remove(request): 
@@ -273,7 +278,10 @@ def confirm_remove(request, msgid):
     if not request.user.is_superuser and request.user.email != imgjob.email :
       return render_to_response('app/remove.html', {'errors': {'Error' : ['You are not authorized to delete this job!']}}, context_instance=RequestContext(request)) 
     try:
-      topdir = os.path.join(settings.IMGDIR, job.task_id) + os.sep
+      d = job.task_id
+      if job.user:
+        d = os.path.join(job.user.username, job.task_id)
+      topdir = os.path.join(settings.IMGDIR, d) + os.sep
       if os.path.exists(topdir):
         walker = os.walk(topdir)
         file_list=[]

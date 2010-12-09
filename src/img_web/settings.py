@@ -139,7 +139,7 @@ FORCE_SCRIPT_NAME = ''
 LOGIN_URL='/' + url_prefix + "/login/"
 LOGIN_REDIRECT_URL='/' + url_prefix + "/"
 
-if USE_LDAP == "yes":
+if USE_LDAP:
   import ldap
   from django_auth_ldap.config import LDAPSearch
   import logging

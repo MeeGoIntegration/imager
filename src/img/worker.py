@@ -48,13 +48,15 @@ base_img = os.path.join(img_home, 'base.img')
 class ImageWorker(object):
     def _getport(self):
         return random.randint(49152, 65535)
-    def __init__(self, id, tmpname, type, logfile, dir, port=2222, chan=None, work_item=None, name=None, release=None, arch='i686'):
+    def __init__(self, id, tmpname, type, logfile, dir, port=2222, chan=None, work_item=None, name=None, release=None, arch='i686', dir_prefix="unknown"):
         print "init"
         sys.stdout.flush()
         self._tmpname = tmpname
         self._type = type
         self._logfile = logfile
         self._dir = dir
+        self._dir_prefix = dir_prefix
+        self._base_url_dir = base_url + '/' + self._dir_prefix + '/'
         self._id = id
         self._image =None
         self._release = release
@@ -123,7 +125,7 @@ class ImageWorker(object):
         sizesortedlist=[ backitems[i][1] for i in range(0,len(backitems))]
         # Its a path, don't worry
         largest_file = sizesortedlist[-1].split(self._dir)[-1]
-        self._image = base_url+self._id+'/'+largest_file
+        self._image = self._base_url_dir+self._id+'/'+largest_file
     def _append_to_base_command_and_run(self,base,command,execute=True,verbose=False):
         copy_base = copy.copy(base)        
         copy_base = copy_base + command
@@ -136,7 +138,7 @@ class ImageWorker(object):
     def build(self):
         if use_kvm == "yes":
             try:
-                datadict = {'status':"VIRTUAL MACHINE, IMAGE CREATION", "url":base_url+self._id, 'id':self._id}
+                datadict = {'status':"VIRTUAL MACHINE, IMAGE CREATION", "url":self._base_url_dir+self._id, 'id':self._id}
                 self._update_status(datadict)
                 print self._imagecreate
                 sub.check_call(self._imagecreate, shell=False, stdin=sub.PIPE, stdout=sub.PIPE, stderr=sub.PIPE)                        
@@ -179,12 +181,12 @@ class ImageWorker(object):
                 #    post_toargs = [post, "root@127.0.0.1:"+post]                    
                 #    self._append_to_base_command_and_run(self._scpksargs, post_toargs,verbose=True)
                 #    self._append_to_base_command_and_run(self._sshargs, post,verbose=True)
-                data = {'status':"DONE", "url":base_url+self._id, 'id':self._id,'image':self._image, "arch":self._arch, "name":self._tmpname}
+                data = {'status':"DONE", "url":self._base_url_dir+self._id, 'id':self._id,'image':self._image, "arch":self._arch, "name":self._tmpname}
                 self._update_status(data)  
                 sys.stdout.flush() 
             except Exception,err:
                 print "error %s"%err
-                error = {'status':"ERROR","error":"%s"%err, 'id':str(self._id), 'url':base_url+self._id, "arch": self._arch, "name":self._tmpname}
+                error = {'status':"ERROR","error":"%s"%err, 'id':str(self._id), 'url':self._base_url_dir+self._id, "arch": self._arch, "name":self._tmpname}
                 self._update_status(error)
             self._append_to_base_command_and_run(self._sshargs, ['halt'], verbose=True)
             os.remove(self._kvmimage)
@@ -192,7 +194,7 @@ class ImageWorker(object):
             return   
         else:
             try:
-                datadict = {'status':"RUNNING MIC2", "url":base_url+self._id, 'id':self._id}                
+                datadict = {'status':"RUNNING MIC2", "url":self._base_url_dir+self._id, 'id':self._id}                
                 self._update_status(datadict)
                 if mic_args:
                     self._append_to_base_command_and_run(self._micargs, [''], verbose=True)
@@ -205,7 +207,7 @@ class ImageWorker(object):
                 sys.stdout.flush()
             except Exception,err:
                 print "error %s"%err
-                error = {'status':"ERROR","error":"%s"%err, 'id':str(self._id), 'url':base_url+self._id}
+                error = {'status':"ERROR","error":"%s"%err, 'id':str(self._id), 'url':self._base_url_dir+self._id}
                 self._update_status(error)  
                 sys.stdout.flush()              
                 return 

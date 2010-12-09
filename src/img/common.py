@@ -80,13 +80,13 @@ def mic2(id, name,  type, email, kickstart, release, arch="i686", dir_prefix="un
         tmp.write(kickstart)            
         tmp.close()
         os.chmod(tmpname, 0644)
-        file = base_url+"%s"%id    
+        file = base_url + '/' + dir_prefix + '/' + "%s"%id    
         logfile = open(logfile_name,'w')
-        logurl = base_url+id+'/'+os.path.split(logfile.name)[-1]
+        logurl = base_url + dir_prefix + '/' + id + '/' + os.path.split(logfile.name)[-1]
         if chan:
             data = json.dumps({"status":"WORKER BEGIN", "id":str(id), 'url':str(file), 'log':str(logfile_name)})
             statusmsg = amqp.Message(data)
             chan.basic_publish(statusmsg, exchange="django_result_exchange", routing_key="status")
-        worker = ImageWorker(id, tmpname, type, logfile, dir, work_item=work_item, chan=chan, name=name, release=release, arch=arch)
+        worker = ImageWorker(id, tmpname, type, logfile, dir, work_item=work_item, chan=chan, name=name, release=release, arch=arch, dir_prefix=dir_prefix)
         worker.build()
         logfile.close()

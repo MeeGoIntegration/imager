@@ -275,7 +275,7 @@ def confirm_remove(request, msgid):
       job = ImageJob.objects.get(task_id__exact=msgid)
     except:
       return render_to_response('app/remove.html', {'errors': {'Error' : ['No job with this id was found!']}}, context_instance=RequestContext(request)) 
-    if not request.user.is_superuser and request.user.email != imgjob.email :
+    if not request.user.is_superuser and request.user.email != job.email :
       return render_to_response('app/remove.html', {'errors': {'Error' : ['You are not authorized to delete this job!']}}, context_instance=RequestContext(request)) 
     try:
       d = job.task_id

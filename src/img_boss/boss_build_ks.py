@@ -76,9 +76,9 @@ class KickstartBuilderParticipant(Participant):
             project = fields["project"] 
             repo = fields["repository"]
             if 'from' in params.keys():
-              packages = str(fields[params['from']])
+              packages = fields[params['from']]
             else:
-              packages = str(fields["packages"])
+              packages = fields["packages"]
             print packages
             sys.stdout.flush()
             project_uri = project.replace(":", ":/")
@@ -91,6 +91,9 @@ class KickstartBuilderParticipant(Participant):
             wi.set_field("kickstart", str(ks.handler))
             wi.set_field("id", str(fields['rid']) + '-' + time.strftime('%Y%m%d-%H%M%S'))
             wi.set_field("name", os.path.basename(ksfile)[0:-3])
+            msg = wi.lookup("msg") if "msg" in wi.fields() else []
+            msg.append("Added packages to template kickstart successfully.")
+            wi.set_field("msg", msg)
             print json.dumps(wi.to_h(), sort_keys=True, indent=4)
             sys.stdout.flush()
             result = True
@@ -100,6 +103,9 @@ class KickstartBuilderParticipant(Participant):
             traceback.print_exc(file=sys.stdout)
             sys.stdout.flush()
             result = False
+            msg = wi.lookup("msg") if "msg" in wi.fields() else []
+            msg.append("Failed to add packages to kickstart.")
+            wi.set_field("msg", msg)
             wi.set_field("status", "FAILED")
             pass
         wi.set_result(result)

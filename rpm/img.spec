@@ -1,5 +1,5 @@
 Name: img
-Version: 0.42
+Version: 0.43
 Release: 1
 
 Group: Applications/Engineering
@@ -126,6 +126,9 @@ rm -rf %{buildroot}
 %{_sysconfdir}/init.d/boss-participant-build_ks
 
 %changelog
+* Thu Dec 09 2010 Islam Amer <islam.amer@nokia.com> 0.43
+- Additions to the webui.
+- Human readable uuid.
 * Mon Oct 11 2010 Aleksi Suomalainen <aleksi.suomalainen@nomovok.com> 0.4
 - Daemonization code added
 - Code refactoring

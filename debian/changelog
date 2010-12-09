@@ -1,8 +1,15 @@
+img (0.43) unstable; urgency=low
+
+  * Additions to the web ui.
+  * Changed uuid to be human readable.
+
+ -- Islam Amer <islam.amer@nokia.com>  Thu, 09 Dec 2010 02:39:39 +0200
+
 img (0.42) unstable; urgency=low
 
   * Allow deleting own images.
 
- -- Islam Amer <iamer@solitude>  Tue, 07 Dec 2010 21:22:41 +0200
+ -- Islam Amer <islam.amer@nokia.com>  Tue, 07 Dec 2010 21:22:41 +0200
 
 img (0.41) unstable; urgency=low
 

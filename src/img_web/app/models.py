@@ -18,7 +18,7 @@ import os
 import img_web.settings as settings
 import shutil
 from django.contrib.auth.models import User
-
+from django.contrib import admin
 
 # Create your models here.
 class ImageJob(models.Model):    
@@ -42,5 +42,10 @@ class ImageJob(models.Model):
         topdir = os.path.join(settings.IMGDIR, d) + os.sep
         if os.path.exists(topdir):
             shutil.rmtree(topdir)
-            super(ImageJob, self).delete(*args, **kwargs)
+        super(ImageJob, self).delete(*args, **kwargs)
+
+class ImageJobAdmin(admin.ModelAdmin):
+    list_display = ('task_id', 'user', 'status')
+
+admin.site.register(ImageJob, ImageJobAdmin)
 

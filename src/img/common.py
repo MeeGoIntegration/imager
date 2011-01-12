@@ -76,7 +76,7 @@ def mic2(id, name,  type, email, kickstart, release, arch="i686", dir_prefix="un
         tmp = open(ksfilename, mode='w+b')
         print tmp.name   
         tmpname = tmp.name
-        logfile_name = dir+'/'+name+"-log"
+        logfile_name = dir+'/'+name+".log"
         tmp.write(kickstart)            
         tmp.close()
         os.chmod(tmpname, 0644)

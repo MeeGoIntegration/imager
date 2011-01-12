@@ -138,7 +138,16 @@ def mic2_callback(msg):
     data = json.dumps({"status":"IN QUEUE", "id":str(id), 'url':str(file)})
     statusmsg = amqp.Message(data)
     chan.basic_publish(statusmsg, exchange="django_result_exchange", routing_key="status")
-    mic2(id, name, type, email, ksfile, release, arch, dir_prefix=username, chan=chan)        
+    try:
+        mic2(id, name, type, email, ksfile, release, arch, dir_prefix=username, chan=chan)        
+    except Exception, error:
+        print "Worker error"
+        data = json.dumps({"status":"ERROR", "error":"%s"%error, "id":str(id)})
+        statusmsg = amqp.Message(data)
+        chan.basic_publish(statusmsg, exchange="django_result_exchange", routing_key="status")
+        traceback.print_exc(file=sys.stdout)
+        sys.stdout.flush()
+        return
     sys.stdout.flush()
  
 def kickstarter_callback(msg):

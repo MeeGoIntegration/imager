@@ -35,9 +35,9 @@ amqp_user = boss
 amqp_pwd = boss
 amqp_vhost = boss
 
-ots_server_url = http://OTS_URL_HERE
-default_device_group = OTS_DEVICE_GROUP
-default_sw_product = SOFTWARE_PRODUCT
+ots_server_url = http://test.meego.com
+default_device_group = meego
+default_sw_product = meego
 """
 
 
@@ -45,38 +45,42 @@ default_sw_product = SOFTWARE_PRODUCT
 
 def submit(ks, arch, imgtype, device, sw_product, email): 
     # Specify a minimal OTS process definition
-    
+    name = os.path.basename(ks)
     process = """
             Ruote.process_definition :name => 'build_and_test' do
               sequence do
                 build_ks 
                 _if :test => '${f:status} != SUCCESS' do
-                    notify :template => 'kickstart_failed', :subject => '[BOSS] Kickstart validation failed'
-                    cancel_process
+		    sequence do
+                        notify :template => 'kickstart_failed', :subject => '[BOSS] Kickstart validation failed'
+                        cancel_process
+	            end
                 end
                 build_image
                 _if :test => '${f:status} != SUCCESS' do
-                    notify :template => 'image_failed', :subject => '[BOSS] Image %s creation failed'
-                    cancel_process
+		    sequence do
+                        notify :template => 'image_failed', :subject => '[BOSS] Image %s creation failed'
+                        cancel_process
+	            end
                 end
                 notify :template => 'image_created', :subject => '[BOSS] Image %s creation succeeded'
                 test_image
               end
             end
-          """ % ( ks , ks)
+          """ % ( name , name )
     fields= {
       "prefix": "custom",
-      "name": "%s" % ks,
+      "name": name,
       "release": "daily-custom",
       "status": "SUCCESS",
       "arch": arch,
       "type": imgtype,
       "kickstart" : open(ks).read(),
-	    "server" : config.get('boss', 'ots_server_url'), 
-	    "devicegroup" : 'devicegroup:' + device,
-	    "product" : sw_product,
-	    "email" : [email],
-            }
+      "server" : config.get('boss', 'ots_server_url'), 
+      "devicegroup" : 'devicegroup:' + device,
+      "product" : sw_product,
+      "email" : [email],
+    }
     print "Launching image build and test run ... "
     launcher = RuoteAMQP.Launcher(amqp_host=amqp_host, amqp_user=amqp_user,
                               amqp_pass=amqp_pass, amqp_vhost=amqp_vhost)

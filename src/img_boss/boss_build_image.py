@@ -107,6 +107,7 @@ class MICParticipant(Participant):
     def consume(self):
         try:            
             wi = self.workitem
+            fields = wi.fields()
             email = wi.lookup('email')
             kickstart = wi.lookup('kickstart')
             iid = wi.lookup('id')
@@ -117,19 +118,23 @@ class MICParticipant(Participant):
             print "Workitem: "
             print json.dumps(wi.to_h())
             prefix="requests"
-            if "prefix" in wi.fields.keys():
-              prefix = wi.fields["prefix"]
+            if "prefix" in fields.keys():
+              prefix = fields["prefix"]
             if kickstart:
                 mic2(iid, name, itype,  email, kickstart, release, arch, dir_prefix=prefix, work_item=wi)
+            msg = self.workitem.lookup('msg') if 'msg' in self.workitem.fields() else []
+            msg.append('Test image build result was %s, details can be viewed here: %s ' % (wi.lookup('status'), wi.lookup('url')))
+            self.workitem.set_field('msg', msg)
             result = True
-        except Exception as e:            
-            print e
+        except Exception , error:            
+            print error
+            msg = self.workitem.lookup('msg') if 'msg' in self.workitem.fields() else []
+            msg.append('Test image build result was FAILED, error was : %s ' % (error))
+            self.workitem.set_field('msg', msg)
             traceback.print_exc(file=sys.stdout)
+            wi.set_field("status", "FAILED")
             result = False
-            pass
-        msg = self.workitem.lookup('msg') if 'msg' in self.workitem.fields() else []
-        msg.append('Test image build was %s, details can be viewed here: %s ' % (wi.lookup('status'), wi.lookup('url')))
-        self.workitem.set_field('msg', msg)
+        sys.stdout.flush()
         wi.set_result(result)
 
 def main():

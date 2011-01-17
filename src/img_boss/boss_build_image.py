@@ -109,15 +109,18 @@ class MICParticipant(Participant):
             wi = self.workitem
             email = wi.lookup('email')
             kickstart = wi.lookup('kickstart')
-            id = wi.lookup('id')
-            type = wi.lookup('type')
+            iid = wi.lookup('id')
+            itype = wi.lookup('type')
             name = wi.lookup('name')
             release = wi.lookup('release')
             arch = wi.lookup('arch')
             print "Workitem: "
             print json.dumps(wi.to_h())
+            prefix="requests"
+            if "prefix" in wi.fields.keys():
+              prefix = wi.fields["prefix"]
             if kickstart:
-                mic2(id, name, type,  email, kickstart, release, arch, dir_prefix="requests", work_item=wi)
+                mic2(iid, name, itype,  email, kickstart, release, arch, dir_prefix=prefix, work_item=wi)
             result = True
         except Exception as e:            
             print e

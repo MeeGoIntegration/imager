@@ -73,27 +73,49 @@ class KickstartBuilderParticipant(Participant):
             print json.dumps(wi.to_h(), sort_keys=True, indent=4)
             fields = wi.fields()
             params = wi.params()
-            project = fields["project"] 
-            repo = fields["repository"]
+
+            projects = []
+            if "project" in fields.keys() and "repo" in fields.keys():
+              project = fields["project"] 
+              repo = fields["repository"]
+              project_uri = project.replace(":", ":/")
+              repo = repo.replace(":", ":/")
+              base_url = reposerver+'/'+project_uri+'/'+repo
+              projects = [ base_url ]
+
+            packages = []
             if 'from' in params.keys():
               packages = fields[params['from']]
             else:
               packages = fields["packages"]
+            
             print packages
             sys.stdout.flush()
-            project_uri = project.replace(":", ":/")
-            repo = repo.replace(":", ":/")
-            base_url = reposerver+'/'+project_uri+'/'+repo
-            projects = [ base_url ]
-            ksfile = os.path.join(ksstore, fields["ksfile"])
-            ks = build_kickstart(ksfile, packages=packages, projects=projects)
-            # We got the damn thing published, move on
+
+            if "ksfile" in fields.keys():
+              ksfile = os.path.join(ksstore, fields["ksfile"])
+              ks = build_kickstart(ksfile, packages=packages, projects=projects)
+            elif "kickstart" in fields.keys():
+              kstemplate = tempfile.NamedTemporaryFile(delete=False)
+              kstemplate.write(fields("kickstart"))
+              kstemplate.close()
+              ksfile = kstemplate.name
+              ks = build_kickstart(ksfile, packages=packages, projects=projects)
+              os.remove(ksfile)
+
             wi.set_field("kickstart", str(ks.handler))
-            wi.set_field("id", str(fields['rid']) + '-' + time.strftime('%Y%m%d-%H%M%S'))
-            wi.set_field("name", os.path.basename(ksfile)[0:-3])
+            if "rid" in fields.keys():
+              wi.set_field("id", str(fields['rid']) + '-' + time.strftime('%Y%m%d-%H%M%S'))
+            else:
+              wi.set_field("id", time.strftime('%Y%m%d-%H%M%S'))
+
+            if not "name" in fields.keys():
+              wi.set_field("name", os.path.basename(ksfile)[0:-3])
+
             msg = wi.lookup("msg") if "msg" in wi.fields() else []
-            msg.append("Added packages to template kickstart successfully.")
+            msg.append("Kickstart handled successfully.")
             wi.set_field("msg", msg)
+
             print json.dumps(wi.to_h(), sort_keys=True, indent=4)
             sys.stdout.flush()
             result = True
@@ -104,7 +126,7 @@ class KickstartBuilderParticipant(Participant):
             sys.stdout.flush()
             result = False
             msg = wi.lookup("msg") if "msg" in wi.fields() else []
-            msg.append("Failed to add packages to kickstart.")
+            msg.append("Failed to handle to kickstart.")
             wi.set_field("msg", msg)
             wi.set_field("status", "FAILED")
             pass

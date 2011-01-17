@@ -8,7 +8,7 @@ try:
 except ImportError:
      import simplejson as json
 import time
-import os, sys, traceback, ConfigParser, optparse, io, pwd, grp
+import os, sys, traceback, ConfigParser, optparse, io, pwd, grp, tempfile
 import daemon
 from img.common import build_kickstart
 participant_name = "build_ks"
@@ -86,7 +86,7 @@ class KickstartBuilderParticipant(Participant):
             packages = []
             if 'from' in params.keys():
               packages = fields[params['from']]
-            else:
+            elif 'packages' in fields.keys():
               packages = fields["packages"]
             
             print packages
@@ -97,7 +97,7 @@ class KickstartBuilderParticipant(Participant):
               ks = build_kickstart(ksfile, packages=packages, projects=projects)
             elif "kickstart" in fields.keys():
               kstemplate = tempfile.NamedTemporaryFile(delete=False)
-              kstemplate.write(fields("kickstart"))
+              kstemplate.write(fields["kickstart"])
               kstemplate.close()
               ksfile = kstemplate.name
               ks = build_kickstart(ksfile, packages=packages, projects=projects)
@@ -117,19 +117,16 @@ class KickstartBuilderParticipant(Participant):
             wi.set_field("msg", msg)
 
             print json.dumps(wi.to_h(), sort_keys=True, indent=4)
-            sys.stdout.flush()
             result = True
-        except Exception as e:
-            print type(e)
-            print e
+        except Exception, error:
             traceback.print_exc(file=sys.stdout)
             sys.stdout.flush()
             result = False
             msg = wi.lookup("msg") if "msg" in wi.fields() else []
-            msg.append("Failed to handle to kickstart.")
+            msg.append("Failed to handle kickstart. %s" % error)
             wi.set_field("msg", msg)
             wi.set_field("status", "FAILED")
-            pass
+        sys.stdout.flush()
         wi.set_result(result)
   
 def main():

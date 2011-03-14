@@ -1,5 +1,5 @@
 Name: img
-Version: 0.43
+Version: 0.44
 Release: 1
 
 Group: Applications/Engineering
@@ -126,6 +126,8 @@ rm -rf %{buildroot}
 %{_sysconfdir}/init.d/boss-participant-build_ks
 
 %changelog
+* Mon Mar 14 2011 Aleksi Suomalainen <aleksi.suomalainen@nomovok.com> 0.44
+- Bugfixes to settings.py
 * Thu Dec 09 2010 Islam Amer <islam.amer@nokia.com> 0.43
 - Additions to the webui.
 - Human readable uuid.

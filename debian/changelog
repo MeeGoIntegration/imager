@@ -1,3 +1,9 @@
+img (0.44) unstable; urgency=low
+
+  * Fixes to settings.py
+
+ -- Aleksi Suomalainen <aleksi.suomalainen@nomovok.com>  Mon, 14 Mar 2011 15:23:23 +0200
+
 img (0.43) unstable; urgency=low
 
   * Additions to the web ui.

@@ -70,15 +70,16 @@ class UploadFileForm(forms.Form):
                                 otherwise mic2 will reject it.")
     imagetype = forms.ChoiceField(label='Image type',
                                   choices=[
-                                              ('livecd',"livecd"),
-                                              ('liveusb', "liveusb"),
-                                              ('loop', "loop"),
-                                              ('raw',"raw"),
-                                              ('nand',"nand"),
-                                              ('mrstnand',"mrstnand"),
-                                              ('vdi',"vdi"),
-                                              ('vmdk',"vmdk"),
-                                              ('fiasco', 'fiasco')
+                                              ('fs', 'Compressed tarball of
+                                                      rootfs')
+                                              ('livecd',"Live CD"),
+                                              ('liveusb', "Live USB"),
+                                              ('loop', "Loop file"),
+                                              ('raw',"Raw disk image"),
+                                              ('nand',"NAND"),
+                                              ('mrstnand',"MRST NAND"),
+                                              ('vdi',"VDI file"),
+                                              ('vmdk',"VMDK file"),
                                           ],
                                   help_text='Type: format of image you want to \
                                              produce.')

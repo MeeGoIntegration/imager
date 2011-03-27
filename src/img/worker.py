@@ -85,6 +85,8 @@ class ImageWorker(object):
         self._micargs = ['mic-image-creator', '-d', '-v']
         self._micargs.append('--config='+self._tmpname)
         self._micargs.append('--format='+self._type)
+        if self._type == "fs":
+            self._micargs.append('--package=tar.gz')
         self._micargs.append('--cache='+mic_cache_dir)
         self._micargs.append('--outdir='+dir)
         if arch:

@@ -13,8 +13,10 @@
 #~ You should have received a copy of the GNU General Public License
 #~ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Create your views here.
-from django.http import HttpResponse, HttpResponseRedirect, HttpResponseNotFound,  Http404
+""" imager views """
+
+from django.http import ( HttpResponse, HttpResponseRedirect,
+                        HttpResponseNotFound, Http404 )
 from django.template import RequestContext
 from django.core.urlresolvers import reverse
 from django.shortcuts import render_to_response

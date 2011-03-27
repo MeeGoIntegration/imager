@@ -70,8 +70,7 @@ class UploadFileForm(forms.Form):
                                 otherwise mic2 will reject it.")
     imagetype = forms.ChoiceField(label='Image type',
                                   choices=[
-                                              ('fs', 'Compressed tarball of \
-                                                      rootfs'),
+                                              ('fs', 'RootFS'),
                                               ('livecd',"Live CD"),
                                               ('liveusb', "Live USB"),
                                               ('loop', "Loop file"),

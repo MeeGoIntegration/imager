@@ -1,5 +1,5 @@
 Name: img
-Version: 0.44
+Version: 0.45
 Release: 1
 
 Group: Applications/Engineering

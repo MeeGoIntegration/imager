@@ -84,8 +84,11 @@ class UploadFileForm(forms.Form):
                                              produce.')
     architecture = forms.ChoiceField(label='Architecture',
                                      choices=[
+                                                ('i586', "i586"),
                                                 ('i686', "i686"),
-                                                ('armv7l',"armv7l")
+                                                ('armv7l',"armv7l"),
+                                                ('armv7hl','armv7hl'),
+                                                ('armv7nhl','armv7nhl'),
                                              ],
                                      help_text="Target architecture of the \
                                                 image you want to build from \

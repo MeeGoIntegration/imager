@@ -78,7 +78,7 @@ class ImageWorker(object):
         self._kvmargs.append('user,hostfwd=tcp:127.0.0.1:%s-:22'%self._port)        
         self._kvmargs.append('-daemonize')
         self._kvmargs.append('-drive')
-        self._kvmargs.append(str('file='+self._kvmimage+',index=0,if=virtio,boot=on'))#,index=0,media=disk'))
+        self._kvmargs.append(str('file='+self._kvmimage+',index=0,if=virtio'))#,index=0,media=disk'))
         #self._kvmargs.append('-drive')
         #self._kvmargs.append(str('file='+self._cacheimage+',index=1,media=disk'))        
         
@@ -190,7 +190,7 @@ class ImageWorker(object):
                 print "error %s"%err
                 error = {'status':"ERROR","error":"%s"%err, 'id':str(self._id), 'url':self._base_url_dir+self._id, "arch": self._arch, "name":self._tmpname}
                 self._update_status(error)
-            self._append_to_base_command_and_run(self._sshargs, ['halt'], verbose=True)
+            self._append_to_base_command_and_run(self._sshargs, ['poweroff'], verbose=True)
             os.remove(self._kvmimage)
             sys.stdout.flush() 
             return   

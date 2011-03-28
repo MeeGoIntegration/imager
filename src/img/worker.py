@@ -190,7 +190,9 @@ class ImageWorker(object):
                 print "error %s"%err
                 error = {'status':"ERROR","error":"%s"%err, 'id':str(self._id), 'url':self._base_url_dir+self._id, "arch": self._arch, "name":self._tmpname}
                 self._update_status(error)
-            self._append_to_base_command_and_run(self._sshargs, ['poweroff'], verbose=True)
+            self._append_to_base_command_and_run(self._sshargs,
+                                                 ['shutdown', 'now'],
+                                                 verbose=True)
             os.remove(self._kvmimage)
             sys.stdout.flush() 
             return   

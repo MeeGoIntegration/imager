@@ -66,21 +66,23 @@ class ImageWorker(object):
         self._amqp_chan = chan        
         self._kvmimage = os.path.join(img_tmp, 'overlay-%s-port-%s'%(self._id, self._port))
         self._cacheimage = os.path.join(img_tmp, 'cache-image')#%self._id
-        self._sshargs = ['/usr/bin/ssh','-o','ConnectTimeout=60', '-o', 'ConnectionAttempts=4','-o','UserKnownHostsFile=/dev/null','-o','StrictHostKeyChecking=no','-p%s'%self._port, '-lroot', '-i%s'%id_rsa, '127.0.0.1']        
+        self._sshargs = ['/usr/bin/ssh','-o','ConnectTimeout=60', '-o', 'ConnectionAttempts=4','-o','UserKnownHostsFile=/dev/null','-o','StrictHostKeyChecking=no','-p%s'%self._port, '-lroot', '-i%s'%id_rsa, '127.0.0.1'] 
         self._scpksargs = [ '/usr/bin/scp', '-o','UserKnownHostsFile=/dev/null','-o','StrictHostKeyChecking=no','-P%s'%self._port, '-i%s'%id_rsa]
-        self._imagecreate = ['/usr/bin/qemu-img', 'create', '-b', base_img ,'-o','preallocation=metadata', '-o', 'cluster_size=2048', '-f','qcow2', "%s"%self._kvmimage]        
-        self._cachecreate = ['/usr/bin/qemu-img', 'create', '-f','raw', self._cacheimage, '3G']
-        self._kvmargs = ['/usr/bin/qemu-kvm']        
+        self._imagecreate = ['/usr/bin/qemu-img', 'create', '-b', base_img ,'-o','preallocation=metadata', '-o', 'cluster_size=2048', '-f','qcow2', "%s"%self._kvmimage]
+        #self._cachecreate = ['/usr/bin/qemu-img', 'create', '-f','raw', self._cacheimage, '3G']
+        self._kvmargs = ['/usr/bin/qemu-kvm']
         self._kvmargs.append('-nographic')
+        self._kvmargs.append('-m')
+        self._kvmargs.append('256M')
         self._kvmargs.append('-net')
-        self._kvmargs.append('nic,model=virtio')        
+        self._kvmargs.append('nic,model=virtio')
         self._kvmargs.append('-net')
-        self._kvmargs.append('user,hostfwd=tcp:127.0.0.1:%s-:22'%self._port)        
+        self._kvmargs.append('user,hostfwd=tcp:127.0.0.1:%s-:22'%self._port)
         self._kvmargs.append('-daemonize')
         self._kvmargs.append('-drive')
         self._kvmargs.append(str('file='+self._kvmimage+',index=0,if=virtio'))#,index=0,media=disk'))
         #self._kvmargs.append('-drive')
-        #self._kvmargs.append(str('file='+self._cacheimage+',index=1,media=disk'))        
+        #self._kvmargs.append(str('file='+self._cacheimage+',index=1,media=disk'))
         
         self._micargs = ['mic-image-creator', '-d', '-v']
         self._micargs.append('--config='+self._tmpname)
@@ -99,7 +101,7 @@ class ImageWorker(object):
         data = json.dumps(datadict)
         if self._amqp_chan:
             msg = amqp.Message(data)
-            self._amqp_chan.basic_publish(msg, exchange="django_result_exchange", routing_key="status") 
+            self._amqp_chan.basic_publish(msg, exchange="django_result_exchange", routing_key="status")
         if self._work_item:
             if "status" in datadict and datadict["status"] == "ERROR":
                 self._work_item.set_field("status", datadict['status'])
@@ -143,13 +145,13 @@ class ImageWorker(object):
                 datadict = {'status':"VIRTUAL MACHINE, IMAGE CREATION", "url":self._base_url_dir+self._id, 'id':self._id}
                 self._update_status(datadict)
                 print self._imagecreate
-                sub.check_call(self._imagecreate, shell=False, stdin=sub.PIPE, stdout=sub.PIPE, stderr=sub.PIPE)                        
+                sub.check_call(self._imagecreate, shell=False, stdin=sub.PIPE, stdout=sub.PIPE, stderr=sub.PIPE)
                 self._update_status(datadict)
-                print self._kvmargs                 
+                print self._kvmargs
                 self._kvmproc = sub.Popen(self._kvmargs, shell=False, stdin=sub.PIPE, stdout=sub.PIPE, stderr=sub.PIPE)
                 datadict["status"] = "VIRTUAL MACHINE, WAITING FOR VM"
                 self._update_status(datadict)
-                time.sleep(45)                        
+                time.sleep(20)
                 datadict["status"] = "VIRTUAL MACHINE, RUNNING MIC2"
                 print datadict
                  
@@ -161,9 +163,11 @@ class ImageWorker(object):
                     for micarg in mic_args.split(','):
                         sshargs.append(micarg)
                 mic2confargs = ['/etc/mic2/mic2.conf','root@127.0.0.1:/etc/mic2/']
-                self._append_to_base_command_and_run(self._scpksargs, mic2confargs)                
-                mkdirargs = ['mkdir', '-p', self._dir]                
-                self._append_to_base_command_and_run(self._sshargs, mkdirargs)         
+                self._append_to_base_command_and_run(self._scpksargs, mic2confargs)
+                proxyconfargs = ['/etc/sysconfig/proxy','root@127.0.0.1:/etc/sysconfig/']
+                self._append_to_base_command_and_run(self._scpksargs, proxyconfargs)
+                mkdirargs = ['mkdir', '-p', self._dir]
+                self._append_to_base_command_and_run(self._sshargs, mkdirargs)
                 toargs = [self._tmpname, "root@127.0.0.1:"+self._dir+"/"]
                 self._append_to_base_command_and_run(self._scpksargs, toargs)
                 if mic_args:
@@ -172,15 +176,15 @@ class ImageWorker(object):
                         custom_args.append(arg)
                     self._append_to_base_command_and_run(self._sshargs, custom_args,verbose=True)
                 else:
-                    self._append_to_base_command_and_run(self._sshargs, self._micargs, verbose=True) 
+                    self._append_to_base_command_and_run(self._sshargs, self._micargs, verbose=True)
                 
                 fromargs = ['-r',"root@127.0.0.1:"+self._dir+'/*', self._dir+'/']
                 self._append_to_base_command_and_run(self._scpksargs, fromargs, verbose=True)
                 datadict["status"] = "VIRTUAL MACHINE, COPYING IMAGE"
-                self._update_status(datadict)           
+                self._update_status(datadict)
                 self._post_copying()
                 #if post:
-                #    post_toargs = [post, "root@127.0.0.1:"+post]                    
+                #    post_toargs = [post, "root@127.0.0.1:"+post]
                 #    self._append_to_base_command_and_run(self._scpksargs, post_toargs,verbose=True)
                 #    self._append_to_base_command_and_run(self._sshargs, post,verbose=True)
                 data = {'status':"DONE", "url":self._base_url_dir+self._id, 'id':self._id,'image':self._image, "arch":self._arch, "name":self._tmpname}
@@ -190,20 +194,21 @@ class ImageWorker(object):
                 print "error %s"%err
                 error = {'status':"ERROR","error":"%s"%err, 'id':str(self._id), 'url':self._base_url_dir+self._id, "arch": self._arch, "name":self._tmpname}
                 self._update_status(error)
-            self._append_to_base_command_and_run(self._sshargs,
-                                                 ['shutdown', 'now'],
-                                                 verbose=True)
+            try:
+                self._append_to_base_command_and_run(self._sshargs, ['poweroff', '-f'], verbose=True)
+            except:
+                pass
             os.remove(self._kvmimage)
-            sys.stdout.flush() 
-            return   
+            sys.stdout.flush()
+            return
         else:
             try:
-                datadict = {'status':"RUNNING MIC2", "url":self._base_url_dir+self._id, 'id':self._id}                
+                datadict = {'status':"RUNNING MIC2", "url":self._base_url_dir+self._id, 'id':self._id}
                 self._update_status(datadict)
                 if mic_args:
                     self._append_to_base_command_and_run(self._micargs, [''], verbose=True)
                 else:
-                    self._append_to_base_command_and_run(self._micargs, mic_args,verbose=True)                 
+                    self._append_to_base_command_and_run(self._micargs, mic_args,verbose=True)
                 self._post_copying()
                 datadict["image"] = self._image
                 datadict['status'] = "DONE"
@@ -212,7 +217,7 @@ class ImageWorker(object):
             except Exception,err:
                 print "error %s"%err
                 error = {'status':"ERROR","error":"%s"%err, 'id':str(self._id), 'url':self._base_url_dir+self._id}
-                self._update_status(error)  
-                sys.stdout.flush()              
-                return 
+                self._update_status(error)
+                sys.stdout.flush()
+                return
         

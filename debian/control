@@ -20,13 +20,6 @@ XB-Python-Version: ${python:Versions}
 Description: image creation service for MeeGo related products
  This package provides a django based web interface for imager. It can work with a standalone imager installation communicating over AMQP, or an installation that is part of BOSS.
 
-Package: img-amqp
-Architecture: all
-Depends: ${python:Depends}, ${misc:Depends}, python-pykickstart, python-amqplib, img-core
-XB-Python-Version: ${python:Versions}
-Description: image creation service for MeeGo related products
- This package provides the imager client components that communicate over AMQP with the worker to build images using mic2.
-
 Package: img-boss
 Architecture: all
 Depends: ${python:Depends}, ${misc:Depends}, python-pykickstart, python-ruote-amqp-pyclient, python-air, img-core

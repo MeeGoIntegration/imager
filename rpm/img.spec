@@ -50,19 +50,6 @@ Summary: Image creation service for MeeGo related products, django web interface
 %description -n img-web
 This package provides a django based web interface for imager. It can work with a standalone imager installation communicating over AMQP, or an installation that is part of BOSS.
 
-%package -n img-amqp
-Group: Applications/Engineering
-BuildRequires: python >= 2.5.0
-BuildRequires: python-setuptools
-Requires: python >= 2.5.0
-Requires: pykickstart
-Requires: python-amqplib
-Requires: img-core
-Requires: python-simplejson
-Summary: Image creation service for MeeGo related products, raw AMQP
-%description -n img-amqp
-This package provides the imager client components that communicate over AMQP with the worker to build images using mic2
-
 %package -n img-boss
 Group: Applications/Engineering
 BuildRequires: python >= 2.5.0
@@ -110,12 +97,6 @@ rm -rf %{buildroot}
 %{_datadir}/img_web
 %{_sysconfdir}/init.d/img-web
 /var/lib/img
-
-%files -n img-amqp
-%defattr(-,root,root,-)
-%{_bindir}/build_image.py
-%{_bindir}/img_client.py
-%{_sysconfdir}/init.d/img-amqp
 
 %files -n img-boss
 %defattr(-,root,root,-)

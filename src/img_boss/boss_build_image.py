@@ -18,8 +18,6 @@ import os, sys, traceback, ConfigParser, optparse, io, pwd, grp
 from tempfile import TemporaryFile, NamedTemporaryFile, mkdtemp
 import daemon
 
-from  RuoteAMQP.workitem import Workitem
-from  RuoteAMQP.participant import Participant
 import random
 from img.worker import ImageWorker
 from img.common import mic2
@@ -27,7 +25,7 @@ try:
      import simplejson as json
 except ImportError:
      import json
-
+from SkyNET import (WorkItemCtrl, ParticipantCtrl, Workitem)
 
 
 
@@ -56,15 +54,8 @@ use_kvm = yes
 mic_opts =
 """ % ( participant_name, participant_name )
 
-parser = optparse.OptionParser()
-parser.add_option("-c", "--config", dest="filename",
-                  help="Read configuration from CFILE", metavar="CFILE")
-parser.add_option("-n", "--num_worker", dest="num",
-                  help="Number for this worker", metavar="NUM")
-(options, args) = parser.parse_args()
-
 try:
-    conf = open(options.filename)
+    conf = open('/etc/imager/img.conf')
 except:
     # Fallback
     conf = io.BytesIO(defaultconf)
@@ -73,14 +64,6 @@ config = ConfigParser.ConfigParser()
 config.readfp(conf)
 conf.close()
 
-amqp_vhost = config.get('boss', 'amqp_vhost')
-amqp_pwd = config.get('boss', 'amqp_pwd')
-amqp_user = config.get('boss', 'amqp_user')
-amqp_host = config.get('boss', 'amqp_host')
-d = config.get(participant_name, 'daemon')
-daemonize = False
-if d == "Yes":
-    daemonize = True
 
 config_logfile = config.get(participant_name, 'logfile')
 num = options.num if options.num else '0'
@@ -102,19 +85,30 @@ if not os.geteuid()==0:
     sys.exit("\nOnly root can run this script\n")
 if not os.path.exists('/dev/kvm') and use_kvm == "yes":
     sys.exit("\nYou must enable KVM kernel module\n")
-    
-class MICParticipant(Participant):    
-    def consume(self):
-        try:            
-            wi = self.workitem
-            fields = wi.fields()
-            email = wi.lookup('email')
-            kickstart = wi.lookup('kickstart')
-            iid = wi.lookup('id')
-            itype = wi.lookup('type')
-            name = wi.lookup('name')
-            release = wi.lookup('release')
-            arch = wi.lookup('arch')
+
+class ParticipantHandler(object):
+    """ Participant class as defined by the SkyNET API """
+
+    def __init__(self):
+        pass
+
+    def handle_wi_control(self, ctrl):
+        """ job control thread """
+        pass
+
+    def handle_lifecycle_control(self, ctrl):
+        pass
+
+    def handle_wi(self, wid):
+        try:
+            wi = wid.fields
+            email = wi.email
+            kickstart = wi.kickstart
+            iid = wi.id
+            itype = wi.type
+            name = wi.name
+            release = wi.release
+            arch = wi.arch
             print "Workitem: "
             print json.dumps(wi.to_h())
             prefix="requests"
@@ -122,40 +116,19 @@ class MICParticipant(Participant):
               prefix = fields["prefix"]
             if kickstart:
                 mic2(iid, name, itype,  email, kickstart, release, arch, dir_prefix=prefix, work_item=wi)
-            msg = self.workitem.lookup('msg') if 'msg' in self.workitem.fields() else []
-            msg.append('Test image build result was %s, details can be viewed here: %s ' % (wi.lookup('status'), wi.lookup('url')))
-            self.workitem.set_field('msg', msg)
+            msg = wi.msg if 'msg' in wi else []
+            msg.append('Test image build result was %s, details can be viewed here: %s ' % (wi.status, wi.url))
+            wi.msg = msg
             result = True
         except Exception , error:            
             print error
-            msg = self.workitem.lookup('msg') if 'msg' in self.workitem.fields() else []
+            msg = wi.msg if 'msg' in wid.fields else []
             msg.append('Test image build result was FAILED, error was : %s ' % (error))
-            self.workitem.set_field('msg', msg)
+            wi.msg = msg
             traceback.print_exc(file=sys.stdout)
-            wi.set_field("status", "FAILED")
+            wi.status = "FAILED"
             result = False
         sys.stdout.flush()
-        wi.set_result(result)
+        wid.set_result(result)
 
-def main():
-    print "Image building participant running"
-    # Create an instance
-    p = MICParticipant(ruote_queue=participant_name, amqp_host=amqp_host,  amqp_user=amqp_user, amqp_pass=amqp_pwd, amqp_vhost=amqp_vhost)
-    # Register with BOSS
-    p.register(participant_name, {'queue':participant_name})
-    # Enter event loop
-    p.run()
-
-if __name__ == "__main__":
-    if daemonize:
-        log = open(config_logfile,'a+')
-        pidf = open(config_pidfile,'a+')
-        os.chown(config_logfile,int(uid),int(gid))
-        os.chown(config_pidfile,int(uid),int(gid))
-        with daemon.DaemonContext(stdout=log, stderr=log, uid=uid, gid=gid, files_preserve=[pidf]):
-            pidf.write(str(os.getpid()))
-            pidf.close()
-            main()
-    else:
-        main()
 

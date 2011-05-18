@@ -49,7 +49,18 @@ base_img = os.path.join(img_home, 'base.img')
 class ImageWorker(object):
     def _getport(self):
         return random.randint(49152, 65535)
-    def __init__(self, id, tmpname, type, logfile, dir, port=2222, chan=None, work_item=None, name=None, release=None, arch='i686', dir_prefix="unknown"):
+    def __init__(self, \
+        id, \
+        tmpname, \
+        type, \
+        logfile, \
+        dir, \
+        port=2222, \
+        name=None, \
+        release=None, \
+        arch='i686', \
+        dir_prefix="unknown"\
+        ):
         print "init"
         sys.stdout.flush()
         self._tmpname = tmpname
@@ -63,14 +74,40 @@ class ImageWorker(object):
         self._release = release
         self._name = name
         self._port = self._getport()
-        self._work_item = work_item
-        self._amqp_chan = chan        
-        self._kvmimage = os.path.join(img_tmp, 'overlay-%s-port-%s'%(self._id, self._port))
+        self._kvmimage = os.path.join(img_tmp, 
+                'overlay-%s-port-%s' % (self._id, self._port))
         self._cacheimage = os.path.join(img_tmp, 'cache-image')#%self._id
-        self._sshargs = ['/usr/bin/ssh','-o','ConnectTimeout=60', '-o', 'ConnectionAttempts=4','-o','UserKnownHostsFile=/dev/null','-o','StrictHostKeyChecking=no','-p%s'%self._port, '-lroot', '-i%s'%id_rsa, '127.0.0.1'] 
-        self._scpksargs = [ '/usr/bin/scp', '-o','UserKnownHostsFile=/dev/null','-o','StrictHostKeyChecking=no','-P%s'%self._port, '-i%s'%id_rsa]
-        self._imagecreate = ['/usr/bin/qemu-img', 'create', '-b', base_img ,'-o','preallocation=metadata', '-o', 'cluster_size=2048', '-f','qcow2', "%s"%self._kvmimage]
-        #self._cachecreate = ['/usr/bin/qemu-img', 'create', '-f','raw', self._cacheimage, '3G']
+        self._sshargs = [ '/usr/bin/ssh',\
+                '-o',\
+                'ConnectTimeout=60', \
+                '-o', \
+                'ConnectionAttempts=4', \
+                '-o', \
+                'UserKnownHostsFile=/dev/null',\
+                '-o', \
+                'StrictHostKeyChecking=no', \
+                '-p%s'%self._port, \
+                '-lroot', \
+                '-i%s'%id_rsa, \
+                '127.0.0.1' ] 
+        self._scpksargs = [ '/usr/bin/scp', \
+        '-o', \
+        'UserKnownHostsFile=/dev/null', \
+        '-o', \
+        'StrictHostKeyChecking=no', \
+        '-P%s'%self._port, \
+        '-i%s'%id_rsa]
+        self._imagecreate = ['/usr/bin/qemu-img', \
+        'create', \
+        '-b', \
+        base_img ,\
+        '-o', \
+        'preallocation=metadata', \
+        '-o', \
+        'cluster_size=2048', \
+        '-f', \
+        'qcow2', \
+        "%s"%self._kvmimage]
         self._kvmargs = ['/usr/bin/qemu-kvm']
         self._kvmargs.append('-nographic')
         self._kvmargs.append('-m')
@@ -78,13 +115,10 @@ class ImageWorker(object):
         self._kvmargs.append('-net')
         self._kvmargs.append('nic,model=virtio')
         self._kvmargs.append('-net')
-        self._kvmargs.append('user,hostfwd=tcp:127.0.0.1:%s-:22'%self._port)
+        self._kvmargs.append('user,hostfwd=tcp:127.0.0.1:%s-:22' % self._port)
         self._kvmargs.append('-daemonize')
         self._kvmargs.append('-drive')
-        self._kvmargs.append(str('file='+self._kvmimage+',index=0,if=virtio'))#,index=0,media=disk'))
-        #self._kvmargs.append('-drive')
-        #self._kvmargs.append(str('file='+self._cacheimage+',index=1,media=disk'))
-        
+        self._kvmargs.append(str('file=' + self._kvmimage + ',index=0,if=virtio'))
         self._micargs = ['mic-image-creator', '-d', '-v']
         self._micargs.append('--config='+self._tmpname)
         self._micargs.append('--format='+self._type)
@@ -104,33 +138,17 @@ class ImageWorker(object):
             self._imagecreate.insert(0,'/usr/bin/sudo')
             self._imagecreate.insert(1,'-n')
     def _update_status(self, datadict):
-        data = json.dumps(datadict)
-        if self._amqp_chan:
-            msg = amqp.Message(data)
-            self._amqp_chan.basic_publish(msg, exchange="django_result_exchange", routing_key="status")
-        if self._work_item:
-            if "status" in datadict and datadict["status"] == "ERROR":
-                self._work_item.set_field("status", datadict['status'])
-            if "url" in datadict:
-                self._work_item.set_field("url", datadict['url'])
-            if "error" in datadict:
-                self._work_item.set_field("error", datadict['error'])
-                self._work_item.set_result(None)
-            if "image" in datadict:
-                self._work_item.set_field("image", datadict['image'])
-                self._work_item.set_result(True)
-            if "log" in datadict:
-                self._work_item.set_field("log", datadict['log'])
+        pass
     def _post_copying(self):
         fmap = {}
-        for path,dirs,files in os.walk(self._dir):    
+        for path, dirs, files in os.walk(self._dir):    
             for file_ in files:
                 fullpath = os.path.join(path,file_)
                 size = int(os.path.getsize(fullpath))
                 fmap[fullpath] = size
         items = fmap.items()
         # Map back the items and sort using size, largest will be the last
-        backitems = [ [v[1],v[0]] for v in items]
+        backitems = [ [v[1], v[0]] for v in items]
         backitems.sort()
         sizesortedlist=[ backitems[i][1] for i in range(0,len(backitems))]
         # Its a path, don't worry
@@ -148,20 +166,11 @@ class ImageWorker(object):
     def build(self):
         if use_kvm == "yes" and os.path.exists('/dev/kvm'):
             try:
-                datadict = {'status':"VIRTUAL MACHINE, IMAGE CREATION", "url":self._base_url_dir+self._id, 'id':self._id}
-                self._update_status(datadict)
                 print self._imagecreate
                 sub.check_call(self._imagecreate, shell=False, stdin=sub.PIPE, stdout=sub.PIPE, stderr=sub.PIPE)
-                self._update_status(datadict)
                 print self._kvmargs
                 self._kvmproc = sub.Popen(self._kvmargs, shell=False, stdin=sub.PIPE, stdout=sub.PIPE, stderr=sub.PIPE)
-                datadict["status"] = "VIRTUAL MACHINE, WAITING FOR VM"
-                self._update_status(datadict)
                 time.sleep(20)
-                datadict["status"] = "VIRTUAL MACHINE, RUNNING MIC2"
-                print datadict
-                 
-                self._update_status(datadict)
                 sshargs = copy.copy(self._sshargs)
                 for arg in self._micargs:
                     sshargs.append(arg)
@@ -183,24 +192,17 @@ class ImageWorker(object):
                     self._append_to_base_command_and_run(self._sshargs, custom_args,verbose=True)
                 else:
                     self._append_to_base_command_and_run(self._sshargs, self._micargs, verbose=True)
-                
                 fromargs = ['-r',"root@127.0.0.1:"+self._dir+'/*', self._dir+'/']
                 self._append_to_base_command_and_run(self._scpksargs, fromargs, verbose=True)
-                datadict["status"] = "VIRTUAL MACHINE, COPYING IMAGE"
-                self._update_status(datadict)
                 self._post_copying()
                 #if post:
                 #    post_toargs = [post, "root@127.0.0.1:"+post]
                 #    self._append_to_base_command_and_run(self._scpksargs, post_toargs,verbose=True)
                 #    self._append_to_base_command_and_run(self._sshargs, post,verbose=True)
-                data = {'status':"DONE", "url":self._base_url_dir+self._id, 'id':self._id,'image':self._image, "arch":self._arch, "name":self._tmpname}
-                self._update_status(data)  
                 sys.stdout.flush() 
                 return True
             except Exception,err:
                 print "error %s"%err
-                error = {'status':"ERROR","error":"%s"%err, 'id':str(self._id), 'url':self._base_url_dir+self._id, "arch": self._arch, "name":self._tmpname}
-                self._update_status(error)
                 return False
             try:
                 self._append_to_base_command_and_run(self._sshargs, ['poweroff', '-f'], verbose=True)
@@ -211,25 +213,16 @@ class ImageWorker(object):
             return
         elif use_kvm=='no':
             try:
-                datadict = {'status':"RUNNING MIC2", "url":self._base_url_dir+self._id, 'id':self._id}
-                self._update_status(datadict)
                 if mic_args:
                     self._append_to_base_command_and_run(self._micargs, [''], verbose=True)
                 else:
                     self._append_to_base_command_and_run(self._micargs, mic_args,verbose=True)
                 self._post_copying()
-                datadict["image"] = self._image
-                datadict['status'] = "DONE"
-                self._update_status(datadict)
                 sys.stdout.flush()
                 return True
             except Exception,err:
                 print "error %s"%err
-                error = {'status':"ERROR","error":"%s"%err, 'id':str(self._id), 'url':self._base_url_dir+self._id}
-                self._update_status(error)
                 sys.stdout.flush()
                 return False
         else:
-            error = {'status':'ERROR, NO KVM MODULES LOADED AND KVM DEVICE MISSING', 'id':str(self._id)}
             return False
-        

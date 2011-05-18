@@ -40,8 +40,8 @@ class ParticipantHandler(object):
             f.msg = []
         email = f.email
         kickstart = f.kickstart
-        iid = f.id
-        itype = f.type
+        iid = f.iid
+        itype = f.itype
         name = f.name
         release = f.release
         archs = f.archs

@@ -1,148 +1,98 @@
 #!/usr/bin/python
+#~ Copyright (C) 2010 Nokia Corporation and/or its subsidiary(-ies).
+#~ Contact: Ramez Hanna <ramez.hanna@nokia.com>
+#~ This program is free software: you can redistribute it and/or modify
+#~ it under the terms of the GNU General Public License as published by
+#~ the Free Software Foundation, either version 3 of the License, or
+#~ (at your option) any later version.
 
- 
-from  RuoteAMQP.workitem import Workitem
-from  RuoteAMQP.participant import Participant
-try:
-     import json
-except ImportError:
-     import simplejson as json
-import time
-import os, sys, traceback, ConfigParser, optparse, io, pwd, grp, tempfile
-import daemon
+#~ This program is distributed in the hope that it will be useful,
+#~ but WITHOUT ANY WARRANTY; without even the implied warranty of
+#~ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#~ GNU General Public License for more details.
+
+#~ You should have received a copy of the GNU General Public License
+#~ along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+import os, time, tempfile
 from img.common import build_kickstart
-participant_name = "build_ks"
 
-# Fallback configuration. If you need to customize it, copy it somewhere 
-# ( ideally to your system's configuration directory ), modify it and 
-# pass it with the -c option
-defaultconf = """[boss]
-amqp_host = 127.0.0.1:5672
-amqp_user = boss
-amqp_pwd = boss
-amqp_vhost = boss
-[%s]
-daemon = Yes 
-logfile = /var/log/%s.log
-runas_user = nobody
-runas_group = nogroup
-ksstore = /srv/BOSS/ksstore
-reposerver = http://download.meego.com
-""" % ( participant_name, participant_name ) 
+class ParticipantHandler(object):
+    """ Participant class as defined by the SkyNET API """
+    def __init__(self):
+        self.reposerver = ""
+        self.ksstore = ""
 
-parser = optparse.OptionParser()
-parser.add_option("-c", "--config", dest="filename", 
-                  help="read configuration from CFILE", metavar="CFILE")
-(options, args) = parser.parse_args()
+    def handle_wi_control(self, ctrl):
+        """ job control thread """
+        pass
 
-try:
-    conf = open(options.filename)
-except:
-    # Fallback
-    conf = io.BytesIO(defaultconf)
+    def handle_lifecycle_control(self, ctrl):
+        """ participant control thread """
+        if ctrl.message == "start":
+            self.reposerver = ctrl.config.get("build_ks", "reposerver")
+            self.ksstore = ctrl.config.get("build_ks", "ksstore")
 
-config = ConfigParser.ConfigParser()
-config.readfp(conf)
-conf.close()
+    def handle_wi(self, wid):
+        # We may want to examine the fields structure
+        if wid.fields.debug_dump or wid.params.debug_dump:
+            print wid.dump()
 
-amqp_vhost = config.get('boss', 'amqp_vhost')
-amqp_pwd = config.get('boss', 'amqp_pwd')
-amqp_user = config.get('boss', 'amqp_user')
-amqp_host = config.get('boss', 'amqp_host')
-d = config.get(participant_name, 'daemon')
-daemonize = False
-if d == "Yes":
-    daemonize = True
+        wid.result = False
+        f = wid.fields
+        if not f.msg:
+            f.msg = []
+        if not f.ksfile or not f.kickstart:
+            f.__error__ = "One of the mandatory fields: kickstart or ksfile"\
+                          " does not exist."
+            f.msg.append(f.__error__)
+            raise RuntimeError("Missing mandatory field")
 
-logfile = config.get(participant_name, 'logfile')
-runas_user = config.get(participant_name, 'runas_user')
-runas_group = config.get(participant_name, 'runas_group')
-uid = pwd.getpwnam(runas_user)[2]
-gid = grp.getgrnam(runas_group)[2]
+        projects = []
+        if f.project and f.repository:
+            project = f.project
+            repo = f.repository
+            project = project.replace(":", ":/")
+            repo = repo.replace(":", ":/")
+            url = "%s/%s/%s" % (self.reposerver, project, repo)
+            projects = [ url ]
 
-ksstore = config.get(participant_name, "ksstore")
-reposerver = config.get(participant_name, "reposerver")
+        packages = []
+        if wid.params.packages_from :
+            packages = f.as_dict()[wid.params.packages_from]
+        elif f.packages:
+            packages = f.packages
 
+        remove = False
+        ksfile = ""
 
+        if f.ksfile:
+            ksfile = os.path.join(self.ksstore, f.ksfile)
+        elif f.kickstart:
+            kstemplate = tempfile.NamedTemporaryFile(delete=False)
+            kstemplate.write(f.kickstart)
+            kstemplate.close()
+            ksfile = kstemplate.name
+            remove = ksfile
 
-packages= {}
-class KickstartBuilderParticipant(Participant):    
-    def consume(self):
         try:
-            wi = self.workitem
-            print json.dumps(wi.to_h(), sort_keys=True, indent=4)
-            fields = wi.fields()
-            params = wi.params()
-
-            projects = []
-            if "project" in fields.keys() and "repo" in fields.keys():
-              project = fields["project"] 
-              repo = fields["repository"]
-              project_uri = project.replace(":", ":/")
-              repo = repo.replace(":", ":/")
-              base_url = reposerver+'/'+project_uri+'/'+repo
-              projects = [ base_url ]
-
-            packages = []
-            if 'from' in params.keys():
-              packages = fields[params['from']]
-            elif 'packages' in fields.keys():
-              packages = fields["packages"]
-            
-            print packages
-            sys.stdout.flush()
-
-            if "ksfile" in fields.keys():
-              ksfile = os.path.join(ksstore, fields["ksfile"])
-              ks = build_kickstart(ksfile, packages=packages, projects=projects)
-            elif "kickstart" in fields.keys():
-              kstemplate = tempfile.NamedTemporaryFile(delete=False)
-              kstemplate.write(fields["kickstart"])
-              kstemplate.close()
-              ksfile = kstemplate.name
-              ks = build_kickstart(ksfile, packages=packages, projects=projects)
-              os.remove(ksfile)
-
-            wi.set_field("kickstart", str(ks.handler))
-            if "rid" in fields.keys():
-              wi.set_field("id", str(fields['rid']) + '-' + time.strftime('%Y%m%d-%H%M%S'))
-            else:
-              wi.set_field("id", time.strftime('%Y%m%d-%H%M%S'))
-
-            if not "name" in fields.keys():
-              wi.set_field("name", os.path.basename(ksfile)[0:-3])
-
-            msg = wi.lookup("msg") if "msg" in wi.fields() else []
-            msg.append("Kickstart handled successfully.")
-            wi.set_field("msg", msg)
-
-            print json.dumps(wi.to_h(), sort_keys=True, indent=4)
-            result = True
+            ks = build_kickstart(ksfile, packages=packages, projects=projects)
+            f.kickstart = str(ks.handler)
         except Exception, error:
-            traceback.print_exc(file=sys.stdout)
-            sys.stdout.flush()
-            result = False
-            msg = wi.lookup("msg") if "msg" in wi.fields() else []
-            msg.append("Failed to handle kickstart. %s" % error)
-            wi.set_field("msg", msg)
-            wi.set_field("status", "FAILED")
-        sys.stdout.flush()
-        wi.set_result(result)
-  
-def main():
-    print "Kickstart building participant running"
-    sys.stdout.flush()
-    # Create an instance
-    p = KickstartBuilderParticipant(ruote_queue=participant_name, amqp_host=amqp_host,  amqp_user=amqp_user, amqp_pass=amqp_pwd, amqp_vhost=amqp_vhost)
-    # Register with BOSS
-    p.register(participant_name, {'queue':participant_name})
-    # Enter event loop
-    p.run()               
+            f.__error__ = "Failed to handle kickstart. %s" % error
+            f.msg.append(f.__error__)
+            raise
+        finally:
+            if remove:
+                os.remove(remove)
 
-if __name__ == "__main__":
-    if daemonize:
-        log = open(logfile,'a+')
-        with daemon.DaemonContext(stdout=log, stderr=log, uid=uid, gid=gid):
-            main()
-    else:
-        main() 
+        if f.ev.rid:
+            f.iid = "%s-%s" % (str(f.ev.rid), time.strftime('%Y%m%d-%H%M%S'))
+        else:
+            f.iid = time.strftime('%Y%m%d-%H%M%S')
+
+        if not f.name:
+            f.name = os.path.basename(ksfile)[0:-3]
+
+        f.msg.append("Kickstart handled successfully.")
+        wid.result = True

@@ -99,8 +99,10 @@ class ImageWorker(object):
             self._micargs.append('--release='+self._release)
         self._loopargs = []
         if use_sudo=='yes':
-            self._kvmargs.insert(0,'sudo -n')
-            self._imagecreate.insert(0,'sudo -n')
+            self._kvmargs.insert(0,'/usr/bin/sudo')
+            self._kvmargs.insert(1,'-n')
+            self._imagecreate.insert(0,'/usr/bin/sudo')
+            self._imagecreate.insert(1,'-n')
     def _update_status(self, datadict):
         data = json.dumps(datadict)
         if self._amqp_chan:
@@ -194,10 +196,12 @@ class ImageWorker(object):
                 data = {'status':"DONE", "url":self._base_url_dir+self._id, 'id':self._id,'image':self._image, "arch":self._arch, "name":self._tmpname}
                 self._update_status(data)  
                 sys.stdout.flush() 
+                return True
             except Exception,err:
                 print "error %s"%err
                 error = {'status':"ERROR","error":"%s"%err, 'id':str(self._id), 'url':self._base_url_dir+self._id, "arch": self._arch, "name":self._tmpname}
                 self._update_status(error)
+                return False
             try:
                 self._append_to_base_command_and_run(self._sshargs, ['poweroff', '-f'], verbose=True)
             except:
@@ -218,12 +222,14 @@ class ImageWorker(object):
                 datadict['status'] = "DONE"
                 self._update_status(datadict)
                 sys.stdout.flush()
+                return True
             except Exception,err:
                 print "error %s"%err
                 error = {'status':"ERROR","error":"%s"%err, 'id':str(self._id), 'url':self._base_url_dir+self._id}
                 self._update_status(error)
                 sys.stdout.flush()
-                return
+                return False
         else:
             error = {'status':'ERROR, NO KVM MODULES LOADED AND KVM DEVICE MISSING', 'id':str(self._id)}
+            return False
         

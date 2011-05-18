@@ -25,7 +25,8 @@ class ParticipantHandler(object):
 
     def handle_lifecycle_control(self, ctrl):
         """ participant control thread """
-        pass
+        if ctrl.message == "start":
+            self.reposerver = ctrl.config.get("build_image", "base_dir")
 
     def handle_wi(self, wid):
         # We may want to examine the fields structure
@@ -36,13 +37,13 @@ class ParticipantHandler(object):
         f = wid.fields
         if not f.msg:
             f.msg = []
-        email = f.email
         kickstart = f.kickstart
         iid = f.iid
         itype = f.itype
         name = f.name
         release = f.release
         archs = f.archs
+
         if not iid or not kickstart or not itype or not name or not archs:
             f.__error__ = "One of the mandatory fields: id, kickstart, type,"\
                           " name and archs does not exist."
@@ -57,8 +58,9 @@ class ParticipantHandler(object):
             for arch in archs:
                 if not arch:
                     raise RuntimeError("No archs defined")
-                status = mic2(iid, name, itype,  email, kickstart, release, 
-                              arch, dir_prefix=prefix, work_item=f)
+                status = mic2(iid, name, itype,  kickstart, release, 
+                              arch, base_dir=self.base_dir,
+                              dir_prefix=prefix, work_item=f)
                 if not status:
                     result = False
                     status = "failed"

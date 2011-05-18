@@ -4,22 +4,10 @@ Created on Oct 11, 2010
 @author: locusfwork
 '''
 import os
-import io
-import random
-import pwd, grp
-try:
-     import json
-except ImportError:
-     import simplejson as json
-from amqplib import client_0_8 as amqp
-from worker import ImageWorker
-import ConfigParser
 
+from worker import ImageWorker
 from urlparse import urlparse
 
-import pykickstart.commands as kscommands
-import pykickstart.constants as ksconstants
-import pykickstart.errors as kserrors
 import pykickstart.parser as ksparser
 import pykickstart.version as ksversion
 from pykickstart.handlers.control import commandMap
@@ -29,63 +17,52 @@ from mic.imgcreate.kscommands import desktop
 from mic.imgcreate.kscommands import moblinrepo
 from mic.imgcreate.kscommands import micboot
 
-conf = open("/etc/imager/img.conf")
-config = ConfigParser.ConfigParser()
-config.readfp(conf)
-conf.close()
+KSCLASS = ksversion.returnClassForVersion(version=ksversion.DEVEL)
 
-base_url = config.get('worker', 'base_url')
-base_dir = config.get('worker', 'base_dir')
-reposerver = config.get('worker','reposerver')
-using_version = ksversion.DEVEL
-commandMap[using_version]["desktop"] = desktop.Moblin_Desktop
-commandMap[using_version]["repo"] = moblinrepo.Moblin_Repo
-commandMap[using_version]["bootloader"] = micboot.Moblin_Bootloader
-dataMap[using_version]["RepoData"] = moblinrepo.Moblin_RepoData
-superclass = ksversion.returnClassForVersion(version=using_version)
-
-
-
-class KSHandlers(superclass):
-    def __init__(self, mapping={}):
-        superclass.__init__(self, mapping=commandMap[using_version])
+class KSHandlers(KSCLASS):
+    def __init__(self):
+        ver = ksversion.DEVEL
+        commandMap[ver]["desktop"] = desktop.Moblin_Desktop
+        commandMap[ver]["repo"] = moblinrepo.Moblin_Repo
+        commandMap[ver]["bootloader"] = micboot.Moblin_Bootloader
+        dataMap[ver]["RepoData"] = moblinrepo.Moblin_RepoData
+        KSCLASS.__init__(self, mapping=commandMap[ver])
     
-def build_kickstart(base_ks, packages=None, groups=None, projects=None):
+def build_kickstart(base_ks, packages=[], groups=[], projects=[]):
     ks = ksparser.KickstartParser(KSHandlers())
     ks.readKickstart(base_ks)
-    if packages:
-        ks.handler.packages.add(packages)
-    if groups:
-        ks.handler.packages.add(groups)
-    if projects:
-        for prj in projects:
-            name = urlparse(prj).path
-            name = name.replace(":/","_")
-            name = name.replace("/","_")
-            ks.handler.repo.repoList.append(moblinrepo.Moblin_RepoData(baseurl=prj, name=name))
-    return ks
+    ks.handler.packages.add(packages)
+    ks.handler.packages.add(groups)
+    for prj in projects:
+        name = urlparse(prj).path
+        name = name.replace(":/","_")
+        name = name.replace("/","_")
+        repo = moblinrepo.Moblin_RepoData(baseurl=prj, name=name)
+        ks.handler.repo.repoList.append(repo)
+    ks_txt = str(ks.handler)
+    return ks_txt
 
-def mic2(id, name,  type, email, kickstart, release, arch="i686", dir_prefix="unknown", work_item=None):
-    dir = "%s/%s/%s"%(base_dir, dir_prefix, id)
-    print dir
-    os.makedirs(dir, 0775)
-    
-    ksfilename = ""
-    ksfilename = dir+'/'+name+'.ks'
-    
-    tmp = open(ksfilename, mode='w+b')
-    print tmp.name   
-    tmpname = tmp.name
-    logfile_name = dir+'/'+name+".log"
-    tmp.write(kickstart)            
-    tmp.close()
-    os.chmod(tmpname, 0644)
-    file = base_url + '/' + dir_prefix + '/' + "%s"%id    
-    logfile = open(logfile_name,'w')
-    logurl = base_url + dir_prefix + '/' + id + '/' + os.path.split(logfile.name)[-1]
-    
-    
-                
-    worker = ImageWorker(id, tmpname, type, logfile, dir, work_item=work_item, chan=chan, name=name, release=release, arch=arch, dir_prefix=dir_prefix)
-    worker.build()
+def mic2(iid, name, itype, kickstart, release, arch,
+         base_dir="/tmp", dir_prefix="unknown"):
+    idir = os.path.join(base_dir, dir_prefix, iid)
+    os.makedirs(idir, 0775)
+
+    ksfile_name = os.path.join(idir, "%s.ks" % name)
+    ksfile = open(ksfile_name, mode='w+b')
+    ksfile.write(kickstart)
+    ksfile.close()
+
+    logfile_name = os.path.join(idir, "%s.log" % name)
+    logfile = open(logfile_name,'w+b')
+
+    os.chmod(ksfile_name, 0644)
+    os.chmod(logfile_name, 0644)
+
+    worker = ImageWorker(iid, ksfile_name, itype, logfile, idir,
+                         name=name, release=release, arch=arch,
+                         dir_prefix=dir_prefix)
+    result = worker.build()
+
     logfile.close()
+
+    return result

@@ -63,6 +63,12 @@ class ParticipantHandler(object):
         elif f.packages:
             packages = f.packages
 
+        groups = []
+        if wid.params.groups_from :
+            groups = f.as_dict()[wid.params.groups_from]
+        elif f.groups:
+            groups = f.groups
+
         remove = False
         ksfile = ""
 
@@ -76,8 +82,9 @@ class ParticipantHandler(object):
             remove = ksfile
 
         try:
-            ks = build_kickstart(ksfile, packages=packages, projects=projects)
-            f.kickstart = str(ks.handler)
+            ks = build_kickstart(ksfile, packages=packages, groups=groups,
+                                 projects=projects)
+            f.kickstart = ks
         except Exception, error:
             f.__error__ = "Failed to handle kickstart. %s" % error
             f.msg.append(f.__error__)

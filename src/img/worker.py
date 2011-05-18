@@ -205,7 +205,7 @@ class ImageWorker(object):
             os.remove(self._kvmimage)
             sys.stdout.flush()
             return
-        else if use_kvm=='no':
+        elif use_kvm=='no':
             try:
                 datadict = {'status':"RUNNING MIC2", "url":self._base_url_dir+self._id, 'id':self._id}
                 self._update_status(datadict)

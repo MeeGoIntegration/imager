@@ -14,25 +14,15 @@
 #~ You should have received a copy of the GNU General Public License
 #~ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-try:
-     import json
-except ImportError:
-     import simplejson as json
+import json
 import subprocess as sub
 from subprocess import CalledProcessError
-import os,  sys
-from tempfile import TemporaryFile, NamedTemporaryFile, mkdtemp
-import shutil
-import re
+import os, sys
 import time
 import random
 import copy
+from img.common import get_worker_config
 
-from amqplib import client_0_8 as amqp
-import ConfigParser
-
-config = ConfigParser.ConfigParser()
-config.read('/etc/imager/img.conf')
 base_url = config.get('worker', 'base_url')
 base_dir = config.get('worker', 'base_dir')
 post = config.get('worker', 'post_creation')
@@ -46,183 +36,228 @@ img_tmp = config.get('worker', 'img_tmp')
 id_rsa = os.path.join(img_home, 'id_rsa')
 base_img = os.path.join(img_home, 'base.img')
 
+def getport():
+    return random.randint(49152, 65535)
+
+def find_largest_file(indir):
+    fmap = {}
+    for path, dirs, files in os.walk(indir):    
+        for file_ in files:
+            fullpath = os.path.join(path, file_)
+            size = int(os.path.getsize(fullpath))
+            fmap[fullpath] = size
+    items = fmap.items()
+    # Map back the items and sort using size, largest will be the last
+    backitems = [ [v[1], v[0]] for v in items ]
+    backitems.sort()
+    sizesortedlist=[ backitems[i][1] for i in range(0,len(backitems)) ]
+    # Its a path, don't worry
+    largest_file = sizesortedlist[-1]
+
+    return largest_file
+
+class Commands(object):
+
+    def __init__(self):
+
+        self.port = getport()
+
+        self.sudobase = [
+                     'sudo', '-n'
+                   ]
+
+        self.overlaybase = [
+                        '/usr/bin/qemu-img', 'create', '-b',\
+                        img_conf.base_img, '-f', 'qcow2'
+                      ]
+
+        self.sopts = [ 
+                  '-lroot', '-i%s' % img_conf.id_rsa,
+                  '-o', 'ConnectTimeout=60',
+                  '-o', 'ConnectionAttempts=4',
+                  '-o', 'UserKnownHostsFile=/dev/null',
+                  '-o', 'StrictHostKeyChecking=no'
+                ]
+
+        self.sshbase = [ 
+                    '/usr/bin/ssh', 
+                    '-p%s' % port,
+                    '127.0.0.1'
+                  ]
+
+        self.scpbase = [ 
+                    '/usr/bin/scp',
+                    '-P%s' % port,
+                    '-r'
+                  ]
+
+        self.kvmbase = [
+                    '/usr/bin/qemu-kvm',
+                    '-nographic',
+                    '-daemonize',
+                    '-m', '256M',
+                    '-net', 'nic,model=virtio',
+                    '-net', 'user,hostfwd=tcp:127.0.0.1:%s-:22' % port,
+                    '-drive', 'index=0,if=virtio,file=%s' % self._kvmimage
+                  ]
+
+        self.micbase = [
+                    'mic-image-creator',
+                    '--config=%s' % self._tmpname,
+                    '--format=%s' % self._type,
+                    '--cache=%s' % mic_cache_dir,
+                  ]
+
+        if self._type == "fs":
+            self._micargs.append('--package=tar.gz')
+        if arch:
+            self._arch = arch
+            self._micargs.append('--arch='+arch)
+        if self._release:
+            self._micargs.append('--release='+self._release)
+        for arg in self._micargs:
+            sshargs.append(arg)
+        if mic_args:
+            for micarg in mic_args.split(','):
+                sshargs.append(micarg)
+        if mic_args:
+            custom_args = copy.copy(self._micargs)
+            for arg in mic_args.split(','):
+                custom_args.append(arg)
+
+    def run(self, command, verbose=False):
+        if verbose:
+            print command
+        if execute:
+            sub.check_call(command, shell=False, stdout=self._logfile, 
+                           stderr=self._logfile, stdin=sub.PIPE)
+
+    def scpto(self, source="", dest=""):
+        scp_comm = copy(self.scpbase)
+        scp_comm.extend(self.sopts)
+        scp_comm.append(source)
+        scp_comm.append("127.0.0.1:%s" % dest)
+        self.run(scp_comm)
+
+    def scpfrom(self, source="", dest=""):
+        scp_comm = copy(self.scpbase)
+        scp_comm.extend(self.sopts)
+        scp_comm.append("127.0.0.1:%s" % source)
+        scp_comm.append(dest)
+        self.run(scp_comm)
+
+    def ssh(self, command=""):
+        ssh_comm = copy(self.sshbase)
+        ssh_comm.extend(self.sopts)
+        ssh_comm.extend(command)
+        self.run(ssh_comm)
+
+    def overlaycreate(self, tmpoverlay):
+        overlay_comm = copy(self.overlaybase)
+        overlay_comm.append(tmpoverlay)
+        self.run(overlay_comm)
+
+    def runkvm(self):
+        kvm_comm = copy(self.kvmbase)
+        if use_sudo:
+            sudo = copy(self.sudobase)
+            kvm_comm = sudo.extend(kvm_comm)
+        self.run(kvm_comm)
+
+    def runmic(ssh=False):
+        mic_comm = copy(self.micbase)
+        if ssh:
+            self.ssh(mic_comm)
+        else:
+            if use_sudo:
+                sudo = copy(self.sudobase)
+                mic_comm = sudo.extend(mic_comm)
+            self.run(mic_comm)
+
+
+
 class ImageWorker(object):
-    def _getport(self):
-        return random.randint(49152, 65535)
-    def __init__(self, \
-        id, \
-        tmpname, \
-        type, \
-        logfile, \
-        dir, \
-        port=2222, \
-        name=None, \
-        release=None, \
-        arch='i686', \
-        dir_prefix="unknown"\
-        ):
-        print "init"
-        sys.stdout.flush()
+
+    def __init__(self, image_id=None, ksfile_name=None, image_type=None,
+                 logfile_name=None, image_dir=None, port=None,
+                 name=None, release=None, arch=None, dir_prefix=None):
+        
+        self.config = get_worker_config()
+        
+        self.commands = Commands()
+
         self._tmpname = tmpname
         self._type = type
         self._logfile = logfile
         self._dir = dir
         self._dir_prefix = dir_prefix
         self._base_url_dir = base_url + '/' + self._dir_prefix + '/'
-        self._id = id
+        self._image_id = image_id
         self._image =None
         self._release = release
         self._name = name
-        self._port = self._getport()
-        self._kvmimage = os.path.join(img_tmp, 
-                'overlay-%s-port-%s' % (self._id, self._port))
-        self._cacheimage = os.path.join(img_tmp, 'cache-image')#%self._id
-        self._sshargs = [ '/usr/bin/ssh',\
-                '-o',\
-                'ConnectTimeout=60', \
-                '-o', \
-                'ConnectionAttempts=4', \
-                '-o', \
-                'UserKnownHostsFile=/dev/null',\
-                '-o', \
-                'StrictHostKeyChecking=no', \
-                '-p%s'%self._port, \
-                '-lroot', \
-                '-i%s'%id_rsa, \
-                '127.0.0.1' ] 
-        self._scpksargs = [ '/usr/bin/scp', \
-        '-o', \
-        'UserKnownHostsFile=/dev/null', \
-        '-o', \
-        'StrictHostKeyChecking=no', \
-        '-P%s'%self._port, \
-        '-i%s'%id_rsa]
-        self._imagecreate = ['/usr/bin/qemu-img', \
-        'create', \
-        '-b', \
-        base_img ,\
-        '-o', \
-        'preallocation=metadata', \
-        '-o', \
-        'cluster_size=2048', \
-        '-f', \
-        'qcow2', \
-        "%s"%self._kvmimage]
-        self._kvmargs = ['/usr/bin/qemu-kvm']
-        self._kvmargs.append('-nographic')
-        self._kvmargs.append('-m')
-        self._kvmargs.append('256M')
-        self._kvmargs.append('-net')
-        self._kvmargs.append('nic,model=virtio')
-        self._kvmargs.append('-net')
-        self._kvmargs.append('user,hostfwd=tcp:127.0.0.1:%s-:22' % self._port)
-        self._kvmargs.append('-daemonize')
-        self._kvmargs.append('-drive')
-        self._kvmargs.append(str('file=' + self._kvmimage + ',index=0,if=virtio'))
-        self._micargs = ['mic-image-creator', '-d', '-v']
-        self._micargs.append('--config='+self._tmpname)
-        self._micargs.append('--format='+self._type)
-        if self._type == "fs":
-            self._micargs.append('--package=tar.gz')
-        self._micargs.append('--cache='+mic_cache_dir)
-        self._micargs.append('--outdir='+dir)
-        if arch:
-            self._arch = arch
-            self._micargs.append('--arch='+arch)
-        if self._release:
-            self._micargs.append('--release='+self._release)
-        self._loopargs = []
-        if use_sudo=='yes':
-            self._kvmargs.insert(0,'/usr/bin/sudo')
-            self._kvmargs.insert(1,'-n')
-            self._imagecreate.insert(0,'/usr/bin/sudo')
-            self._imagecreate.insert(1,'-n')
-    def _update_status(self, datadict):
-        pass
-    def _post_copying(self):
-        fmap = {}
-        for path, dirs, files in os.walk(self._dir):    
-            for file_ in files:
-                fullpath = os.path.join(path,file_)
-                size = int(os.path.getsize(fullpath))
-                fmap[fullpath] = size
-        items = fmap.items()
-        # Map back the items and sort using size, largest will be the last
-        backitems = [ [v[1], v[0]] for v in items]
-        backitems.sort()
-        sizesortedlist=[ backitems[i][1] for i in range(0,len(backitems))]
-        # Its a path, don't worry
-        largest_file = sizesortedlist[-1].split(self._dir)[-1]
-        self._image = self._base_url_dir+self._id+'/'+largest_file
-    def _append_to_base_command_and_run(self,base,command,execute=True,verbose=False):
-        copy_base = copy.copy(base)        
-        copy_base = copy_base + command
-        if verbose:
-            print copy_base
-            sys.stdout.flush()
-        if execute:
-            sub.check_call(copy_base, shell=False, stdout=self._logfile, stderr=self._logfile, stdin=sub.PIPE)
+
     
     def build(self):
-        if use_kvm == "yes" and os.path.exists('/dev/kvm'):
+
+        commands = Commands()
+
+        if self.config.use_kvm == "yes" and os.path.exists('/dev/kvm'):
             try:
-                print self._imagecreate
-                sub.check_call(self._imagecreate, shell=False, stdin=sub.PIPE, stdout=sub.PIPE, stderr=sub.PIPE)
-                print self._kvmargs
-                self._kvmproc = sub.Popen(self._kvmargs, shell=False, stdin=sub.PIPE, stdout=sub.PIPE, stderr=sub.PIPE)
+
+                kvmimage = os.path.join(self.config.img_tmp, 
+                                        'overlay-%s-port-%s' % (self._image_id, 
+                                                                self._port))
+                commands.overlaycreate(self._kvmimage)
+
+                commands.runkvm()
+
                 time.sleep(20)
-                sshargs = copy.copy(self._sshargs)
-                for arg in self._micargs:
-                    sshargs.append(arg)
-                if mic_args:
-                    for micarg in mic_args.split(','):
-                        sshargs.append(micarg)
-                mic2confargs = ['/etc/mic2/mic2.conf','root@127.0.0.1:/etc/mic2/']
-                self._append_to_base_command_and_run(self._scpksargs, mic2confargs)
-                proxyconfargs = ['/etc/sysconfig/proxy','root@127.0.0.1:/etc/sysconfig/']
-                self._append_to_base_command_and_run(self._scpksargs, proxyconfargs)
-                mkdirargs = ['mkdir', '-p', self._dir]
-                self._append_to_base_command_and_run(self._sshargs, mkdirargs)
-                toargs = [self._tmpname, "root@127.0.0.1:"+self._dir+"/"]
-                self._append_to_base_command_and_run(self._scpksargs, toargs)
-                if mic_args:
-                    custom_args = copy.copy(self._micargs)
-                    for arg in mic_args.split(','):
-                        custom_args.append(arg)
-                    self._append_to_base_command_and_run(self._sshargs, custom_args,verbose=True)
-                else:
-                    self._append_to_base_command_and_run(self._sshargs, self._micargs, verbose=True)
-                fromargs = ['-r',"root@127.0.0.1:"+self._dir+'/*', self._dir+'/']
-                self._append_to_base_command_and_run(self._scpksargs, fromargs, verbose=True)
-                self._post_copying()
-                #if post:
-                #    post_toargs = [post, "root@127.0.0.1:"+post]
-                #    self._append_to_base_command_and_run(self._scpksargs, post_toargs,verbose=True)
-                #    self._append_to_base_command_and_run(self._sshargs, post,verbose=True)
-                sys.stdout.flush() 
-                return True
-            except Exception,err:
+
+                commands.scpto(source='/etc/mic2/mic2.conf',
+                               dest='/etc/mic2/')
+
+                commands.scpto(source='/etc/sysconfig/proxy',
+                               dest='/etc/sysconfig/')
+
+                commands.ssh(['mkdir', '-p', self._dir])
+
+                commands.scpto(source=self._tmpname,
+                               dest=self._dir)
+
+                commands.runmic(ssh=True)
+
+                commands.scpfrom(source=self._dir+'/*',
+                                 dest=self._dir+'/')
+
+            except Exception, err:
                 print "error %s"%err
                 return False
+
+            finally:
+
+                try:
+                    commands.ssh(['poweroff', '-f'])
+                except:
+                    #FIXME: try -KILL using PID if set (where?)
+                    pass
+
+                os.remove(self._kvmimage)
+
+        elif not self.config.use_kvm == 'yes':
             try:
-                self._append_to_base_command_and_run(self._sshargs, ['poweroff', '-f'], verbose=True)
-            except:
-                pass
-            os.remove(self._kvmimage)
-            sys.stdout.flush()
-            return
-        elif use_kvm=='no':
-            try:
-                if mic_args:
-                    self._append_to_base_command_and_run(self._micargs, [''], verbose=True)
-                else:
-                    self._append_to_base_command_and_run(self._micargs, mic_args,verbose=True)
-                self._post_copying()
-                sys.stdout.flush()
-                return True
-            except Exception,err:
-                print "error %s"%err
-                sys.stdout.flush()
+
+                commands.runmic(ssh=False)
+
+            except Exception, err:
+
+                print "error %s" % err
                 return False
         else:
             return False
+
+    image_file = find_largest_file(base_dir)
+
+    self._image = self._base_url_dir+self._id+'/' + image_file
+
+    return True

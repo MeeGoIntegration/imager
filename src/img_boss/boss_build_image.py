@@ -15,8 +15,6 @@
 #~ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from img.common import mic2
-import json
-
 
 class ParticipantHandler(object):
     """ Participant class as defined by the SkyNET API """
@@ -55,13 +53,24 @@ class ParticipantHandler(object):
         if f.prefix and not f.prefix == "":
             prefix = f.prefix
         try:
+            result = True
             for arch in archs:
-                mic2(iid, name, itype,  email, kickstart, release, arch,
-                     dir_prefix=prefix, work_item=f)
-            f.msg.append("Image %s for arch %s build result was %s"\
-                         "files at: %s" % (name, arch, f.status, f.url))
-            wid.result = True
+                if not arch:
+                    raise RuntimeError("No archs defined")
+                status = mic2(iid, name, itype,  email, kickstart, release, 
+                              arch, dir_prefix=prefix, work_item=f)
+                if not status:
+                    result = False
+                    status = "failed"
+                else:
+                    status = "succeeded"
+
+                f.msg.append("Image %s build for arch %s build %s"\
+                             "files at: %s" % (name, arch, status, f.url))
+
+            wid.result = result
         except Exception:
-            f.msg.append('Image build FAILED')
+            f.__error__ = ('Image build FAILED')
+            f.msg.append(f.__error__)
             raise
 

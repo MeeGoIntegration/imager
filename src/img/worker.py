@@ -37,6 +37,7 @@ base_url = config.get('worker', 'base_url')
 base_dir = config.get('worker', 'base_dir')
 post = config.get('worker', 'post_creation')
 use_kvm = config.get('worker', 'use_kvm')
+use_sudo = config.get('worker', 'use_sudo')
 mic_args = config.get('worker', 'mic_opts')
 mic_cache_dir = config.get('worker', 'mic_cache_dir')
 img_home = config.get('worker', 'img_home')
@@ -97,6 +98,9 @@ class ImageWorker(object):
         if self._release:
             self._micargs.append('--release='+self._release)
         self._loopargs = []
+        if use_sudo=='yes':
+            self._kvmargs.insert(0,'sudo -n')
+            self._imagecreate.insert(0,'sudo -n')
     def _update_status(self, datadict):
         data = json.dumps(datadict)
         if self._amqp_chan:
@@ -140,7 +144,7 @@ class ImageWorker(object):
             sub.check_call(copy_base, shell=False, stdout=self._logfile, stderr=self._logfile, stdin=sub.PIPE)
     
     def build(self):
-        if use_kvm == "yes":
+        if use_kvm == "yes" and os.path.exists('/dev/kvm'):
             try:
                 datadict = {'status':"VIRTUAL MACHINE, IMAGE CREATION", "url":self._base_url_dir+self._id, 'id':self._id}
                 self._update_status(datadict)
@@ -201,7 +205,7 @@ class ImageWorker(object):
             os.remove(self._kvmimage)
             sys.stdout.flush()
             return
-        else:
+        else if use_kvm=='no':
             try:
                 datadict = {'status':"RUNNING MIC2", "url":self._base_url_dir+self._id, 'id':self._id}
                 self._update_status(datadict)
@@ -220,4 +224,6 @@ class ImageWorker(object):
                 self._update_status(error)
                 sys.stdout.flush()
                 return
+        else:
+            error = {'status':'ERROR, NO KVM MODULES LOADED AND KVM DEVICE MISSING', 'id':str(self._id)}
         

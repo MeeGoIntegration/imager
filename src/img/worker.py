@@ -87,7 +87,8 @@ class Commands(object):
                     '-m', '256M',
                     '-net', 'nic,model=virtio',
                     '-net', 'user,hostfwd=tcp:127.0.0.1:%s-:22' % self.port,
-                    '-drive', 'index=0,if=virtio,file=@KVMIMAGEFILE@'
+                    '-drive', 'index=0,if=virtio,media=disk,cache=writeback,' \
+                              'file=@KVMIMAGEFILE@'
                   ]
 
         self.micbase = [

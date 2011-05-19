@@ -149,10 +149,10 @@ class Commands(object):
         if job_args["image_type"] == "fs":
             mic_comm.append('--package=tar.gz')
 
-        if "release" in job_args.keys():
+        if "release" in job_args.keys() and job_args["release"]:
             mic_comm.append('--release=%s' % job_args["release"])
 
-        if "extra_opts" in job_args.keys():
+        if "extra_opts" in job_args.keys() and job_args["extra_opts"]:
             for opt in job_args["extra_opts"]:
                 mic_comm.append(opt)
 

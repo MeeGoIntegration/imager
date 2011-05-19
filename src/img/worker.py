@@ -137,7 +137,7 @@ class Commands(object):
             kvm_comm = sudo.extend(kvm_comm)
         self.run(kvm_comm)
 
-    def runmic(self, ssh=False, job_args=job_args):
+    def runmic(self, ssh=False, job_args=None):
         mic_comm = copy(self.micbase)
         mic_comm.append('--config=%s' % job_args["ksfile_name"])
         mic_comm.append('--format=%s' % job_args["image_type"])

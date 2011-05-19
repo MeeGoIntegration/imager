@@ -14,27 +14,13 @@
 #~ You should have received a copy of the GNU General Public License
 #~ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import json
 import subprocess as sub
-from subprocess import CalledProcessError
-import os, sys
+import os
 import time
 import random
-import copy
+from copy import copy
 from img.common import get_worker_config
 
-base_url = config.get('worker', 'base_url')
-base_dir = config.get('worker', 'base_dir')
-post = config.get('worker', 'post_creation')
-use_kvm = config.get('worker', 'use_kvm')
-use_sudo = config.get('worker', 'use_sudo')
-mic_args = config.get('worker', 'mic_opts')
-mic_cache_dir = config.get('worker', 'mic_cache_dir')
-img_home = config.get('worker', 'img_home')
-img_tmp = config.get('worker', 'img_tmp')
-
-id_rsa = os.path.join(img_home, 'id_rsa')
-base_img = os.path.join(img_home, 'base.img')
 
 def getport():
     return random.randint(49152, 65535)
@@ -50,7 +36,7 @@ def find_largest_file(indir):
     # Map back the items and sort using size, largest will be the last
     backitems = [ [v[1], v[0]] for v in items ]
     backitems.sort()
-    sizesortedlist=[ backitems[i][1] for i in range(0,len(backitems)) ]
+    sizesortedlist = [ backitems[i][1] for i in range(0, len(backitems)) ]
     # Its a path, don't worry
     largest_file = sizesortedlist[-1]
 
@@ -58,21 +44,25 @@ def find_largest_file(indir):
 
 class Commands(object):
 
-    def __init__(self):
+    def __init__(self, use_sudo=None, ssh_key=None, log_filename=None):
 
         self.port = getport()
+
+        self._logf = log_filename
+
+        if use_sudo:
+            self.use_sudo = True
 
         self.sudobase = [
                      'sudo', '-n'
                    ]
 
         self.overlaybase = [
-                        '/usr/bin/qemu-img', 'create', '-b',\
-                        img_conf.base_img, '-f', 'qcow2'
+                        '/usr/bin/qemu-img', 'create', '-f', 'qcow2', '-b'
                       ]
 
         self.sopts = [ 
-                  '-lroot', '-i%s' % img_conf.id_rsa,
+                  '-lroot', '-i%s' % ssh_key,
                   '-o', 'ConnectTimeout=60',
                   '-o', 'ConnectionAttempts=4',
                   '-o', 'UserKnownHostsFile=/dev/null',
@@ -81,13 +71,13 @@ class Commands(object):
 
         self.sshbase = [ 
                     '/usr/bin/ssh', 
-                    '-p%s' % port,
+                    '-p%s' % self.port,
                     '127.0.0.1'
                   ]
 
         self.scpbase = [ 
                     '/usr/bin/scp',
-                    '-P%s' % port,
+                    '-P%s' % self.port,
                     '-r'
                   ]
 
@@ -97,8 +87,8 @@ class Commands(object):
                     '-daemonize',
                     '-m', '256M',
                     '-net', 'nic,model=virtio',
-                    '-net', 'user,hostfwd=tcp:127.0.0.1:%s-:22' % port,
-                    '-drive', 'index=0,if=virtio,file=%s' % self._kvmimage
+                    '-net', 'user,hostfwd=tcp:127.0.0.1:%s-:22' % self.port,
+                    '-drive', 'index=0,if=virtio,file=@KVMIMAGEFILE@'
                   ]
 
         self.micbase = [
@@ -128,9 +118,9 @@ class Commands(object):
     def run(self, command, verbose=False):
         if verbose:
             print command
-        if execute:
-            sub.check_call(command, shell=False, stdout=self._logfile, 
-                           stderr=self._logfile, stdin=sub.PIPE)
+        with open(self._logf, 'a+b') as logf:
+            sub.check_call(command, shell=False, stdout=logf, 
+                           stderr=logf, stdin=sub.PIPE)
 
     def scpto(self, source="", dest=""):
         scp_comm = copy(self.scpbase)
@@ -152,24 +142,27 @@ class Commands(object):
         ssh_comm.extend(command)
         self.run(ssh_comm)
 
-    def overlaycreate(self, tmpoverlay):
+    def overlaycreate(self, baseimg, tmpoverlay):
         overlay_comm = copy(self.overlaybase)
-        overlay_comm.append(tmpoverlay)
+        overlay_comm.extend([baseimg, tmpoverlay])
         self.run(overlay_comm)
 
-    def runkvm(self):
+    def runkvm(self, overlayimg):
         kvm_comm = copy(self.kvmbase)
-        if use_sudo:
+        filearg = kvm_comm.pop()
+        filearg = filearg.replace("@KVMIMAGEFILE@", overlayimg)
+        kvm_comm.append(filearg)
+        if self.use_sudo:
             sudo = copy(self.sudobase)
             kvm_comm = sudo.extend(kvm_comm)
         self.run(kvm_comm)
 
-    def runmic(ssh=False):
+    def runmic(self, ssh=False):
         mic_comm = copy(self.micbase)
         if ssh:
             self.ssh(mic_comm)
         else:
-            if use_sudo:
+            if self.use_sudo:
                 sudo = copy(self.sudobase)
                 mic_comm = sudo.extend(mic_comm)
             self.run(mic_comm)
@@ -179,38 +172,43 @@ class Commands(object):
 class ImageWorker(object):
 
     def __init__(self, image_id=None, ksfile_name=None, image_type=None,
-                 logfile_name=None, image_dir=None, port=None,
                  name=None, release=None, arch=None, dir_prefix=None):
         
         self.config = get_worker_config()
         
-        self.commands = Commands()
-
-        self._tmpname = tmpname
-        self._type = type
-        self._logfile = logfile
-        self._dir = dir
+        self._ksfile_name = ksfile_name
+        self._image_type = image_type
         self._dir_prefix = dir_prefix
-        self._base_url_dir = base_url + '/' + self._dir_prefix + '/'
         self._image_id = image_id
-        self._image =None
         self._release = release
         self._name = name
 
+        self._image_dir = os.path.join(self.config.base_dir, self._dir_prefix,
+                                       self._image_id)
+
+        self._image_dir = "%s/" % self._image_dir
+        
+        self.logfile_name = os.path.join(self._image_dir,
+                                         "%s.log" % self._name)
+
+        self.image_file = None
+        self.image_url = None
     
     def build(self):
 
-        commands = Commands()
+        commands = Commands(use_sudo=self.config.use_sudo,
+                            ssh_key=self.config.ssh_key,
+                            log_filename=self.logfile_name)
 
-        if self.config.use_kvm == "yes" and os.path.exists('/dev/kvm'):
+        if self.config.use_kvm and os.path.exists('/dev/kvm'):
             try:
 
-                kvmimage = os.path.join(self.config.img_tmp, 
-                                        'overlay-%s-port-%s' % (self._image_id, 
-                                                                self._port))
-                commands.overlaycreate(self._kvmimage)
+                overlayimg = os.path.join(self.config.img_tmp,
+                                         'overlay-%s-port-%s' % (self._image_id,
+                                                                 commands.port))
+                commands.overlaycreate(self.config.base_img, overlayimg)
 
-                commands.runkvm()
+                commands.runkvm(overlayimg)
 
                 time.sleep(20)
 
@@ -220,44 +218,52 @@ class ImageWorker(object):
                 commands.scpto(source='/etc/sysconfig/proxy',
                                dest='/etc/sysconfig/')
 
-                commands.ssh(['mkdir', '-p', self._dir])
+                commands.ssh(['mkdir', '-p', self._image_dir])
 
-                commands.scpto(source=self._tmpname,
-                               dest=self._dir)
+                commands.scpto(source=self._ksfile_name,
+                               dest=self._image_dir)
 
                 commands.runmic(ssh=True)
 
-                commands.scpfrom(source=self._dir+'/*',
-                                 dest=self._dir+'/')
+                commands.scpfrom(source="%s*" % self._image_dir,
+                                 dest=self._image_dir)
 
             except Exception, err:
-                print "error %s"%err
+                print "error %s" % err
                 return False
 
             finally:
 
                 try:
                     commands.ssh(['poweroff', '-f'])
-                except:
+                except Exception, err:
                     #FIXME: try -KILL using PID if set (where?)
-                    pass
+                    print "error %s" % err
+                finally:
+                    os.remove(overlayimg)
 
-                os.remove(self._kvmimage)
-
-        elif not self.config.use_kvm == 'yes':
+        elif not self.config.use_kvm:
             try:
 
                 commands.runmic(ssh=False)
 
             except Exception, err:
-
                 print "error %s" % err
                 return False
         else:
             return False
 
-    image_file = find_largest_file(base_dir)
+        self.image_file = find_largest_file(self._image_dir)
+    
+        self.image_url = self.image_file.replace(self.config.base_dir,
+                                                 self.config.base_url)
+        return True
 
-    self._image = self._base_url_dir+self._id+'/' + image_file
+    def get_results(self):
+        results = {
+                    "image_file" : self.image_file,
+                    "image_url"  : self.image_url,
+                    "log_file"   : self.logfile_name
+                  }
 
-    return True
+        return results

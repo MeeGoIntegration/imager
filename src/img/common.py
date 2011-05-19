@@ -5,7 +5,7 @@ Created on Oct 11, 2010
 '''
 import os
 
-from worker import ImageWorker
+from img.worker import ImageWorker
 from urlparse import urlparse
 
 import pykickstart.parser as ksparser
@@ -55,11 +55,10 @@ def mic2(iid, name, itype, kickstart, release, arch,
     with open(ksfile_name, mode='w+b') as ksfile:
         ksfile.write(kickstart)
     os.chmod(ksfile_name, 0644)
-    logfile_name = os.path.join(idir, "%s.log" % name)
 
     worker = ImageWorker(image_id=iid, ksfile_name=ksfile_name,
-                         image_type=itype, logfile_name=logfile_name,
-                         image_dir=idir, name=name, release=release, arch=arch,
+                         image_type=itype, 
+                         name=name, release=release, arch=arch,
                          dir_prefix=dir_prefix)
     result = worker.build()
 
@@ -70,9 +69,25 @@ def get_worker_config(conffile="/etc/imager/img.conf"):
     config = ConfigParser.ConfigParser()
     config.read(conffile)
 
-    conf = {}
-    for name, value in config.items("worker"):
-        conf[name] = value
+    conf = {
+            "base_url" : config.get('worker', 'base_url'),
+            "base_dir" : config.get('worker', 'base_dir'),
+            "use_kvm"  : config.getboolean('worker', 'use_kvm'),
+            "use_sudo" : config.getboolean('worker', 'use_sudo'),
+            "mic_args" : config.get('worker', 'mic_opts'),
+            "img_home" : config.get('worker', 'img_home'),
+            "img_tmp"  : config.get('worker', 'img_tmp'),
+           }
+
+    if config.has_option("worker", "ssh_key"):
+        conf["ssh_key"] = config.get("worker", "ssh_key")
+    else:
+        conf["ssh_key"] = os.path.join(conf["img_home"], 'id_rsa')
+    
+    if config.has_option("worker", "base_img"):
+        conf["base_img"] = config.get("worker", "base_img")
+    else:
+        conf["base_img"] = os.path.join(conf["img_home"], 'base.img')
 
     dap = DictAttrProxy(conf)
 

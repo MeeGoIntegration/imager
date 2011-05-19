@@ -98,7 +98,7 @@ class ParticipantHandler(object):
 
             results = worker.get_results()
 
-            f.image.update(results)
+            f.image.as_dict().update(results)
 
 
             msg = "Image %s build for arch %s" % (name, arch)

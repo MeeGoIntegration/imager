@@ -12,7 +12,8 @@ for static_files_dir in static_files_dirs:
     static_files.append((os.path.join('share', root.replace(static_files_dir['prefix'],'')), files))
 
 static_files.append((os.path.join('/etc','imager'), ['img.conf']))
-
+static_files.append((os.path.join('/etc','imager'), ['build_image.conf']))
+static_files.append((os.path.join('/etc','imager'), ['build_ks.conf']))
 print static_files
 setup(
     name = "img",

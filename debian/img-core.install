@@ -1,2 +1,4 @@
 etc/imager/img.conf
+etc/imager/build_image.conf
+etc/imager/build_ks.conf
 usr/lib/python*/*/img

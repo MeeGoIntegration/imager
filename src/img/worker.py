@@ -178,7 +178,7 @@ class ImageWorker(object):
         job_args["outdir"] = self._image_dir
         
         self.logfile_name = os.path.join(self._image_dir,
-                                         "%s.log" % job_args["name"])
+                                         "%s.log" % job_args["image_name"])
         self.files_url = "%s/%s/%s" % (config.base_url, job_args["prefix"], 
                                        job_args["image_id"])
         
@@ -195,13 +195,13 @@ class ImageWorker(object):
         os.makedirs(self._image_dir, 0775)
 
         ksfile_name = os.path.join(self._image_dir, "%s.ks" %\
-                                   self.job_args["name"])
+                                   self.job_args["image_name"])
 
         with open(ksfile_name, mode='w+b') as ksfile:
             ksfile.write(self.job_args["kickstart"])
         os.chmod(ksfile_name, 0644)
 
-        self.job_args['kickstart_file'] = ksfile_name
+        self.job_args['ksfile_name'] = ksfile_name
 
         if self.config.use_kvm and os.path.exists('/dev/kvm'):
             try:
@@ -269,7 +269,7 @@ class ImageWorker(object):
                     "files_url"  : self.files_url,
                     "image_file" : self.image_file,
                     "image_url"  : self.image_url,
-                    "log_file"   : self.logfile_name
+                    "image_log"   : self.logfile_name
                   }
 
         return results

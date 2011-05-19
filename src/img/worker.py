@@ -60,7 +60,7 @@ class Commands(object):
                       ]
 
         self.sopts = [ 
-                  '-lroot', '-i%s' % ssh_key,
+                  '-i%s' % ssh_key,
                   '-o', 'ConnectTimeout=60',
                   '-o', 'ConnectionAttempts=4',
                   '-o', 'UserKnownHostsFile=/dev/null',
@@ -70,6 +70,7 @@ class Commands(object):
         self.sshbase = [ 
                     '/usr/bin/ssh', 
                     '-p%s' % self.port,
+                    '-lroot',
                     '127.0.0.1'
                   ]
 
@@ -94,10 +95,9 @@ class Commands(object):
                   ]
 
 
-    def run(self, command, verbose=False):
-        if verbose:
-            print command
+    def run(self, command):
         with open(self._logf, 'a+b') as logf:
+            logf.write(" ".join(command))
             sub.check_call(command, shell=False, stdout=logf, 
                            stderr=logf, stdin=sub.PIPE)
 
@@ -105,13 +105,13 @@ class Commands(object):
         scp_comm = copy(self.scpbase)
         scp_comm.extend(self.sopts)
         scp_comm.append(source)
-        scp_comm.append("127.0.0.1:%s" % dest)
+        scp_comm.append("root@127.0.0.1:%s" % dest)
         self.run(scp_comm)
 
     def scpfrom(self, source="", dest=""):
         scp_comm = copy(self.scpbase)
         scp_comm.extend(self.sopts)
-        scp_comm.append("127.0.0.1:%s" % source)
+        scp_comm.append("root@127.0.0.1:%s" % source)
         scp_comm.append(dest)
         self.run(scp_comm)
 

@@ -134,7 +134,8 @@ class Commands(object):
         kvm_comm.append(filearg)
         if self.use_sudo:
             sudo = copy(self.sudobase)
-            kvm_comm = sudo.extend(kvm_comm)
+            sudo.extend(kvm_comm)
+            kvm_comm = sudo
         self.run(kvm_comm)
 
     def runmic(self, ssh=False, job_args=None):
@@ -160,7 +161,8 @@ class Commands(object):
         else:
             if self.use_sudo:
                 sudo = copy(self.sudobase)
-                mic_comm = sudo.extend(mic_comm)
+                sudo.extend(mic_comm)
+                mic_comm = sudo
             self.run(mic_comm)
 
 

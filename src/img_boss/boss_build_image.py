@@ -14,10 +14,14 @@
 #~ You should have received a copy of the GNU General Public License
 #~ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from img.common import mic2
+from img.common import worker_config
+from img.worker import ImageWorker
 
 class ParticipantHandler(object):
     """ Participant class as defined by the SkyNET API """
+
+    def __init__(self):
+        self.worker_config = None
 
     def handle_wi_control(self, ctrl):
         """ job control thread """
@@ -26,7 +30,7 @@ class ParticipantHandler(object):
     def handle_lifecycle_control(self, ctrl):
         """ participant control thread """
         if ctrl.message == "start":
-            self.reposerver = ctrl.config.get("build_image", "base_dir")
+            self.worker_config = worker_config(config=ctrl.config)
 
     def handle_wi(self, wid):
         # We may want to examine the fields structure
@@ -35,40 +39,77 @@ class ParticipantHandler(object):
 
         wid.result = False
         f = wid.fields
+        prefix = "requests"
+        extra_opts = []
+
         if not f.msg:
             f.msg = []
-        kickstart = f.kickstart
-        iid = f.iid
-        itype = f.itype
-        name = f.name
-        release = f.release
-        archs = f.archs
+        if f.image:
+            # new API, image namespace
+            kickstart = f.image.kickstart
+            image_id = f.image.image_id
+            image_type = f.image.image_type
+            name = f.image.name
+            release = f.release
+            arch = f.image.arch
+            if f.image.prefix and not f.image.prefix == "":
+                prefix = f.image.prefix
+            if f.image.extra_opts and isinstance(f.image.extra_opts, list):
+                extra_opts = f.image.extra_opts
+        else:
+            # old API, flat workitem
+            kickstart = f.kickstart
+            image_id = f.image_id
+            image_type = f.image_type
+            name = f.name
+            release = f.release
+            arch = f.arch
+            if f.prefix and not f.prefix == "":
+                prefix = f.prefix
+            if f.extra_opts and isinstance(f.extra_opts, list):
+                extra_opts = f.extra_opts
+            f.image = {}
 
-        if not iid or not kickstart or not itype or not name or not archs:
+        if self.worker_config.extra_opts:
+            extra_opts.extend(self.worker_config.extra_opts)
+
+        if not image_id or not kickstart or not image_type or not name\
+                or not arch:
             f.__error__ = "One of the mandatory fields: id, kickstart, type,"\
                           " name and archs does not exist."
             f.msg.append(f.__error__)
             raise RuntimeError("Missing mandatory field")
 
-        prefix = "requests"
-        if f.prefix and not f.prefix == "":
-            prefix = f.prefix
         try:
-            result = True
-            for arch in archs:
-                if not arch:
-                    raise RuntimeError("No archs defined")
-                status = mic2(iid, name, itype,  kickstart, release, 
-                              arch, base_dir=self.base_dir,
-                              dir_prefix=prefix, work_item=f)
-                if not status:
-                    result = False
-                    status = "failed"
-                else:
-                    status = "succeeded"
+            job_args = { "image_id" : image_id, 
+                         "image_name" : name,
+                         "image_type" : image_type,
+                          "kickstart" : kickstart,
+                          "release" :  release, 
+                          "arch" : arch,
+                          "prefix" : prefix,
+                          "extra_opts" : extra_opts
+                         }
 
-                f.msg.append("Image %s build for arch %s build %s"\
-                             "files at: %s" % (name, arch, status, f.url))
+            worker = ImageWorker(config=self.worker_config,
+                                 job_args=job_args)
+
+            result = worker.build()
+
+            results = worker.get_results()
+
+            f.image.update(results)
+
+
+            msg = "Image %s build for arch %s" % (name, arch)
+
+            if result:
+                msg = "%s succeeded \nfiles: %s \nimage: %s \nlog %s" % (msg, \
+                      results["files_url"], results["image_url"],\
+                      results["image_log"])
+            else:
+                msg = "%s failed \nlog %s" % (msg, \
+                      results["image_log"])
 
             wid.result = result
         except Exception:

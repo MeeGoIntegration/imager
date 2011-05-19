@@ -19,8 +19,6 @@ import os
 import time
 import random
 from copy import copy
-from img.common import get_worker_config
-
 
 def getport():
     return random.randint(49152, 65535)
@@ -92,28 +90,9 @@ class Commands(object):
                   ]
 
         self.micbase = [
-                    'mic-image-creator',
-                    '--config=%s' % self._tmpname,
-                    '--format=%s' % self._type,
-                    '--cache=%s' % mic_cache_dir,
+                    'mic-image-creator'
                   ]
 
-        if self._type == "fs":
-            self._micargs.append('--package=tar.gz')
-        if arch:
-            self._arch = arch
-            self._micargs.append('--arch='+arch)
-        if self._release:
-            self._micargs.append('--release='+self._release)
-        for arg in self._micargs:
-            sshargs.append(arg)
-        if mic_args:
-            for micarg in mic_args.split(','):
-                sshargs.append(micarg)
-        if mic_args:
-            custom_args = copy.copy(self._micargs)
-            for arg in mic_args.split(','):
-                custom_args.append(arg)
 
     def run(self, command, verbose=False):
         if verbose:
@@ -157,8 +136,24 @@ class Commands(object):
             kvm_comm = sudo.extend(kvm_comm)
         self.run(kvm_comm)
 
-    def runmic(self, ssh=False):
+    def runmic(self, ssh=False, job_args=job_args):
         mic_comm = copy(self.micbase)
+        mic_comm.append('--config=%s' % job_args["ksfile_name"])
+        mic_comm.append('--format=%s' % job_args["image_type"])
+        mic_comm.append('--arch=%s' % job_args["arch"])
+        mic_comm.append('--outdir=%s' % job_args["outdir"])
+
+        # Workaround until bug is fixed in mic2
+        if job_args["image_type"] == "fs":
+            mic_comm.append('--package=tar.gz')
+
+        if "release" in job_args.keys():
+            mic_comm.append('--release=%s' % job_args["release"])
+
+        if "extra_opts" in job_args.keys():
+            for opt in job_args["extra_opts"]:
+                mic_comm.append(opt)
+
         if ssh:
             self.ssh(mic_comm)
         else:
@@ -168,29 +163,25 @@ class Commands(object):
             self.run(mic_comm)
 
 
-
 class ImageWorker(object):
 
-    def __init__(self, image_id=None, ksfile_name=None, image_type=None,
-                 name=None, release=None, arch=None, dir_prefix=None):
-        
-        self.config = get_worker_config()
-        
-        self._ksfile_name = ksfile_name
-        self._image_type = image_type
-        self._dir_prefix = dir_prefix
-        self._image_id = image_id
-        self._release = release
-        self._name = name
+    def __init__(self, config=None, job_args=None):
 
-        self._image_dir = os.path.join(self.config.base_dir, self._dir_prefix,
-                                       self._image_id)
+        self.config = config
+        
+        self._image_dir = os.path.join(config.base_dir, job_args["prefix"],
+                                       job_args["image_id"])
 
         self._image_dir = "%s/" % self._image_dir
+
+        job_args["outdir"] = self._image_dir
         
         self.logfile_name = os.path.join(self._image_dir,
-                                         "%s.log" % self._name)
-
+                                         "%s.log" % job_args["name"])
+        self.files_url = "%s/%s/%s" % (config.base_url, job_args["prefix"], 
+                                       job_args["image_id"])
+        
+        self.job_args = job_args
         self.image_file = None
         self.image_url = None
     
@@ -200,12 +191,25 @@ class ImageWorker(object):
                             ssh_key=self.config.ssh_key,
                             log_filename=self.logfile_name)
 
+        os.makedirs(self._image_dir, 0775)
+
+        ksfile_name = os.path.join(self._image_dir, "%s.ks" %\
+                                   self.job_args["name"])
+
+        with open(ksfile_name, mode='w+b') as ksfile:
+            ksfile.write(self.job_args["kickstart"])
+        os.chmod(ksfile_name, 0644)
+
+        self.job_args['kickstart_file'] = ksfile_name
+
         if self.config.use_kvm and os.path.exists('/dev/kvm'):
             try:
 
-                overlayimg = os.path.join(self.config.img_tmp,
-                                         'overlay-%s-port-%s' % (self._image_id,
-                                                                 commands.port))
+                overlayimg = os.path.join(self.config.img_tmp, \
+                                         'overlay-%s-port-%s' % \
+                                         (self.job_args["image_id"], \
+                                          commands.port))
+
                 commands.overlaycreate(self.config.base_img, overlayimg)
 
                 commands.runkvm(overlayimg)
@@ -220,10 +224,10 @@ class ImageWorker(object):
 
                 commands.ssh(['mkdir', '-p', self._image_dir])
 
-                commands.scpto(source=self._ksfile_name,
+                commands.scpto(source=ksfile_name,
                                dest=self._image_dir)
 
-                commands.runmic(ssh=True)
+                commands.runmic(ssh=True, job_args=self.job_args)
 
                 commands.scpfrom(source="%s*" % self._image_dir,
                                  dest=self._image_dir)
@@ -245,7 +249,7 @@ class ImageWorker(object):
         elif not self.config.use_kvm:
             try:
 
-                commands.runmic(ssh=False)
+                commands.runmic(ssh=False, job_args=self.job_args)
 
             except Exception, err:
                 print "error %s" % err
@@ -261,6 +265,7 @@ class ImageWorker(object):
 
     def get_results(self):
         results = {
+                    "files_url"  : self.files_url,
                     "image_file" : self.image_file,
                     "image_url"  : self.image_url,
                     "log_file"   : self.logfile_name

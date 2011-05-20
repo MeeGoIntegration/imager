@@ -22,6 +22,7 @@ from  RuoteAMQP.workitem import DictAttrProxy
 KSCLASS = ksversion.returnClassForVersion(version=ksversion.DEVEL)
 
 class KSHandlers(KSCLASS):
+    """Helper class for parsing a kickstart file"""
     def __init__(self):
         ver = ksversion.DEVEL
         commandMap[ver]["desktop"] = desktop.Moblin_Desktop
@@ -31,6 +32,8 @@ class KSHandlers(KSCLASS):
         KSCLASS.__init__(self, mapping=commandMap[ver])
     
 def build_kickstart(base_ks, packages=[], groups=[], projects=[]):
+    """Build a kickstart file using the handler class, with custom kickstart, 
+    packages, groups and projects."""
     ks = ksparser.KickstartParser(KSHandlers())
     ks.readKickstart(base_ks)
     ks.handler.packages.add(packages)
@@ -45,6 +48,8 @@ def build_kickstart(base_ks, packages=[], groups=[], projects=[]):
     return ks_txt
 
 def worker_config(config=None, conffile="/etc/imager/img.conf"):
+    """"Utility function which parses the either given or  imager configuration file and passes
+    a dictionary proxy containing the configuration keys and values in return."""
     if not config:
         config = ConfigParser.ConfigParser()
         config.read(conffile)

@@ -21,9 +21,19 @@ import random
 from copy import copy
 
 def getport():
+    """Gets a random port for the KVM virtual machine communtication, target being always the SSH port."""
     return random.randint(49152, 65535)
 
 def find_largest_file(indir):
+    """Find the largest file in a given directory string.
+    indir: Directory to find as string
+    Returns the largest file in the given directory
+    
+    BACKGROUND:
+    Essentially Imager needs to return the url to the image and this is the 
+    best way to find out which one is the image (biggest file is usually the 
+    image).
+    """
     fmap = {}
     for path, dirs, files in os.walk(indir):    
         for file_ in files:
@@ -41,9 +51,21 @@ def find_largest_file(indir):
     return largest_file
 
 class Commands(object):
-
+    """Commands object for running various image building commands eg. MIC2.
+    """
     def __init__(self, use_sudo=None, ssh_key=None, log_filename=None):
-
+        """Constructor, creates the object with necessary parameters to run 
+        commands.
+        
+        use_sudo: Are we using sudo to run commands, if so, append one in the
+        beginning. Mainly used in running KVM and MIC2.
+        
+        ssh_key: Path to the ssh private key used to connect to the base KVM
+        image.
+        
+        log_filename: Filename to pipe the output to. Used by both KVM and 
+        MIC2.
+        """
         self.port = getport()
 
         self._logf = log_filename
@@ -97,12 +119,17 @@ class Commands(object):
 
 
     def run(self, command):
+        """Method to run an arbitrary command and pipe the log output to a file.
+        Uses subprocess.check_call to properly execute and catch if any errors
+        occur.
+        """
         with open(self._logf, 'a+b') as logf:
             logf.write(" ".join(command))
             sub.check_call(command, shell=False, stdout=logf, 
                            stderr=logf, stdin=sub.PIPE)
 
     def scpto(self, source="", dest=""):
+        """Generic ssh copy file method, from KVM to host."""
         scp_comm = copy(self.scpbase)
         scp_comm.extend(self.sopts)
         scp_comm.append(source)
@@ -110,6 +137,7 @@ class Commands(object):
         self.run(scp_comm)
 
     def scpfrom(self, source="", dest=""):
+        """Generic ssh copy file method, from host to KVM."""
         scp_comm = copy(self.scpbase)
         scp_comm.extend(self.sopts)
         scp_comm.append("root@127.0.0.1:%s" % source)
@@ -117,17 +145,21 @@ class Commands(object):
         self.run(scp_comm)
 
     def ssh(self, command=""):
+        """Execute an arbitrary command in the KVM guest."""
         ssh_comm = copy(self.sshbase)
         ssh_comm.extend(self.sopts)
         ssh_comm.extend(command)
         self.run(ssh_comm)
 
     def overlaycreate(self, baseimg, tmpoverlay):
+        """Create an overlay image based on a base image, usually a minimal OS
+        with a static ssh-key built-in."""
         overlay_comm = copy(self.overlaybase)
         overlay_comm.extend([baseimg, tmpoverlay])
         self.run(overlay_comm)
 
     def runkvm(self, overlayimg):
+        """Run KVM using the created overlay image."""
         kvm_comm = copy(self.kvmbase)
         filearg = kvm_comm.pop()
         filearg = filearg.replace("@KVMIMAGEFILE@", overlayimg)
@@ -139,6 +171,9 @@ class Commands(object):
         self.run(kvm_comm)
 
     def runmic(self, ssh=False, job_args=None):
+        """Run MIC2, using ssh or executing on the host, with arguments.
+        ssh: Use ssh?
+        job_args: Arguments for MIC2."""
         mic_comm = copy(self.micbase)
         mic_comm.append('--config=%s' % job_args.ksfile_name)
         mic_comm.append('--format=%s' % job_args.image_type)
@@ -151,7 +186,6 @@ class Commands(object):
 
         if job_args.release:
             mic_comm.append('--release=%s' % job_args.release)
-
         if job_args.extra_opts:
             for opt in job_args.extra_opts:
                 mic_comm.append(opt)
@@ -167,9 +201,9 @@ class Commands(object):
 
 
 class ImageWorker(object):
-
+    """Actual worker class that does the heavy lifting."""
     def __init__(self, config=None, job_args=None):
-
+        """Initialize the worker using a config and job args."""
         self.config = config
         
         self._image_dir = os.path.join(config.base_dir, job_args.prefix,
@@ -189,7 +223,12 @@ class ImageWorker(object):
         self.image_url = None
     
     def build(self):
-
+        """Build the image in KVM or in host.
+        When building the image in KVM, first create an overlay and then use 
+        it to create the VM. After the VM is running, copy the kickstart, MIC2 
+        config and proxy settings to the guest. Then create the output 
+        directory and then run MIC2. When its ready, copy the entire image 
+        directory."""
         commands = Commands(use_sudo=self.config.use_sudo,
                             ssh_key=self.config.ssh_key,
                             log_filename=self.logfile_name)
@@ -267,6 +306,7 @@ class ImageWorker(object):
         return True
 
     def get_results(self):
+        """Returns the results in a dictionary."""
         results = {
                     "files_url"  : self.files_url,
                     "image_file" : self.image_file,

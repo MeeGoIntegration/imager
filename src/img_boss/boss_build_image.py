@@ -16,6 +16,7 @@
 
 from img.common import worker_config
 from img.worker import ImageWorker
+from  RuoteAMQP.workitem import DictAttrProxy
 
 class ParticipantHandler(object):
     """ Participant class as defined by the SkyNET API """
@@ -81,15 +82,15 @@ class ParticipantHandler(object):
             raise RuntimeError("Missing mandatory field")
 
         try:
-            job_args = { "image_id" : image_id, 
-                         "image_name" : name,
-                         "image_type" : image_type,
-                          "kickstart" : kickstart,
-                          "release" :  release, 
-                          "arch" : arch,
-                          "prefix" : prefix,
-                          "extra_opts" : extra_opts
-                         }
+            job_args = DictAttrProxy({ "image_id" : image_id,
+                                       "image_name" : name,
+                                       "image_type" : image_type,
+                                        "kickstart" : kickstart,
+                                        "release" :  release,
+                                        "arch" : arch,
+                                        "prefix" : prefix,
+                                        "extra_opts" : extra_opts
+                                    })
 
             worker = ImageWorker(config=self.worker_config,
                                  job_args=job_args)

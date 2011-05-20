@@ -140,20 +140,20 @@ class Commands(object):
 
     def runmic(self, ssh=False, job_args=None):
         mic_comm = copy(self.micbase)
-        mic_comm.append('--config=%s' % job_args["ksfile_name"])
-        mic_comm.append('--format=%s' % job_args["image_type"])
-        mic_comm.append('--arch=%s' % job_args["arch"])
-        mic_comm.append('--outdir=%s' % job_args["outdir"])
+        mic_comm.append('--config=%s' % job_args.ksfile_name)
+        mic_comm.append('--format=%s' % job_args.image_type)
+        mic_comm.append('--arch=%s' % job_args.arch)
+        mic_comm.append('--outdir=%s' % job_args.outdir)
 
         # Workaround until bug is fixed in mic2
-        if job_args["image_type"] == "fs":
+        if job_args.image_type == "fs":
             mic_comm.append('--package=tar.gz')
 
-        if "release" in job_args.keys() and job_args["release"]:
-            mic_comm.append('--release=%s' % job_args["release"])
+        if job_args.release:
+            mic_comm.append('--release=%s' % job_args.release)
 
-        if "extra_opts" in job_args.keys() and job_args["extra_opts"]:
-            for opt in job_args["extra_opts"]:
+        if job_args.extra_opts:
+            for opt in job_args.extra_opts:
                 mic_comm.append(opt)
 
         if ssh:
@@ -172,17 +172,17 @@ class ImageWorker(object):
 
         self.config = config
         
-        self._image_dir = os.path.join(config.base_dir, job_args["prefix"],
-                                       job_args["image_id"])
+        self._image_dir = os.path.join(config.base_dir, job_args.prefix,
+                                       job_args.image_id)
 
         self._image_dir = "%s/" % self._image_dir
 
-        job_args["outdir"] = self._image_dir
+        job_args.outdir = self._image_dir
         
         self.logfile_name = os.path.join(self._image_dir,
-                                         "%s.log" % job_args["image_name"])
-        self.files_url = "%s/%s/%s" % (config.base_url, job_args["prefix"], 
-                                       job_args["image_id"])
+                                         "%s.log" % job_args.image_name)
+        self.files_url = "%s/%s/%s" % (config.base_url, job_args.prefix, 
+                                       job_args.image_id)
         
         self.job_args = job_args
         self.image_file = None
@@ -197,20 +197,20 @@ class ImageWorker(object):
         os.makedirs(self._image_dir, 0775)
 
         ksfile_name = os.path.join(self._image_dir, "%s.ks" %\
-                                   self.job_args["image_name"])
+                                   self.job_args.image_name)
 
         with open(ksfile_name, mode='w+b') as ksfile:
-            ksfile.write(self.job_args["kickstart"])
+            ksfile.write(self.job_args.kickstart)
         os.chmod(ksfile_name, 0644)
 
-        self.job_args['ksfile_name'] = ksfile_name
+        self.job_args.ksfile_name = ksfile_name
 
         if self.config.use_kvm and os.path.exists('/dev/kvm'):
             try:
 
                 overlayimg = os.path.join(self.config.img_tmp, \
                                          'overlay-%s-port-%s' % \
-                                         (self.job_args["image_id"], \
+                                         (self.job_args.image_id, \
                                           commands.port))
 
                 commands.overlaycreate(self.config.base_img, overlayimg)

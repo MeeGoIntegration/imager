@@ -40,81 +40,67 @@ class ParticipantHandler(object):
 
         wid.result = False
         f = wid.fields
-        prefix = "requests"
-        extra_opts = []
-
         if not f.msg:
             f.msg = []
+
         if f.image:
             # new API, image namespace
-            kickstart = f.image.kickstart
-            image_id = f.image.image_id
-            image_type = f.image.image_type
-            name = f.image.name
-            release = f.release
-            arch = f.image.arch
-            if f.image.prefix and not f.image.prefix == "":
-                prefix = f.image.prefix
-            if f.image.extra_opts and isinstance(f.image.extra_opts, list):
-                extra_opts = f.image.extra_opts
+            args_dict = f.image.as_dict()
         else:
             # old API, flat workitem
-            kickstart = f.kickstart
-            image_id = f.image_id
-            image_type = f.image_type
-            name = f.name
-            release = f.release
-            arch = f.arch
-            if f.prefix and not f.prefix == "":
-                prefix = f.prefix
-            if f.extra_opts and isinstance(f.extra_opts, list):
-                extra_opts = f.extra_opts
-            f.image = {}
+            args_dict = {
+                          "kickstart" : f.kickstart,
+                          "image_id" : f.image_id,
+                          "image_type" : f.image_type,
+                          "name" : f.name,
+                          "release" : f.release,
+                          "arch" : f.arch,
+                          "prefix" : f.prefix,
+                          "extra_opts" : f.extra_opts
+                         }
+            f.image = args_dict
 
-        if self.worker_config.extra_opts:
-            extra_opts.extend(self.worker_config.extra_opts)
+        jargs = DictAttrProxy(args_dict)
 
-        if not image_id or not kickstart or not image_type or not name\
-                or not arch:
+        if (not jargs.image_id or not jargs.kickstart or not jargs.image_type
+            or not jargs.name or not jargs.arch):
             f.__error__ = "One of the mandatory fields: id, kickstart, type,"\
                           " name and archs does not exist."
             f.msg.append(f.__error__)
             raise RuntimeError("Missing mandatory field")
 
-        try:
-            job_args = DictAttrProxy({ "image_id" : image_id,
-                                       "image_name" : name,
-                                       "image_type" : image_type,
-                                        "kickstart" : kickstart,
-                                        "release" :  release,
-                                        "arch" : arch,
-                                        "prefix" : prefix,
-                                        "extra_opts" : extra_opts
-                                    })
+        if jargs.extra_opts:
+            if not isinstance(jargs.extra_opts, list):
+                f.__error__ = "Expected extra_opts field to be a list"
+                f.msg.append(f.__error__)
+                raise RuntimeError("Wrong type of field")
+            if self.worker_config.extra_opts:
+                jargs.extra_opts.extend(self.worker_config.extra_opts)
 
+        if not jargs.prefix or jargs.prefix == "":
+            jargs.prefix = "requests"
+
+        try:
             worker = ImageWorker(config=self.worker_config,
-                                 job_args=job_args)
+                                 job_args=jargs)
 
             result = worker.build()
 
-            results = worker.get_results()
+            f.image.update(worker.get_results())
 
-            f.image.as_dict().update(results)
-
-
-            msg = "Image %s build for arch %s" % (name, arch)
+            msg = "Image %s build for arch %s" % (f.image.name, f.image.arch)
 
             if result:
                 msg = "%s succeeded \nfiles: %s \nimage: %s \nlog %s" % (msg, \
-                      results["files_url"], results["image_url"],\
-                      results["image_log"])
+                      f.image.files_url, f.image.image_url,f.image.image_log)
             else:
-                msg = "%s failed \nlog %s" % (msg, \
-                      results["image_log"])
+                msg = "%s failed \nlog %s" % (msg, f.image.image_log)
+
+            f.msg.append(msg)
 
             wid.result = result
         except Exception:
-            f.__error__ = ('Image build FAILED')
+            f.__error__ = 'Image build FAILED'
             f.msg.append(f.__error__)
             raise
 

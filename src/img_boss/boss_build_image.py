@@ -65,7 +65,7 @@ class ParticipantHandler(object):
         if (not jargs.image_id or not jargs.kickstart or not jargs.image_type
             or not jargs.name or not jargs.arch):
             f.__error__ = "One of the mandatory fields: id, kickstart, type,"\
-                          " name and archs does not exist."
+                          " name and arch in the image namespace doesn't exist."
             f.msg.append(f.__error__)
             raise RuntimeError("Missing mandatory field")
 

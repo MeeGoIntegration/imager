@@ -42,9 +42,9 @@ class ParticipantHandler(object):
         f = wid.fields
         if not f.msg:
             f.msg = []
-        if not f.ksfile or not f.kickstart:
+        if (not f.image.ksfile or not f.image.kickstart):
             f.__error__ = "One of the mandatory fields: kickstart or ksfile"\
-                          " does not exist."
+                          " in the image namespace does not exist."
             f.msg.append(f.__error__)
             raise RuntimeError("Missing mandatory field")
 
@@ -72,19 +72,18 @@ class ParticipantHandler(object):
         remove = False
         ksfile = ""
 
-        if f.ksfile:
+        if f.image.ksfile:
             ksfile = os.path.join(self.ksstore, f.ksfile)
-        elif f.kickstart:
-            kstemplate = tempfile.NamedTemporaryFile(delete=False)
-            kstemplate.write(f.kickstart)
-            kstemplate.close()
+        elif f.image.kickstart:
+            with tempfile.NamedTemporaryFile(delete=False) as kstemplate:
+                kstemplate.write(f.kickstart)
             ksfile = kstemplate.name
             remove = ksfile
 
         try:
             ks = build_kickstart(ksfile, packages=packages, groups=groups,
                                  projects=projects)
-            f.kickstart = ks
+            f.image.kickstart = ks
         except Exception, error:
             f.__error__ = "Failed to handle kickstart. %s" % error
             f.msg.append(f.__error__)
@@ -94,12 +93,13 @@ class ParticipantHandler(object):
                 os.remove(remove)
 
         if f.ev.rid:
-            f.iid = "%s-%s" % (str(f.ev.rid), time.strftime('%Y%m%d-%H%M%S'))
+            f.image.image_id = "%s-%s" % (str(f.ev.rid), \
+                                          time.strftime('%Y%m%d-%H%M%S'))
         else:
-            f.iid = time.strftime('%Y%m%d-%H%M%S')
+            f.image.image_id = time.strftime('%Y%m%d-%H%M%S')
 
-        if not f.name:
-            f.name = os.path.basename(ksfile)[0:-3]
+        if not f.image.name:
+            f.image.name = os.path.basename(ksfile)[0:-3]
 
         f.msg.append("Kickstart handled successfully.")
         wid.result = True

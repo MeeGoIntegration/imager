@@ -22,28 +22,33 @@ IMGCONF="/etc/imager/img.conf"
 import ConfigParser
 config = ConfigParser.ConfigParser()
 config.readfp(open(IMGCONF))
-url_prefix = config.get('web','url_prefix')
-db_engine = config.get('web','db_engine')
-db_name = config.get('web','db_name')
-db_user = config.get('web','db_user')
-db_pass = config.get('web','db_pass')
 
-USE_BOSS = config.getboolean('web','use_boss')
-if USE_BOSS:
-    DEVICEGROUP = config.get('web','devicegroup')
-IMGURL = config.get('worker','base_url')
-IMGDIR = config.get('worker','base_dir')
-REPOURL = config.get('worker','reposerver')
-TEMPLATESDIR = config.get('worker','templates_dir')
-USE_LDAP = config.getboolean('web','use_ldap')
+url_prefix = config.get('web', 'url_prefix')
+process_filename = config.get('web', 'image_process')
+static_media_collect = config.get('web', 'static_media_collect')
+
+boss_host = config.get('web', 'boss_host')
+boss_user = config.get('web', 'boss_user')
+boss_pass = config.get('web', 'boss_pass')
+boss_vhost = config.get('web', 'boss_vhost')
+
+db_engine = config.get('web', 'db_engine')
+db_name = config.get('web', 'db_name')
+db_user = config.get('web', 'db_user')
+db_pass = config.get('web', 'db_pass')
+
+DEVICEGROUP = config.get('web', 'devicegroup')
+TEMPLATESDIR = config.get('web', 'templates_dir')
+
+USE_LDAP = config.getboolean('web', 'use_ldap')
 if USE_LDAP:
-  LDAP_SERVER = config.get('web','ldap_server')
-  LDAP_DN_TEMPLATE = config.get('web','ldap_dn_template',raw=True)
+  LDAP_SERVER = config.get('web', 'ldap_server')
+  LDAP_DN_TEMPLATE = config.get('web', 'ldap_dn_template', raw=True)
   
-  mail_attr = config.get('web','ldap_mail_attr',raw=True)
-  fname_attr = config.get('web','ldap_fname_attr',raw=True)
-  lname_attr = config.get('web','ldap_lname_attr',raw=True)
-  AUTH_LDAP_USER_ATTR_MAP = {"first_name":fname_attr,"last_name":lname_attr,"email":mail_attr}
+  mail_attr = config.get('web', 'ldap_mail_attr', raw=True)
+  fname_attr = config.get('web', 'ldap_fname_attr', raw=True)
+  lname_attr = config.get('web', 'ldap_lname_attr', raw=True)
+  AUTH_LDAP_USER_ATTR_MAP = {"first_name" : fname_attr, "last_name" : lname_attr, "email":mail_attr}
 
 DEBUG = True
 TEMPLATE_DEBUG = DEBUG
@@ -53,20 +58,25 @@ ADMINS = (
 )
 
 MANAGERS = ADMINS
-
-DATABASE_ENGINE = db_engine          # 'postgresql_psycopg2', 'postgresql', 'mysql', 'sqlite3' or 'oracle'.
-DATABASE_NAME = db_name             # Or path to database file if using sqlite3.
-DATABASE_USER = db_user             # Not used with sqlite3.
-DATABASE_PASSWORD = db_pass        # Not used with sqlite3.
-DATABASE_HOST = ''             # Set to empty string for localhost. Not used with sqlite3.
-DATABASE_PORT = ''             # Set to empty string for default. Not used with sqlite3.
+DATABASES = {
+            'default': {
+                'ENGINE' : 'django.db.backends.' + db_engine,
+                'NAME' : db_name,
+                'USER' : db_user,
+                'PASSWORD' : db_pass,
+                'HOST' : '',
+                'PORT' : '',
+                }
+            }
 
 # Local time zone for this installation. Choices can be found here:
 # http://en.wikipedia.org/wiki/List_of_tz_zones_by_name
 # although not all choices may be available on all operating systems.
+# On Unix systems, a value of None will cause Django to use the same
+# timezone as the operating system.
 # If running in a Windows environment this must be set to the same as your
 # system time zone.
-TIME_ZONE = 'Europe/Helsinki'
+TIME_ZONE = None
 
 # Language code for this installation. All choices can be found here:
 # http://www.i18nguy.com/unicode/language-identifiers.html
@@ -77,6 +87,10 @@ SITE_ID = 1
 # If you set this to False, Django will make some optimizations so as not
 # to load the internationalization machinery.
 USE_I18N = True
+
+# If you set this to False, Django will not format dates, numbers and
+# calendars according to the current locale
+USE_L10N = True
 
 # Absolute path to the directory that holds media.
 # Example: "/home/media/media.lawrence.com/"
@@ -95,20 +109,25 @@ ADMIN_MEDIA_PREFIX = '/' + url_prefix + '/media/'
 # Make this unique, and don't share it with anybody.
 SECRET_KEY = 'yn!2toc#7_#!c5k)xeh9j75()8kb7n2p!tl_h#@+%eptl=vd16'
 
-STATIC_DOC_ROOT = join(PROJECT_DIR, "site_media")
+STATIC_ROOT = static_media_collect
+
+#STATIC_ROOT = join(PROJECT_DIR, "site_media")
+
+STATIC_URL = '/site_media/'
 
 # List of callables that know how to import templates from various sources.
 TEMPLATE_LOADERS = (
-    'django.template.loaders.filesystem.load_template_source',
-    'django.template.loaders.app_directories.load_template_source',
-#     'django.template.loaders.eggs.load_template_source',
+    'django.template.loaders.filesystem.Loader',
+    'django.template.loaders.app_directories.Loader',
+#     'django.template.loaders.eggs.Loader',
 )
 
 MIDDLEWARE_CLASSES = (
     'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'django.contrib.messages.middleware.MessageMiddleware',
 )
 
 ROOT_URLCONF = 'img_web.urls'
@@ -119,21 +138,19 @@ TEMPLATE_DIRS = (
     # Always use forward slashes, even on Windows.
     # Don't forget to use absolute paths, not relative paths.
 )
-BROKER_HOST = "localhost"
-BROKER_PORT = 5672
-BROKER_USER = "img"
-BROKER_PASSWORD = "imgpwd"
-BROKER_VHOST = "imgvhost"
 
 INSTALLED_APPS = (
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.sites',
+    'django.contrib.messages',
+    'django.contrib.staticfiles',
     'django.contrib.admin',
     'south',
     'img_web.app',
 )
+
 FORCE_SCRIPT_NAME = ''
 
 LOGIN_URL='/' + url_prefix + "/login/"

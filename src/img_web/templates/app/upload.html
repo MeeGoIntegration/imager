@@ -25,13 +25,22 @@
         } );
     })
 </script>
-{% if formerror %}
+{% if form.is_bound %}
 <div class="errors">
-  {% for label, errors in formerror.items %}
-    {{ label }} : {{ errors|join:", " }}
-  {% endfor %}
+    {% if form.errors %}
+        {% for label, error in form.errors.items %}
+            {{ error }}
+        {% endfor %}
+    {% endif %}
+    {% if formset.errors %}
+        {% for x in formset.errors %}
+            {% for label, error in x.items %}
+                {{ error }}
+            {% endfor %}
+        {% endfor %}
+    {% endif %}
 </div>
-{% endif%}
+{% endif %}
 <form id="uploadform" action="{%url img-app-submit%}" method="post" enctype="multipart/form-data">
     {% csrf_token %}
     <table width="100%">

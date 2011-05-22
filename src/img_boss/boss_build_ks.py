@@ -57,9 +57,14 @@ class ParticipantHandler(object):
             url = "%s/%s/%s" % (self.reposerver, project, repo)
             projects = [ url ]
 
+        if f.image.extra_repos and isinstance(f.image.extra_repos, list):
+            projects.extend(f.image.extra_repos)
+
         packages = []
         if wid.params.packages_from :
             packages = f.as_dict()[wid.params.packages_from]
+        elif f.image.packages:
+            packages = f.packages
         elif f.packages:
             packages = f.packages
 
@@ -92,11 +97,12 @@ class ParticipantHandler(object):
             if remove:
                 os.remove(remove)
 
-        if f.ev.rid:
-            f.image.image_id = "%s-%s" % (str(f.ev.rid), \
-                                          time.strftime('%Y%m%d-%H%M%S'))
-        else:
-            f.image.image_id = time.strftime('%Y%m%d-%H%M%S')
+        if not f.image.image_id:
+            if f.ev.rid:
+                f.image.image_id = "%s-%s" % (str(f.ev.rid), \
+                                              time.strftime('%Y%m%d-%H%M%S'))
+            else:
+                f.image.image_id = time.strftime('%Y%m%d-%H%M%S')
 
         if not f.image.name:
             f.image.name = os.path.basename(ksfile)[0:-3]

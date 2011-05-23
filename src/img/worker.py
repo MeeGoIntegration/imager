@@ -21,7 +21,8 @@ import random
 from copy import copy
 
 def getport():
-    """Gets a random port for the KVM virtual machine communtication, target being always the SSH port."""
+    """Gets a random port for the KVM virtual machine communtication, target 
+    always being the SSH port."""
     return random.randint(49152, 65535)
 
 def find_largest_file(indir):
@@ -153,7 +154,7 @@ class Commands(object):
 
     def overlaycreate(self, baseimg, tmpoverlay):
         """Create an overlay image based on a base image, usually a minimal OS
-        with a static ssh-key built-in."""
+        with a static ssh-key built-in, as long its capable of running MIC2."""
         overlay_comm = copy(self.overlaybase)
         overlay_comm.extend([baseimg, tmpoverlay])
         self.run(overlay_comm)

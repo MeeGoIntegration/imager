@@ -2,10 +2,8 @@ Ruote.process_definition 'create_image_ondemand' do
   set 'debug_dump' => 'true'
 
   sequence do
-      echo "START"
       do_build_image
       do_failed :if => '${__result__} == false'
-      do_succeeded
   end
 
   define 'do_build_image' do

@@ -20,7 +20,15 @@ from  RuoteAMQP.workitem import DictAttrProxy as dap
 from  RuoteAMQP import Launcher 
 
 class ParticipantHandler(object):
-    """ Participant class as defined by the SkyNET API """
+    """Participant class as defined by the SkyNET API, builds images from
+    kickstart files using MIC2 image creation tools. Supports either KVM or
+    normal MIC2 operation.
+    
+    KVM operations offer more flexibility and cleaner building as each time
+    when the image is being created, a new root filesystem is built using qemu
+    image creation from a base image, so that the new root filesystem is always
+    clean.
+    """
 
     def __init__(self):
         self.worker_config = None
@@ -58,6 +66,11 @@ class ParticipantHandler(object):
         self.launcher.launch(self.process % status, fields)
 
     def handle_wi(self, wid):
+        """Handle the workitem so that an image is created from the kickstart
+        file correctly. One needs the kickstart as a complete file in the
+        workitem, an unique id for image, image type as defined by MIC2, name
+        for the image and architecture that the image root filesystem will use.
+        """
         # We may want to examine the fields structure
         if wid.fields.debug_dump or wid.params.debug_dump:
             print wid.dump()

@@ -150,7 +150,8 @@ def job(request, msgid):
                                   context_instance=RequestContext(request))
 
     return render_to_response('app/job_details.html',
-                              {'errors': {'Error' : [error]}}, 
+                              {'errors': {'Error' : [error]},
+                               'job':imgjob.log}, 
                                 context_instance=RequestContext(request)) 
 
 

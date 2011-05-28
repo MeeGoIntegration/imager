@@ -1,10 +1,9 @@
 #!/usr/bin/make -f
 # Uncomment this to turn on verbose mode.
 export DH_VERBOSE=1
+export PREFIX=/usr
+
 %:
-	dh $@ --buildsystem=python_distutils
-#override steps if needed
+	dh $@
 override_dh_installinit:
 	dh_installinit -pimg-web -n
-	dh_installinit -pimg-amqp -n
-	dh_installinit -pimg-boss -n

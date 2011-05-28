@@ -1,3 +1,9 @@
+img (0.6.0) unstable; urgency=low
+
+  * Complete redesign and rewrite.
+
+ -- Islam Amer <islam.amer@nokia.com>  Sat, 28 May 2011 22:43:51 +0300
+
 img (0.45) unstable; urgency=low
 
   * New arm architectures

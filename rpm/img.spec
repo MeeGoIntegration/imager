@@ -1,5 +1,5 @@
 Name: img
-Version: 0.45
+Version: 0.6.0
 Release: 1
 
 Group: Applications/Engineering
@@ -13,7 +13,7 @@ BuildArch: noarch
 Summary: Image creation service for MeeGo related products
 
 %description
-This package installs all the other imager packages.
+Image creation service for MeeGo related products
 
 %define python python%{?__python_ver}
 %define __python /usr/bin/%{python}
@@ -28,10 +28,7 @@ BuildRequires: python >= 2.5.0
 BuildRequires: python-setuptools
 Requires: python >= 2.5.0
 Requires: mic2
-Requires: python-amqplib
-Requires: bzip2
 Requires: sudo
-Requires: python-daemon
 Summary: Image creation service for MeeGo related products, core package
 %description -n img-core
 This package provides the core worker logic of imager. It builds images using mic2 optionally in a virtual machine.
@@ -46,6 +43,9 @@ Requires: python-django
 Requires: python-flup
 Requires: python-yaml
 Requires: python-django-south
+Requires: python-boss-skynet >= 0.2.2
+Requires: python-buildservice >= 0.3.1
+Requires(post): boss-skynet
 Summary: Image creation service for MeeGo related products, django web interface
 %description -n img-web
 This package provides a django based web interface for imager. It can work with a standalone imager installation communicating over AMQP, or an installation that is part of BOSS.
@@ -54,73 +54,68 @@ This package provides a django based web interface for imager. It can work with 
 Group: Applications/Engineering
 BuildRequires: python >= 2.5.0
 BuildRequires: python-setuptools
-Requires: python >= 2.5.0
 Requires: pykickstart
-Requires: img-amqp
-Requires: ruote-amqp-pyclient
-Requires: python-air
 Requires: img-core
+Requires: python-boss-skynet >= 0.2.2
+Requires: python-buildservice >= 0.3.1
+Requires(post): boss-skynet
 Summary: Image creation service for MeeGo related products, BOSS participants
 %description -n img-boss
 This package provides imager participants that plugin into a BOSS system to fulfill image building steps of processes
 
 %prep
-%setup -q
+%setup -q %{name}-%{version}
 
 %build
-python setup.py build
+make
 
 %install
 rm -rf %{buildroot}
-python setup.py -q install --root=$RPM_BUILD_ROOT --prefix=%{_prefix} --record=INSTALLED_FILES
 install -D -m 755 rpm/img-web.init %{buildroot}/etc/init.d/img-web
-install -D -m 755 rpm/img-amqp.init %{buildroot}/etc/init.d/img-amqp
-install -D -m 755 rpm/boss-participant-build_image.init %{buildroot}/etc/init.d/boss-participant-build_image
-install -D -m 755 rpm/boss-participant-build_ks.init %{buildroot}/etc/init.d/boss-participant-build_ks
-install -D -m 700 ssh/id_rsa %{buildroot}/usr/share/img/id_rsa
-install    -m 755 -d %{buildroot}/var/lib/img
+make PREFIX=%{_prefix} DESTDIR=%{buildroot} install
+
 %clean
 rm -rf %{buildroot}
 
+%post -n img-boss
+if [ $1 -eq 1 ] ; then
+        for i in \
+            build_image \
+            build_ks \
+        ; do
+        
+        skynet make_participant -n $i -p /usr/share/boss-skynet/$i.py
+
+    done
+fi
+
+%post -n img-web
+if [ $1 -eq 1 ] ; then
+        for i in \
+            update_image_status \
+        ; do
+        
+        skynet make_participant -n $i -p /usr/share/boss-skynet/$i.py
+
+    done
+fi
+
 %files -n img-core
 %defattr(-,root,root)
-%config %{_sysconfdir}/imager/img.conf
 %{_sysconfdir}/imager
-%{python_sitelib}/img-0.4-py2.6.egg-info
+%{python_sitelib}/img*egg-info
 %{python_sitelib}/img
-/usr/share/img/id_rsa
-/usr/share/img
 
 %files -n img-web
 %defattr(-,root,root,-)
+%config(noreplace) %{_sysconfdir}/imager/img.conf
 %{python_sitelib}/img_web
 %{_datadir}/img_web
 %{_sysconfdir}/init.d/img-web
-/var/lib/img
+%{_datadir}/boss-skynet/*.py
 
 %files -n img-boss
 %defattr(-,root,root,-)
-%{_bindir}/boss_build_image.py
-%{_bindir}/boss_build_ks.py 
-%{_bindir}/boss_img_client.py
-%{_sysconfdir}/init.d/boss-participant-build_image
-%{_sysconfdir}/init.d/boss-participant-build_ks
-
-%changelog
-* Mon Mar 14 2011 Aleksi Suomalainen <aleksi.suomalainen@nomovok.com> 0.44
-- Bugfixes to settings.py
-* Thu Dec 09 2010 Islam Amer <islam.amer@nokia.com> 0.43
-- Additions to the webui.
-- Human readable uuid.
-* Mon Oct 11 2010 Aleksi Suomalainen <aleksi.suomalainen@nomovok.com> 0.4
-- Daemonization code added
-- Code refactoring
-* Sun Sep 26 2010 Islam Amer <islam.amer@nokia.com> 0.3
-- Major restructure and themeing.
-* Thu Sep 23 2010 Islam Amer <islam.amer@nokia.com> 0.2
-- Increment version to build new package
-* Fri Aug 13 2010 Islam Amer <islam.amer@nokia.com> 0.1
-- Added kickstarter participant package
-* Fri Jul 23 2010 Marko Helenius <marko.helenius@nomovok.com> 0.1
-- Fixed Spec
-
+%{_datadir}/boss-skynet/*.py
+%config(noreplace) %{_sysconfdir}/skynet/build_image.conf
+%config(noreplace) %{_sysconfdir}/skynet/build_ks.conf

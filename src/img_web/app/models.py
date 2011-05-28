@@ -89,7 +89,7 @@ def imagejob_save_callback(sender, **kwargs):
                 launch(process, fields)
 
         if job.status == "DONE":
-            if settings.testing_enabled and job.test:
+            if settings.testing_enabled and job.test_image:
                 with open(settings.test_process, mode='r') as process_file:
                     process = process_file.read()
 
@@ -122,6 +122,7 @@ class ImageJob(models.Model):
 
     status = models.CharField(max_length=30, default="IN QUEUE")
     image_url = models.CharField(max_length=500, blank=True)
+    files_url = models.CharField(max_length=500, blank=True)
     logfile_url = models.CharField(max_length=500, blank=True)
     log = models.TextField(blank=True)
     error = models.CharField(max_length=1000, blank=True)

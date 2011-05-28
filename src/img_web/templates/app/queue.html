@@ -14,22 +14,27 @@ IMG Queue : Display <a href="{%url img-app-queue %}">all images</a> or <a href="
 <meta http-equiv="refresh" content="60">
 <table id="queue">
 <thead><tr>
-<th>Created since</th>
-<th>Email</th>
+<th>Submitted / Finished</th>
+<th>User</th>
 <th>Status</th>
+<th>Arch</th>
 <th>Type</th>
 <th>Log</th>
-<th>Files</th>
+<th>Download</th>
 </tr></thead>
 <tbody>
     {% for obj in queue.object_list %}
         <tr>
-                <td>{{obj.created|timesince}}</td>
-                <td>{{obj.email|split:"@"}}</td> 
-                <td>{{obj.status}} </td> 
-                <td>{{obj.image_type}} </td>
-                <td><a href="{% url img-app-job obj.image_id %}">Log</a></td>
-                <td><a href="{% url img-app-download obj.image_id %}">Files</a></td>                
+            <td>{{ obj.created|date:"SHORT_DATETIME_FORMAT" }}<br/>
+                {{obj.done|date:"SHORT_DATETIME_FORMAT"}}
+            </td>
+            <td>{{obj.user.username}}</td> 
+            <td>{{obj.status}} </td> 
+            <td>{{obj.arch}} </td>
+            <td>{{obj.image_type}} </td>
+            <td><a href="{% url img-app-job obj.image_id %}">Log</a></td>
+            <td><a href="{{ obj.files_url }}">Files</a>
+            <a href="{{ obj.image_url }}">Image</a></td>
         </tr>
     {% endfor %}
 </tbody>

@@ -1,7 +1,7 @@
 Ruote.process_definition 'get_image_log' do
   set 'debug_dump' => 'true'
   sequence do
-   img_status_update
+    update_image_status
   end
 end
 

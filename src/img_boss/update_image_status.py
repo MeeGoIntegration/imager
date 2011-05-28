@@ -1,6 +1,7 @@
 #!/usr/bin/python
 """ Image status update participant """
 import os
+from datetime import datetime
 from urllib2 import urlopen, HTTPError
 
 os.environ['DJANGO_SETTINGS_MODULE'] = 'img_web.settings'
@@ -56,8 +57,11 @@ class ParticipantHandler(object):
             if wid.params.status:
                 job.status = wid.params.status
                 if wid.params.status == "ERROR" and wid.fields.__error__:
+                    job.done = datetime.now()
                     job.error = wid.fields.__error__
+                    job.files_url = wid.fields.image.files_url
                 if wid.params.status == "DONE":
+                    job.done = datetime.now()
                     job.files_url = wid.fields.image.files_url
                     job.image_url = wid.fields.image.image_url
                 if wid.params.status == "DONE, TESTED":

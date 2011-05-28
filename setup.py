@@ -3,28 +3,45 @@ import os, sys
 from distutils.core import setup
 
 
-static_files_dirs=[{'prefix':'src/', 'dir':'src/img_web/site_media'}]
-static_files=[]
-for static_files_dir in static_files_dirs:
-  for root, dirs, files in os.walk(static_files_dir['dir']):
-    if not len(files): continue
-    for i in xrange(len(files)): files[i] = os.path.join(root, files[i])
-    static_files.append((os.path.join('share', root.replace(static_files_dir['prefix'],'')), files))
+static_files=[('/etc/imager', ['src/img_web/img.conf']),
+                ('/usr/share/img_web/processes', 
+                   ['src/img_web/processes/CREATE_IMAGE',
+                    'src/img_web/processes/NOTIFY_IMAGE',
+                    'src/img_web/processes/TEST_IMAGE',
+                    'src/img_web/processes/DELETE_IMAGE',
+                    'src/img_web/processes/UPDATE_STATUS'
+                   ]
+                )
+             ]
 
-static_files.append((os.path.join('/etc','imager'), ['img.conf']))
-static_files.append((os.path.join('/etc','imager'), ['build_image.conf']))
-static_files.append((os.path.join('/etc','imager'), ['build_ks.conf']))
-print static_files
 setup(
     name = "img",
-    version = "0.4",
+    version = "0.6.0",
     url = 'http://meego.gitorious.org/meego-infrastructure-tools/imger',
     license = 'GPLv2',
     description = "Meego Image creation service",
     author = 'Aleksi Suomalainen <aleksi.suomalainen@nomovok.com>',
-    scripts = ['src/img_boss/boss_build_ks.py', 'src/img_boss/boss_build_image.py', 'src/img_boss/boss_img_client.py'],
-    packages = ['img', 'img_web', 'img_web.app', 'img_web.app.templatetags', 'img_web.app.migrations', 'img_web.utils'],    
-    package_dir = {'img':'src/img', 'img_web':'src/img_web', 'img_web.app':'src/img_web/app', 'img_web.app.templatetags':'src/img_web/app/templatetags', 'img_web.utils':'src/img_web/utils', 'img_web.app.migrations':'src/img_web/app/migrations'},
-    package_data = { 'img_web' : ['templates/*.html', 'templates/app/*.html', 'templates/registration/*.html'] },
+    packages = ['img',
+                'img_web',
+                'img_web.app',
+                'img_web.app.templatetags',
+                'img_web.utils'
+                ],    
+    package_dir = {'img':'src/img',
+                   'img_web':'src/img_web',
+                   'img_web.app':'src/img_web/app', 
+                   'img_web.app.templatetags':'src/img_web/app/templatetags',
+                   'img_web.utils':'src/img_web/utils',
+                  },
+    package_data = { 'img_web' : ['templates/*.html',
+                                  'templates/app/*.html', 
+                                  'templates/registration/*.html',
+                                  ],
+                      'img_web.app' : ['static/*.*',
+                                       'static/images/*.*',
+                                       'static/images/formset/*.*',
+                                       'static/js/*.*',
+                                      ]
+                    },
     data_files = static_files,
 )

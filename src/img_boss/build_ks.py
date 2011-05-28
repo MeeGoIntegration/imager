@@ -42,7 +42,8 @@ class ParticipantHandler(object):
         f = wid.fields
         if not f.msg:
             f.msg = []
-        if (not f.image.ksfile or not f.image.kickstart):
+
+        if not f.image.ksfile and not f.image.kickstart:
             f.__error__ = "One of the mandatory fields: kickstart or ksfile"\
                           " in the image namespace does not exist."
             f.msg.append(f.__error__)
@@ -81,10 +82,9 @@ class ParticipantHandler(object):
             ksfile = os.path.join(self.ksstore, f.ksfile)
         elif f.image.kickstart:
             with tempfile.NamedTemporaryFile(delete=False) as kstemplate:
-                kstemplate.write(f.kickstart)
+                kstemplate.write(f.image.kickstart)
             ksfile = kstemplate.name
             remove = ksfile
-
         try:
             ks = build_kickstart(ksfile, packages=packages, groups=groups,
                                  projects=projects)

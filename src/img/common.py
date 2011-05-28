@@ -17,7 +17,6 @@ from mic.imgcreate.kscommands import moblinrepo
 from mic.imgcreate.kscommands import micboot
 
 import ConfigParser
-from  RuoteAMQP.workitem import DictAttrProxy
 
 KSCLASS = ksversion.returnClassForVersion(version=ksversion.DEVEL)
 
@@ -48,8 +47,9 @@ def build_kickstart(base_ks, packages=[], groups=[], projects=[]):
     return ks_txt
 
 def worker_config(config=None, conffile="/etc/imager/img.conf"):
-    """"Utility function which parses the either given or  imager configuration file and passes
-    a dictionary proxy containing the configuration keys and values in return."""
+    """"Utility function which parses the either given or  imager configuration
+        file and passes a dictionary proxy containing the configuration keys
+        and values in return."""
     if not config:
         config = ConfigParser.ConfigParser()
         config.read(conffile)
@@ -77,7 +77,5 @@ def worker_config(config=None, conffile="/etc/imager/img.conf"):
         extra_opts = extra_opts.split(",")
         conf["extra_opts"] = extra_opts
 
-    dap = DictAttrProxy(conf)
-
-    return dap
+    return conf
 

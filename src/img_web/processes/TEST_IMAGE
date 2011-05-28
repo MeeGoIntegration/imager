@@ -1,0 +1,8 @@
+Ruote.process_definition 'test_image' do
+  set 'debug_dump' => 'true'
+
+  sequence do
+      test_image
+  end
+
+end

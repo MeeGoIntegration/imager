@@ -214,13 +214,17 @@ class ImageWorker(object):
         job_args.outdir = self._image_dir
         
         self.logfile_name = os.path.join(self._image_dir,
-                                         "%s.log" % job_args.image_name)
+                                         "%s.log" % job_args.name)
+        self.logfile_url = self.logfile_name.replace(self.config.base_dir,
+                                                     self.config.base_url)
         self.files_url = "%s/%s/%s" % (config.base_url, job_args.prefix, 
                                        job_args.image_id)
         
         self.job_args = job_args
         self.image_file = None
         self.image_url = None
+        self.result = None
+        self.error = None
     
     def build(self):
         """Build the image in KVM or in host.
@@ -233,10 +237,11 @@ class ImageWorker(object):
                             ssh_key=self.config.ssh_key,
                             log_filename=self.logfile_name)
 
+        print self._image_dir
         os.makedirs(self._image_dir, 0775)
 
         ksfile_name = os.path.join(self._image_dir, "%s.ks" %\
-                                   self.job_args.image_name)
+                                   self.job_args.name)
 
         with open(ksfile_name, mode='w+b') as ksfile:
             ksfile.write(self.job_args.kickstart)
@@ -274,9 +279,12 @@ class ImageWorker(object):
                 commands.scpfrom(source="%s*" % self._image_dir,
                                  dest=self._image_dir)
 
+                self.result = True
+
             except Exception, err:
                 print "error %s" % err
-                return False
+                self.error = str(err)
+                self.result = False
 
             finally:
 
@@ -292,26 +300,28 @@ class ImageWorker(object):
             try:
 
                 commands.runmic(ssh=False, job_args=self.job_args)
+                self.result = True
 
             except Exception, err:
                 print "error %s" % err
-                return False
+                self.error = str(err)
+                self.result = False
         else:
-            return False
+            self.result = False
 
         self.image_file = find_largest_file(self._image_dir)
     
         self.image_url = self.image_file.replace(self.config.base_dir,
                                                  self.config.base_url)
-        return True
 
     def get_results(self):
         """Returns the results in a dictionary."""
         results = {
+                    "result"     : self.result,
                     "files_url"  : self.files_url,
-                    "image_file" : self.image_file,
                     "image_url"  : self.image_url,
-                    "image_log"   : self.logfile_name
+                    "logfile_url": self.logfile_url,
+                    "error"      : self.error
                   }
 
         return results

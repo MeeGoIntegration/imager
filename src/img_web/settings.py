@@ -24,30 +24,38 @@ config = ConfigParser.ConfigParser()
 config.readfp(open(IMGCONF))
 
 url_prefix = config.get('web', 'url_prefix')
-process_filename = config.get('web', 'image_process')
 static_media_collect = config.get('web', 'static_media_collect')
-
-boss_host = config.get('web', 'boss_host')
-boss_user = config.get('web', 'boss_user')
-boss_pass = config.get('web', 'boss_pass')
-boss_vhost = config.get('web', 'boss_vhost')
-
-db_engine = config.get('web', 'db_engine')
-db_name = config.get('web', 'db_name')
-db_user = config.get('web', 'db_user')
-db_pass = config.get('web', 'db_pass')
-
-DEVICEGROUP = config.get('web', 'devicegroup')
 TEMPLATESDIR = config.get('web', 'templates_dir')
 
-USE_LDAP = config.getboolean('web', 'use_ldap')
+boss_host = config.get('boss', 'boss_host')
+boss_user = config.get('boss', 'boss_user')
+boss_pass = config.get('boss', 'boss_pass')
+boss_vhost = config.get('boss', 'boss_vhost')
+
+db_engine = config.get('db', 'db_engine')
+db_name = config.get('db', 'db_name')
+db_user = config.get('db', 'db_user')
+db_pass = config.get('db', 'db_pass')
+
+create_image_process = config.get('processes', 'create_image_process')
+getlog_process = config.get('processes', 'getlog_process')
+notify_process = config.get('processes', 'notify_process')
+test_process = config.get('processes', 'test_process')
+delete_process = config.get('processes', 'delete_process')
+
+testing_enabled = config.getboolean('test', 'enabled')
+DEVICEGROUP = config.get('test', 'devicegroup')
+
+notify_enabled = config.getboolean('notify', 'enabled')
+
+USE_LDAP = config.getboolean('ldap', 'use_ldap')
 if USE_LDAP:
-  LDAP_SERVER = config.get('web', 'ldap_server')
-  LDAP_DN_TEMPLATE = config.get('web', 'ldap_dn_template', raw=True)
+  LDAP_SERVER = config.get('ldap', 'ldap_server')
+  LDAP_DN_TEMPLATE = config.get('ldap', 'ldap_dn_template', raw=True)
   
-  mail_attr = config.get('web', 'ldap_mail_attr', raw=True)
-  fname_attr = config.get('web', 'ldap_fname_attr', raw=True)
-  lname_attr = config.get('web', 'ldap_lname_attr', raw=True)
+  mail_attr = config.get('ldap', 'ldap_mail_attr', raw=True)
+  fname_attr = config.get('ldap', 'ldap_fname_attr', raw=True)
+  lname_attr = config.get('ldap', 'ldap_lname_attr', raw=True)
   AUTH_LDAP_USER_ATTR_MAP = {"first_name" : fname_attr, "last_name" : lname_attr, "email":mail_attr}
 
 DEBUG = True
@@ -67,6 +75,10 @@ DATABASES = {
                 'HOST' : '',
                 'PORT' : '',
                 }
+            }
+
+DATABASE_OPTIONS = {
+            "autocommit": True,
             }
 
 # Local time zone for this installation. Choices can be found here:
@@ -104,7 +116,7 @@ MEDIA_URL = '/' + url_prefix + '/site_media/'
 # URL prefix for admin media -- CSS, JavaScript and images. Make sure to use a
 # trailing slash.
 # Examples: "http://foo.com/media/", "/media/".
-ADMIN_MEDIA_PREFIX = '/' + url_prefix + '/media/'
+ADMIN_MEDIA_PREFIX = '/' + url_prefix + '/site_media/admin/'
 
 # Make this unique, and don't share it with anybody.
 SECRET_KEY = 'yn!2toc#7_#!c5k)xeh9j75()8kb7n2p!tl_h#@+%eptl=vd16'

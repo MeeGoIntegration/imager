@@ -58,8 +58,15 @@ class UploadFileForm(forms.Form):
 
     email = forms.EmailField(label='Email', required=True, help_text="Email: "\
          "Your email to send a notification when the image building is done.")
-    test_image = forms.BooleanField(label="Test image", required=False,
-                                    initial=False,
+
+    if settings.notify_enabled:
+        notify_image = forms.BooleanField(label="Notify", required=False,
+                                          initial=True,
+                            help_text="Notify image: Send notification when "\
+                                      "image building process is done. ")
+    if settings.testing_enabled:
+        test_image = forms.BooleanField(label="Test image", required=False,
+                                        initial=False,
                             help_text="Test image: Send image for testing. ")
     devicegroup = forms.CharField(label="Device group", required=False,
                             help_text="Device group: OTS device group to "\

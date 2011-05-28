@@ -14,73 +14,117 @@
 #~ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from django.db import models
-import os
 import img_web.settings as settings
-import shutil
 from django.contrib.auth.models import User
 from django.contrib import admin
-from django.db.models.signals import post_save
+from django.db.models.signals import post_save, post_delete
+import django.dispatch
 from RuoteAMQP import Launcher
+
+GETLOG = django.dispatch.Signal(providing_args=["image_id"])
+
+def launch(process, fields):
+
+    launcher = Launcher(amqp_host = settings.boss_host,
+                        amqp_user = settings.boss_user,
+                        amqp_pass = settings.boss_pass,
+                        amqp_vhost = settings.boss_vhost)
+
+    launcher.launch(process, fields)
+
+def imagejob_getlog(sender, **kwargs):
+    with open(settings.getlog_process, mode='r') as process_file:
+        process = process_file.read()
+
+    fields = {"image" : {"image_id" : kwargs['image_id']}}
+
+    launch(process, fields)
+
+def imagejob_delete_callback(sender, **kwargs):
+    pass
 
 def imagejob_save_callback(sender, **kwargs):
     if kwargs['created']:
         try:
-            with open(settings.process_filename, mode='r') as process_file:
+            with open(settings.create_image_process, mode='r') as process_file:
                 process = process_file.read()
     
             job = kwargs['instance']
-            fields = {"image" : { "kickstart" : job.kickstart,
-                                  "extra_repos" : job.extra_repos.split(","),
-                                  "packages" : job.overlay.split(","),
+
+            fields = {"image" : { 
+                                  "emails" : [job.email],
+                                  "kickstart" : job.kickstart,
                                   "image_id" : job.image_id,
                                   "image_type" : job.image_type,
                                   "name" : job.name,
-                                  "release" : job.release,
                                   "arch" : job.arch,
-                                  "prefix" : "ondemand"
+                                  "prefix" : "%s/%s" % (job.queue,
+                                                        job.user.username)
                                   }
                         }
+            if job.release:
+                fields['image']['release'] = job.release
+            if job.overlay:
+                fields['image']['packages'] = job.overlay.split(",")
+            if job.extra_repos:
+                fields['image']['extra_repos'] = job.extra_repos.split(",")
+            if job.test_image:
+                fields['image']['test_image'] = job.test_image
+                fields['image']['devicegroup'] = job.devicegroup
     
-            launcher = Launcher(amqp_host = settings.boss_host,
-                                amqp_user = settings.boss_user,
-                                amqp_pass = settings.boss_pass,
-                                amqp_vhost = settings.boss_vhost)
-    
-            launcher.launch(process, fields)
+            launch(process, fields)
+
         except Exception, error:
             kwargs['instance'].status = "ERROR"
             kwargs['instance'].error = error
             kwargs['instance'].save()
+    else:
+        #launch notify and test if configured and asked for
+        job = kwargs['instance']
+        if job.status == "DONE" or job.status == "ERROR":
+            if settings.notify_enabled and job.notify:
+                with open(settings.notify_process, mode='r') as process_file:
+                    process = process_file.read()
+
+                launch(process, fields)
+
+        if job.status == "DONE":
+            if settings.testing_enabled and job.test:
+                with open(settings.test_process, mode='r') as process_file:
+                    process = process_file.read()
+
+                launch(process, fields)
 
 
-
-
-# Create your models here.
 class ImageJob(models.Model):    
     image_id = models.CharField(max_length=30)
     created = models.DateTimeField(auto_now_add=True)
+    done = models.DateTimeField(blank=True, null=True)
+    queue = models.CharField(max_length=30)
 
-    user = models.ForeignKey(User, null=True)
+    user = models.ForeignKey(User)
     email = models.CharField(max_length=40)
+    notify = models.BooleanField(blank=True, default=False)
 
     test_image = models.BooleanField(blank=True, default=False)
-    devicegroup = models.CharField(blank=True, default="", max_length=100)
+    devicegroup = models.CharField(blank=True, max_length=100)
+    test_result = models.BooleanField(blank=True, default=False)
 
     image_type = models.CharField(max_length=10)
-    release = models.CharField(max_length=50)
+    release = models.CharField(max_length=50, blank=True)
     arch = models.CharField(max_length=10)
 
-    overlay = models.CharField(max_length=500)
-    extra_repos = models.CharField(max_length=800)
+    overlay = models.CharField(max_length=500, blank=True)
+    extra_repos = models.CharField(max_length=800, blank=True)
     
-    kickstart = models.CharField(max_length=1000)
+    kickstart = models.TextField()
     name = models.CharField(max_length=100)
 
     status = models.CharField(max_length=30, default="IN QUEUE")
-    imagefile = models.CharField(max_length=50)
-    filename = models.CharField(max_length=40)
-    logfile = models.CharField(max_length=50)
-    error = models.CharField(max_length=500)
+    image_url = models.CharField(max_length=500, blank=True)
+    logfile_url = models.CharField(max_length=500, blank=True)
+    log = models.TextField(blank=True)
+    error = models.CharField(max_length=1000, blank=True)
 
 class ImageJobAdmin(admin.ModelAdmin):
     list_display = ('image_id', 'user', 'arch', 'image_type', 'status')
@@ -91,3 +135,8 @@ admin.site.register(ImageJob, ImageJobAdmin)
 post_save.connect(imagejob_save_callback, sender=ImageJob, weak=False,
                   dispatch_uid="imagejob_save_callback")
 
+post_delete.connect(imagejob_delete_callback, sender=ImageJob, weak=False,
+                    dispatch_uid="imagejob_delete_callback")
+
+GETLOG.connect(imagejob_getlog, weak=False,
+               dispatch_uid="imagejob_getlog")

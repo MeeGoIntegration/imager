@@ -16,13 +16,23 @@
 
 from img.common import worker_config
 from img.worker import ImageWorker
-from  RuoteAMQP.workitem import DictAttrProxy
+from  RuoteAMQP.workitem import DictAttrProxy as dap
+from  RuoteAMQP import Launcher 
 
 class ParticipantHandler(object):
     """ Participant class as defined by the SkyNET API """
 
     def __init__(self):
         self.worker_config = None
+        self.launcher = None
+        self.process = \
+        """Ruote.process_definition 'create_image_ondemand' do
+             set 'debug_dump' => 'true'
+             sequence do
+               update_image_status :status => '%s'
+             end
+           end
+        """
 
     def handle_wi_control(self, ctrl):
         """ job control thread """
@@ -31,7 +41,21 @@ class ParticipantHandler(object):
     def handle_lifecycle_control(self, ctrl):
         """ participant control thread """
         if ctrl.message == "start":
-            self.worker_config = worker_config(config=ctrl.config)
+            self.worker_config = dap(worker_config(config=ctrl.config))
+            self.launcher = Launcher(amqp_host = ctrl.config.get("boss",
+                                                                 "amqp_host"),
+                                     amqp_user = ctrl.config.get("boss",
+                                                                 "amqp_user"),
+                                     amqp_pass = ctrl.config.get("boss",
+                                                                 "amqp_pwd"),
+                                     amqp_vhost = ctrl.config.get("boss",
+                                                                  "amqp_vhost")
+                                     )
+ 
+
+    def push_img_status(self, status, fields):
+        """ function to push status by launching a process, ?utility """
+        self.launcher.launch(self.process % status, fields)
 
     def handle_wi(self, wid):
         # We may want to examine the fields structure
@@ -60,7 +84,7 @@ class ParticipantHandler(object):
                          }
             f.image = args_dict
 
-        jargs = DictAttrProxy(args_dict)
+        jargs = dap(args_dict)
 
         if (not jargs.image_id or not jargs.kickstart or not jargs.image_type
             or not jargs.name or not jargs.arch):
@@ -84,23 +108,47 @@ class ParticipantHandler(object):
             worker = ImageWorker(config=self.worker_config,
                                  job_args=jargs)
 
-            result = worker.build()
+            results = worker.get_results()
 
-            f.image.update(worker.get_results())
+            image = f.image.as_dict()
+
+            image.update(results)
+
+            f.image = image
+
+            self.push_img_status("BUILDING", f.as_dict())
+
+            worker.build()
+
+            results = worker.get_results()
+
+            image = f.image.as_dict()
+
+            image.update(results)
+
+            f.image = image
 
             msg = "Image %s build for arch %s" % (f.image.name, f.image.arch)
 
-            if result:
+            if f.image.result:
                 msg = "%s succeeded \nfiles: %s \nimage: %s \nlog %s" % (msg, \
-                      f.image.files_url, f.image.image_url,f.image.image_log)
+                      f.image.files_url, f.image.image_url,f.image.logfile_url)
             else:
-                msg = "%s failed \nlog %s" % (msg, f.image.image_log)
+                msg = "%s failed \nlog %s\nerror %s" % (msg, f.image.image_log,
+                                                        f.image.error)
+                f.__error__ = 'Image build FAILED: %s' % f.image.error
+                f.msg.append(f.__error__)
 
             f.msg.append(msg)
 
-            wid.result = result
-        except Exception:
-            f.__error__ = 'Image build FAILED'
+            wid.result = f.image.result
+        except Exception, error:
+            f.__error__ = 'Image build FAILED: %s' % error
             f.msg.append(f.__error__)
             raise
+        finally:
+            if wid.result:
+                self.push_img_status("DONE", f.as_dict())
+            else:
+                self.push_img_status("ERROR", f.as_dict())
 

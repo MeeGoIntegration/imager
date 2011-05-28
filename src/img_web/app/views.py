@@ -26,10 +26,11 @@ from django.core.paginator import Paginator, InvalidPage, EmptyPage
 
 import img_web.settings as settings
 from img_web.app.forms import UploadFileForm, extraReposFormset
-from img_web.app.models import ImageJob
-from img_web.utils.a2html import plaintext2html 
+from img_web.app.models import ImageJob, GETLOG
+from django.db import transaction
 
 @login_required
+@transaction.autocommit
 def submit(request):    
     
     if request.method == 'GET':
@@ -54,16 +55,22 @@ def submit(request):
         data2 = formset.cleaned_data
         imgjob = ImageJob()
 
-#FIXME: is not unique , need to add a rand
-        imgjob.image_id = time.strftime('%Y%m%d-%H%M%S') 
+        imgjob.image_id = "%s-%s" % ( request.user.id, 
+                                      time.strftime('%Y%m%d-%H%M%S') )
         imgjob.email = data['email']
         imgjob.image_type = data['imagetype']
         imgjob.user = request.user
-        imgjob.devicegroup = data['devicegroup']  
-        imgjob.test_image = data['test_image']
+
         imgjob.overlay = data['overlay']
         imgjob.release = data['release']
         imgjob.arch = data['architecture']
+
+        if "test_image" in data.keys():
+            imgjob.devicegroup = data['devicegroup']  
+            imgjob.test_image = data['test_image']
+
+        if "notify" in data.keys():
+            imgjob.notify = data["notify"]
 
         conf = []
         for prj in data2:
@@ -88,6 +95,8 @@ def submit(request):
             ksname = ksname[0:-3]
 
         imgjob.name = ksname
+
+        imgjob.queue = "web"
 
         imgjob.save()
         
@@ -133,20 +142,12 @@ def job(request, msgid):
         error = "Job still in queue"
     elif imgjob.error and imgjob.error != "":
         error = imgjob.error
-    elif imgjob.logfile:
-        try:
-            if imgjob.logfile.startswith('http'):
-                res = urlopen(imgjob.logfile).read()    
-            res = plaintext2html(res)
-            return render_to_response('app/job_details.html', {'job':res},
-                                      context_instance=RequestContext(request))
-        except HTTPError as error:
-            if error.code == 404:
-                error = "No logfile has been created yet."
-            else:
-                raise
     else:
-        error = "No logfile and no error reported"
+        # signal to launch getlog process
+        GETLOG.send(sender=request, image_id = imgjob.image_id)
+
+        return render_to_response('app/job_details.html', {'job':imgjob.log},
+                                  context_instance=RequestContext(request))
 
     return render_to_response('app/job_details.html',
                               {'errors': {'Error' : [error]}}, 

@@ -16,8 +16,8 @@ app_urlpatterns = patterns('',
     url(r'^login/$', 'django.contrib.auth.views.login', name='login'),
     url(r'^logout/$', 'django.contrib.auth.views.logout_then_login', name='logout'),
 
-    url(r'^site_media/(?P<path>.*)$', 'django.views.static.serve',
-	        {'document_root': settings.STATIC_ROOT}),
+    #url(r'^site_media/(?P<path>.*)$', 'django.views.static.serve',
+	#        {'document_root': settings.STATIC_ROOT}),
     url(r'$', 'img_web.app.views.index', name='index'),
 
 )

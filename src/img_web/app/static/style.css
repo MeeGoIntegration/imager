@@ -10,7 +10,7 @@ body {
 	padding: 0;
 	background: #191919 url(images/img07.jpg) no-repeat right top;
 	font-family: Tahoma, Geneva, sans-serif;
-	font-size: 11px;
+	font-size: 10px;
 	color: #3C3C3C;
 }
 
@@ -18,7 +18,6 @@ h1, h2, h3 {
 	margin: 0;
 	font-family: Arial, Helvetica, sans-serif;
 	font-weight: normal;
-	color: #549900;
 }
 
 h1 {
@@ -26,7 +25,9 @@ h1 {
 }
 
 h2 {
-	font-size: 18px;
+	font-size: 24px;
+	font-weight: normal;
+	color: #424242;
 }
 
 h3 {
@@ -279,8 +280,7 @@ hr {
 
 .post .title a {
 	text-decoration: none;
-	font-size: 18px;
-	color: #424242;
+	font-size: 16px;
 }
 
 .post .title a:hover {
@@ -389,7 +389,6 @@ hr {
 	text-align: left;
 	text-decoration: none;
 	font-weight: bold;
-	color: #666666;
 }
 
 /* Calendar */

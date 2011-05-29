@@ -52,7 +52,8 @@ def imagejob_save_callback(sender, **kwargs):
             job = kwargs['instance']
 
             fields = {"image" : { 
-                                  "emails" : [job.email],
+                                  "emails" :  [ i.strip() for i in \
+                                                job.email.split(',') ],
                                   "kickstart" : job.kickstart,
                                   "image_id" : job.image_id,
                                   "image_type" : job.image_type,
@@ -109,11 +110,12 @@ class ImageJob(models.Model):
     queue = models.ForeignKey(Queue)
 
     user = models.ForeignKey(User)
-    email = models.CharField(max_length=40)
+    email = models.TextField(blank=True)
     notify = models.BooleanField(blank=True, default=False)
 
     test_image = models.BooleanField(blank=True, default=False)
     devicegroup = models.CharField(blank=True, max_length=100)
+    test_options = models.TextField(blank=True)
     test_result = models.BooleanField(blank=True, default=False)
 
     image_type = models.CharField(max_length=10)

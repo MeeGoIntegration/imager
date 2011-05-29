@@ -2,7 +2,7 @@
 
 {% block pagetitle %}IMG image uploader{% endblock %}
 
-{% block title %}IMG image uploader{% endblock %}
+{% block title %}Image creation request{% endblock %}
 
 {% block content %}
 <script type="text/javascript">
@@ -43,27 +43,110 @@
 {% endif %}
 <form id="uploadform" action="{%url img-app-submit%}" method="post" enctype="multipart/form-data">
     {% csrf_token %}
+    <fieldset>
+        <legend>Basic options</legend>
     <table width="100%">
-    {% for field in form %}
         <tr>
             <td>
-            {% if field.name == "ksfile" or field.name == "template"%}
-              <input type="radio" name="choice" id="{{ field.name }}"/>
-            {% endif %}
-            {{ field.label_tag }} 
+            {{ form.imagetype.label_tag }} 
             </td>
             <td>
-            {{ field }}
+            {{ form.imagetype }}
             </td>
         </tr>
-        {% if field.name == "ksfile" %}
+        <tr>
+            <td>
+            {{ form.architecture.label_tag }} 
+            </td>
+            <td>
+            {{ form.architecture }}
+            </td>
+        </tr>
+        <tr>
+            <td>
+              <input type="radio" name="choice" id="{{ form.ksfile.name }}"/>
+            {{ form.ksfile.label_tag }} 
+            </td>
+            <td>
+            {{ form.ksfile }}
+            </td>
+        </tr>
         <tr border="15px">
         <td>-OR-</td>
         <td></td>
         </tr>
-        {% endif %}
-    {% endfor %}
+        <tr>
+            <td>
+              <input type="radio" name="choice" id="{{ form.template.name }}"/>
+            {{ form.template.label_tag }} 
+            </td>
+            <td>
+            {{ form.template }}
+            </td>
+        </tr>
+        <tr>
+            <td>
+            {{ form.release.label_tag }} 
+            </td>
+            <td>
+            {{ form.release }}
+            </td>
+        </tr>
+        </table>
+    </fieldset>
+</table>
+<fieldset>
+    <legend>Notification options</legend>
+    <table width="100%">
+        <tr>
+            <td>
+            {{ form.notify_image.label_tag }} 
+            </td>
+            <td>
+            {{ form.notify_image }}
+            </td>
+        </tr>
+        <tr>
+            <td>
+            {{ form.email.label_tag }} 
+            </td>
+            <td>
+            {{ form.email }}
+            </td>
+        </tr>
     </table>
+</fieldset>
+<fieldset>
+    <legend>Testing options</legend>
+    <table width="100%">
+        <tr>
+            <td>
+            {{ form.test_image.label_tag }} 
+            </td>
+            <td>
+            {{ form.test_image }}
+            </td>
+        </tr>
+        <tr>
+            <td>
+            {{ form.devicegroup.label_tag }} 
+            </td>
+            <td>
+            {{ form.devicegroup }}
+            </td>
+        </tr>
+        <tr>
+            <td>
+            {{ form.test_options.label_tag }} 
+            </td>
+            <td>
+            {{ form.test_options }}
+            </td>
+        </tr>
+    </table>
+</fieldset>
+<fieldset> 
+    <legend>Extra repositories and packages</legend>
     <table id="id_extra_repos_table" border="0" cellpadding="0" cellspacing="5">
          <thead>
              <tr>
@@ -81,6 +164,17 @@
          </tbody>
      </table>
     {{ formset.management_form }}
+    <table>
+    <tr>
+        <td>
+            {{ form.overlay.label_tag }} 
+        </td>
+        <td>
+            {{ form.overlay }}
+        </td>
+    </tr>
+    </table>
+     </fieldset>
 <p><input type="submit" value="Submit" /></p>
 </form>
 

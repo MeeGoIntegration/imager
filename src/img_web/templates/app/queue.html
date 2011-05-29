@@ -5,7 +5,7 @@
 {% block pagetitle %}IMG Queue{% endblock %}
 
 {% block title %}
-IMG Queue : Display <a href="{%url img-app-queue %}">all images</a> or <a href="{%url img-app-queue-filter %}">my images only</a>
+Image creation queue
 {% endblock %}
 
 {% block content %}
@@ -13,56 +13,94 @@ IMG Queue : Display <a href="{%url img-app-queue %}">all images</a> or <a href="
 {%if queue %}
 <meta http-equiv="refresh" content="60">
 <table id="queue">
-<thead><tr>
-        <th>Submitted</th>
-        <th>Length</th>
-<th>User</th>
-<th>Status</th>
-<th>Arch</th>
-<th>Type</th>
-<th>Log</th>
-<th>Download</th>
-</tr></thead>
-<tbody>
-    {% for obj in queue.object_list %}
+    <thead>
         <tr>
+            <th>ID</th>
+            <th>Submitted</th>
+            <th>Length</th>
+            <th>User</th>
+            <th>Arch</th>
+            <th>Type</th>
+            <th>Status</th>
+            <th>Results</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for obj in queue.object_list %}
+        <tr>
+            <td>{{ obj.image_id }}</td>
             <td>{{ obj.created|date:"SHORT_DATETIME_FORMAT" }}</td>
             <td>{{obj.created|timesince:obj.done}}</td>
             <td>{{obj.user.username}}</td> 
-            <td>{{obj.status}} </td> 
             <td>{{obj.arch}} </td>
             <td>{{obj.image_type}} </td>
-            <td><a href="{% url img-app-job obj.image_id %}">Log</a></td>
-            <td><a href="{{ obj.files_url }}">Files</a>
-            <a href="{{ obj.image_url }}">Image</a></td>
+            <td>
+                {{obj.status}}
+                <br/>
+                {% if obj.test_image and obj.status == "DONE, TESTED" %}
+                    {% if obj.test_result %}
+                    <div><font color="green">PASS</font></div>
+                    {% else%}
+                    <div><font color="red">FAIL</font></div>
+                    {% endif %}
+                {% endif %}
+            </td> 
+            <td>
+                {% if obj.logfile_url %}
+                <a href="{% url img-app-job obj.image_id %}">Log</a>
+                {% endif %}
+                <br/>
+                {% if obj.files_url %}
+                <a href="{{ obj.files_url }}">Files</a>
+                {% endif %}
+                {% if obj.image_url %}
+                <a href="{{ obj.image_url }}">Image</a>
+                {% endif %}
+            </td>
         </tr>
-    {% endfor %}
-</tbody>
-<tfoot>
-<tr class="pagination">
-        <td>
-        {% if queue.has_previous %}
-            <a href="?page={{ queue.previous_page_number }}">previous</a>
-        {% endif %}
-        </td>
-        <td colspan="6">
-            Page {{ queue.number }} of {{ queue.paginator.num_pages }}.
-        </td>
-        <td>
-        {% if queue.has_next %}
-            <a href="?page={{ queue.next_page_number }}">next</a>
-        {% endif %}
-        </td>
-</tr>
-</tfoot>
+        {% endfor %}
+    </tbody>
+    <tfoot>
+        <tr class="pagination">
+            <td>
+            {% if queue.has_previous %}
+                <a href="?page={{ queue.previous_page_number }}">previous</a>
+            {% endif %}
+            </td>
+            <td colspan="6">
+                Page {{ queue.number }} of {{ queue.paginator.num_pages }}.
+            </td>
+            <td>
+            {% if queue.has_next %}
+                <a href="?page={{ queue.next_page_number }}">next</a>
+            {% endif %}
+            </td>
+        </tr>
+    </tfoot>
 </table>
 {% endif %}
 {% endblock %}
 {% block sidebar_title %}
-Help
+Filter
 {% endblock %}
 {% block sidebar_content %}
-<li>If your image fails to build check the log file in the download directory to find out about the reason it failed. Usually it is a depndency problem in one of the packages.
+<li>
+{% if filtered %}
+Show <a href="{%url img-app-queue %}">all images</a>
+{% else%}
+Show <a href="{%url img-app-queue-filter %}">only my images</a>
+{% endif %}
+</li>
+<li>
+Show queue: 
+{% for q in queues %}
+{% if q.name not in request.path %}
+<a href="{% url img-app-queue-name queue_name=q.name %}">{{ q.name }} </a>
+{% endif %}
+{% endfor %}
+{% if queue_name %}
+<a href="{% url img-app-queue %}">all </a>
+{% endif %}
 </li>
 <li>
 This page will auto-refresh every 60 seconds.

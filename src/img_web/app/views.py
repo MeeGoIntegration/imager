@@ -104,12 +104,13 @@ def submit(request):
 
 
 @login_required
-def queue(request, dofilter=False):
+def queue(request, queue_name=None, dofilter=False):
+    imgjobs = ImageJob.objects.all().order_by('created').reverse()
     if dofilter:
-        imgjobs = ImageJob.objects.filter(email = request.user.email)\
-                                      .order_by('created').reverse()
-    else:
-        imgjobs = ImageJob.objects.all().order_by('created').reverse()
+        imgjobs = imgjobs.filter(user = request.user)
+    if queue_name:
+        imgjobs = imgjobs.filter(queue__name = queue_name)
+
     paginator = Paginator(imgjobs, 30)
     try:
         page = int(request.GET.get('page', '1'))
@@ -120,7 +121,11 @@ def queue(request, dofilter=False):
     except (EmptyPage, InvalidPage):
         queue_page = paginator.page(paginator.num_pages)
     return render_to_response('app/queue.html',
-                              {'queue' : queue_page },
+                              {'queue' : queue_page,
+                               'queues': Queue.objects.all(),
+                               'queue_name' : queue_name,
+                               'filtered' : dofilter,
+                               },
                               context_instance=RequestContext(request))
     
 @login_required

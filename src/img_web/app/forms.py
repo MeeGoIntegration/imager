@@ -18,6 +18,8 @@
 import os
 from django import forms
 from django.forms.formsets import formset_factory
+from django.core.validators import validate_email
+
 from img_web import settings
 
 class extraReposForm(forms.Form):
@@ -55,28 +57,6 @@ extraReposFormset = formset_factory(extraReposForm)
 
 class UploadFileForm(forms.Form):
     """ Django form that allows users to create image jobs """
-
-    email = forms.EmailField(label='Email', required=True, help_text="Email: "\
-         "Your email to send a notification when the image building is done.")
-
-    if settings.notify_enabled:
-        notify_image = forms.BooleanField(label="Notify", required=False,
-                                          initial=True,
-                            help_text="Notify image: Send notification when "\
-                                      "image building process is done. ")
-    if settings.testing_enabled:
-        test_image = forms.BooleanField(label="Test image", required=False,
-                                        initial=False,
-                            help_text="Test image: Send image for testing. ")
-    devicegroup = forms.CharField(label="Device group", required=False,
-                            help_text="Device group: OTS device group to "\
-                            "use for test run.",
-                            initial='devicegroup:mygroup')
-    release = forms.CharField(label="Release", required=False,
-                              help_text="Release: Optional, if used your "\
-                              "kickstart file has to follow the naming "\
-                              "convention $VERTICAL-$ARCH-$VARIANT, "\
-                              "otherwise mic2 will reject it.")
     imagetype = forms.ChoiceField(label='Image type',
                                   choices=[
                                               ('fs', 'RootFS'),
@@ -91,6 +71,7 @@ class UploadFileForm(forms.Form):
                                           ],
                                   help_text="Type: format of image you want to"\
                                             " produce.")
+
     architecture = forms.ChoiceField(label='Architecture',
                                      choices=[
                                                 ('i586', "i586"),
@@ -105,6 +86,7 @@ class UploadFileForm(forms.Form):
     ksfile = forms.FileField(label="Kickstart file", required=False,
                              help_text="Kickstart: customized kickstart file, "\
                                        "if the templates don't fit your needs.")
+
     template = forms.ChoiceField(label='Template',
                                  choices=[
                                             ("None", "None")
@@ -116,6 +98,39 @@ class UploadFileForm(forms.Form):
                                           "architecture so the architecture "\
                                           "and kickstart fields will be "\
                                           "ignored.")
+
+    release = forms.CharField(label="Release", required=False,
+                              help_text="Release: Optional, if used your "\
+                              "kickstart file has to follow the naming "\
+                              "convention $VERTICAL-$ARCH-$VARIANT, "\
+                              "otherwise mic2 will reject it.")
+
+    if settings.notify_enabled:
+        notify_image = forms.BooleanField(label="Notify", required=False,
+                                          initial=True,
+                            help_text="Notify image: Send notification when "\
+                                      "image building process is done. ")
+        email = forms.CharField(label="Emails", required=False,
+                                 widget=forms.Textarea(attrs={'rows':'2'}),
+                                 help_text="Emails: Comma separated list of "\
+                                           "emails to send a notification to "\
+                                           "when the image building is done.")
+
+    if settings.testing_enabled:
+        test_image = forms.BooleanField(label="Test image", required=False,
+                                        initial=False,
+                            help_text="Test image: Send image for testing. ")
+        devicegroup = forms.CharField(label="Device group", required=False,
+                                help_text="Device group: OTS device group to "\
+                                "use for test run.",
+                                initial='devicegroup:mygroup')
+
+        test_options = forms.CharField(label="Test options", required=False,
+                              widget=forms.Textarea(attrs={'rows':'2'}),
+                                                    help_text=\
+                              "Test options: comma separated list of test "\
+                              "options you want to send to the testing server.")
+
     overlay = forms.CharField(label="Packages", required=False,
                               widget=forms.Textarea(attrs={'rows':'4'}),
                                                     help_text=\
@@ -124,6 +139,7 @@ class UploadFileForm(forms.Form):
                               "chosen template. A packagename prefixed wtit "\
                               '"-" is excluded. Package groups are denoted by '\
                               '"@" prefix.')
+
 
     def __init__(self, *args, **kwargs):
         super(UploadFileForm, self).__init__(*args, **kwargs)
@@ -137,6 +153,13 @@ class UploadFileForm(forms.Form):
         cleaned_data = self.cleaned_data
         if cleaned_data['template'] == "None":
             cleaned_data['template'] = None
+
+        if 'email' in cleaned_data.keys():
+            if cleaned_data['email'].endswith(','):
+                cleaned_data['email'] = cleaned_data['email'][:-1]
+                for email in [i.strip() for i in \
+                        cleaned_data['email'].split(",")]:
+                    validate_email(email)
 
         if cleaned_data['ksfile'] and cleaned_data['template']:
                 raise forms.ValidationError("Please choose template or upload"\

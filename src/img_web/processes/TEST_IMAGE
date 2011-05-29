@@ -2,7 +2,9 @@ Ruote.process_definition 'test_image' do
   set 'debug_dump' => 'true'
 
   sequence do
+      update_image_status :status => 'DONE, TESTING'
       test_image
+      update_image_status :status => 'DONE, TESTED'
   end
 
 end

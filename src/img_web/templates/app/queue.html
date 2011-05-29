@@ -14,7 +14,8 @@ IMG Queue : Display <a href="{%url img-app-queue %}">all images</a> or <a href="
 <meta http-equiv="refresh" content="60">
 <table id="queue">
 <thead><tr>
-<th>Submitted / Finished</th>
+        <th>Submitted</th>
+        <th>Length</th>
 <th>User</th>
 <th>Status</th>
 <th>Arch</th>
@@ -25,9 +26,8 @@ IMG Queue : Display <a href="{%url img-app-queue %}">all images</a> or <a href="
 <tbody>
     {% for obj in queue.object_list %}
         <tr>
-            <td>{{ obj.created|date:"SHORT_DATETIME_FORMAT" }}<br/>
-                {{obj.done|date:"SHORT_DATETIME_FORMAT"}}
-            </td>
+            <td>{{ obj.created|date:"SHORT_DATETIME_FORMAT" }}</td>
+            <td>{{obj.created|timesince:obj.done}}</td>
             <td>{{obj.user.username}}</td> 
             <td>{{obj.status}} </td> 
             <td>{{obj.arch}} </td>
@@ -45,7 +45,7 @@ IMG Queue : Display <a href="{%url img-app-queue %}">all images</a> or <a href="
             <a href="?page={{ queue.previous_page_number }}">previous</a>
         {% endif %}
         </td>
-        <td colspan="5">
+        <td colspan="6">
             Page {{ queue.number }} of {{ queue.paginator.num_pages }}.
         </td>
         <td>

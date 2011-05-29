@@ -58,7 +58,7 @@ def imagejob_save_callback(sender, **kwargs):
                                   "image_type" : job.image_type,
                                   "name" : job.name,
                                   "arch" : job.arch,
-                                  "prefix" : "%s/%s" % (job.queue,
+                                  "prefix" : "%s/%s" % (job.queue.name,
                                                         job.user.username)
                                   }
                         }
@@ -96,11 +96,17 @@ def imagejob_save_callback(sender, **kwargs):
                 launch(process, fields)
 
 
+class Queue(models.Model):    
+    name = models.CharField(max_length=30)
+
+    def __str__(self):
+        return self.name
+
 class ImageJob(models.Model):    
     image_id = models.CharField(max_length=30)
     created = models.DateTimeField(auto_now_add=True)
     done = models.DateTimeField(blank=True, null=True)
-    queue = models.CharField(max_length=30)
+    queue = models.ForeignKey(Queue)
 
     user = models.ForeignKey(User)
     email = models.CharField(max_length=40)
@@ -128,10 +134,14 @@ class ImageJob(models.Model):
     error = models.CharField(max_length=1000, blank=True)
 
 class ImageJobAdmin(admin.ModelAdmin):
-    list_display = ('image_id', 'user', 'arch', 'image_type', 'status')
-    list_filter = ('user', 'arch', 'image_type', 'status')
+    list_display = ('image_id', 'user', 'arch', 'image_type', 'status', 'queue')
+    list_filter = ('user', 'arch', 'image_type', 'status', 'queue')
+
+class QueueAdmin(admin.ModelAdmin):
+    list_display = ('id', 'name')
 
 admin.site.register(ImageJob, ImageJobAdmin)
+admin.site.register(Queue, QueueAdmin)
 
 post_save.connect(imagejob_save_callback, sender=ImageJob, weak=False,
                   dispatch_uid="imagejob_save_callback")

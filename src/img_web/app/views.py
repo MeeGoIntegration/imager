@@ -26,7 +26,7 @@ from django.core.paginator import Paginator, InvalidPage, EmptyPage
 
 import img_web.settings as settings
 from img_web.app.forms import UploadFileForm, extraReposFormset
-from img_web.app.models import ImageJob, GETLOG
+from img_web.app.models import ImageJob, Queue, GETLOG
 from django.db import transaction
 
 @login_required
@@ -96,18 +96,12 @@ def submit(request):
 
         imgjob.name = ksname
 
-        imgjob.queue = "web"
+        imgjob.queue = Queue.objects.get(name="web")
 
         imgjob.save()
         
         return HttpResponseRedirect(reverse('img-app-queue'))
 
-
-def get_or_none(model, **kwargs):
-    try:
-        return model.objects.get(**kwargs)
-    except model.DoesNotExist:
-        return None
 
 @login_required
 def queue(request, dofilter=False):
@@ -130,11 +124,6 @@ def queue(request, dofilter=False):
                               context_instance=RequestContext(request))
     
 @login_required
-def download(request, msgid):
-    image_job = ImageJob.objects.get(image_id__exact=msgid)
-    return HttpResponseRedirect(image_job.image_url)
-    
-@login_required
 def job(request, msgid): 
     imgjob = ImageJob.objects.get(image_id__exact=msgid)
     error = "" 
@@ -153,7 +142,6 @@ def job(request, msgid):
                               {'errors': {'Error' : [error]},
                                'job':imgjob.log}, 
                                 context_instance=RequestContext(request)) 
-
 
 def index(request):
     return render_to_response('index.html',

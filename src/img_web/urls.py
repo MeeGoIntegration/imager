@@ -12,7 +12,6 @@ app_urlpatterns = patterns('',
     url(r'queue/$', 'img_web.app.views.queue', name='img-app-queue'),
     url(r'queue/filter/$', 'img_web.app.views.queue', {'dofilter' : True}, name='img-app-queue-filter'),
     url(r'job/(?P<msgid>\S+)$', 'img_web.app.views.job', name='img-app-job'),      
-    url(r'imgs/(?P<msgid>\S+)$', 'img_web.app.views.download',name='img-app-download'),
     url(r'^login/$', 'django.contrib.auth.views.login', name='login'),
     url(r'^logout/$', 'django.contrib.auth.views.logout_then_login', name='logout'),
 

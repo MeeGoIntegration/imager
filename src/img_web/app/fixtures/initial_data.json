@@ -1,0 +1,23 @@
+[
+  {
+    "model": "app.Queue",
+    "pk": 1,
+    "fields": {
+      "name": "web"
+    }
+  },
+  {
+    "model": "app.Queue",
+    "pk": 2,
+    "fields": {
+      "name": "api"
+    }
+  },
+  {
+    "model": "app.Queue",
+    "pk": 3,
+    "fields": {
+      "name": "requests"
+    }
+  }
+]

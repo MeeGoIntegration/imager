@@ -41,6 +41,7 @@ setup(
                                        'static/images/*.*',
                                        'static/images/formset/*.*',
                                        'static/js/*.*',
+                                       'fixtures/*.*'
                                       ]
                     },
     data_files = static_files,

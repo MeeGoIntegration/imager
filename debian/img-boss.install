@@ -2,3 +2,5 @@ usr/share/boss-skynet/build_image.py
 etc/skynet/build_image.conf
 usr/share/boss-skynet/build_ks.py 
 etc/skynet/build_ks.conf
+usr/share/boss-skynet/request_image.py 
+etc/skynet/request_image.conf

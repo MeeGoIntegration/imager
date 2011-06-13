@@ -1,3 +1,9 @@
+img (0.60.0) unstable; urgency=low
+
+  * Request images can be tracked by the webui now
+
+ -- Islam Amer <islam.amer@nokia.com>  Mon, 13 Jun 2011 18:38:22 +0300
+
 img (0.6.0) unstable; urgency=low
 
   * Complete redesign and rewrite.

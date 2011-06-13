@@ -1,5 +1,5 @@
 Name: img
-Version: 0.6.0
+Version: 0.60.0
 Release: 1
 
 Group: Applications/Engineering
@@ -119,3 +119,4 @@ fi
 %{_datadir}/boss-skynet/*.py
 %config(noreplace) %{_sysconfdir}/skynet/build_image.conf
 %config(noreplace) %{_sysconfdir}/skynet/build_ks.conf
+%config(noreplace) %{_sysconfdir}/skynet/request_image.conf

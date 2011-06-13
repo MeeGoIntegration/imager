@@ -14,7 +14,7 @@
 #~ You should have received a copy of the GNU General Public License
 #~ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import os, time, tempfile
+import os, tempfile
 from img.common import build_kickstart
 
 class ParticipantHandler(object):
@@ -65,21 +65,19 @@ class ParticipantHandler(object):
         if wid.params.packages_from :
             packages = f.as_dict()[wid.params.packages_from]
         elif f.image.packages:
-            packages = f.packages
-        elif f.packages:
-            packages = f.packages
+            packages = f.image.packages
 
         groups = []
         if wid.params.groups_from :
             groups = f.as_dict()[wid.params.groups_from]
-        elif f.groups:
-            groups = f.groups
+        elif f.image.groups:
+            groups = f.image.groups
 
         remove = False
         ksfile = ""
 
         if f.image.ksfile:
-            ksfile = os.path.join(self.ksstore, f.ksfile)
+            ksfile = os.path.join(self.ksstore, f.image.ksfile)
         elif f.image.kickstart:
             with tempfile.NamedTemporaryFile(delete=False) as kstemplate:
                 kstemplate.write(f.image.kickstart)
@@ -96,13 +94,6 @@ class ParticipantHandler(object):
         finally:
             if remove:
                 os.remove(remove)
-
-        if not f.image.image_id:
-            if f.ev.rid:
-                f.image.image_id = "%s-%s" % (str(f.ev.rid), \
-                                              time.strftime('%Y%m%d-%H%M%S'))
-            else:
-                f.image.image_id = time.strftime('%Y%m%d-%H%M%S')
 
         if not f.image.name:
             f.image.name = os.path.basename(ksfile)[0:-3]

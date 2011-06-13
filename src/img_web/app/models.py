@@ -44,12 +44,15 @@ def imagejob_delete_callback(sender, **kwargs):
     pass
 
 def imagejob_save_callback(sender, **kwargs):
+    job = kwargs['instance']
+
+    if not job.queue.handle_launch:
+        return
+
     if kwargs['created']:
         try:
             with open(settings.create_image_process, mode='r') as process_file:
                 process = process_file.read()
-    
-            job = kwargs['instance']
 
             fields = {"image" : { 
                                   "emails" :  [ i.strip() for i in \
@@ -72,6 +75,8 @@ def imagejob_save_callback(sender, **kwargs):
             if job.test_image:
                 fields['image']['test_image'] = job.test_image
                 fields['image']['devicegroup'] = job.devicegroup
+            if job.test_options:
+                fields['image']['test_options'] = job.test_options
     
             launch(process, fields)
 
@@ -99,6 +104,7 @@ def imagejob_save_callback(sender, **kwargs):
 
 class Queue(models.Model):    
     name = models.CharField(max_length=30)
+    handle_launch = models.BooleanField(default=True)
 
     def __str__(self):
         return self.name

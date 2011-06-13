@@ -3,21 +3,24 @@
     "model": "app.Queue",
     "pk": 1,
     "fields": {
-      "name": "web"
+      "name": "web",
+      "handle_launch": true
     }
   },
   {
     "model": "app.Queue",
     "pk": 2,
     "fields": {
-      "name": "api"
+      "name": "api",
+      "handle_launch": true
     }
   },
   {
     "model": "app.Queue",
     "pk": 3,
     "fields": {
-      "name": "requests"
+      "name": "requests",
+      "handle_launch": false
     }
   }
 ]

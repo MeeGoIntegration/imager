@@ -5,7 +5,16 @@
 {% block pagetitle %}IMG Queue{% endblock %}
 
 {% block title %}
-Image creation queue
+{% if filtered %}
+    {{ user.username }}'s images
+{% else%}
+    {%if queue_name %}
+        {{ queue_name }} image creation queue
+    {% else %}
+        All image creation queues
+    {% endif %}
+{% endif %}
+
 {% endblock %}
 
 {% block content %}
@@ -15,7 +24,7 @@ Image creation queue
 <table id="queue">
     <thead>
         <tr>
-            <th>ID</th>
+            <th>ID {%if not queue_name %}/ queue{% endif %}</th>
             <th>Submitted</th>
             <th>Length</th>
             <th>User</th>
@@ -28,7 +37,7 @@ Image creation queue
     <tbody>
         {% for obj in queue.object_list %}
         <tr>
-            <td>{{ obj.image_id }}</td>
+            <td>{{ obj.image_id }} {%if not queue_name %}/ {{ obj.queue.name }}{% endif %}</td>
             <td>{{ obj.created|date:"SHORT_DATETIME_FORMAT" }}</td>
             <td>{{obj.created|timesince:obj.done}}</td>
             <td>{{obj.user.username}}</td> 

@@ -5,7 +5,7 @@ Release: 1
 Group: Applications/Engineering
 License: GPLv2+
 URL: http://www.meego.com
-Source0: https://api.opensuse.org/public/source/Maemo:MeeGo-Infra/Meego-IMG/%{name}_%{version}.tar.gz
+Source0: %{name}_%{version}.tar.gz
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-buildroot
 BuildRequires: python 
 BuildRequires: python-setuptools
@@ -96,7 +96,6 @@ fi
 %{python_sitelib}/img_web
 %{_datadir}/img_web
 %{_sysconfdir}/init.d/img-web
-%{_datadir}/boss-skynet/*.py
 
 %files -n img-boss
 %defattr(-,root,root,-)

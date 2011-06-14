@@ -6,4 +6,4 @@ export PREFIX=/usr
 %:
 	dh $@
 override_dh_installinit:
-	dh_installinit -pimg-web -n
+	dh_installinit -pimg-web

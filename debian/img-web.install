@@ -1,4 +1,3 @@
 usr/lib/python*/*/img_web
 usr/share/img_web
 etc/imager/img.conf
-usr/share/boss-skynet/update_image_status.py

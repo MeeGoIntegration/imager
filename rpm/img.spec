@@ -26,9 +26,7 @@ Image creation service for MeeGo related products
 Group: Applications/Engineering
 BuildRequires: python >= 2.5.0
 BuildRequires: python-setuptools
-Requires: python >= 2.5.0
-Requires: mic2
-Requires: sudo
+Requires: python >= 2.5.0, mic2, sudo, pykickstart
 Summary: Image creation service for MeeGo related products, core package
 %description -n img-core
 This package provides the core worker logic of imager. It builds images using mic2 optionally in a virtual machine.
@@ -41,10 +39,7 @@ Requires: python >= 2.5.0
 Requires: lighttpd
 Requires: python-django
 Requires: python-flup
-Requires: python-yaml
 Requires: python-django-south
-Requires: python-boss-skynet >= 0.2.2
-Requires: python-buildservice >= 0.3.1
 Requires(post): boss-skynet
 Summary: Image creation service for MeeGo related products, django web interface
 %description -n img-web
@@ -54,10 +49,8 @@ This package provides a django based web interface for imager. It can work with 
 Group: Applications/Engineering
 BuildRequires: python >= 2.5.0
 BuildRequires: python-setuptools
-Requires: pykickstart
 Requires: img-core
 Requires: python-boss-skynet >= 0.2.2
-Requires: python-buildservice >= 0.3.1
 Requires(post): boss-skynet
 Summary: Image creation service for MeeGo related products, BOSS participants
 %description -n img-boss
@@ -82,17 +75,8 @@ if [ $1 -eq 1 ] ; then
         for i in \
             build_image \
             build_ks \
-        ; do
-        
-        skynet make_participant -n $i -p /usr/share/boss-skynet/$i.py
-
-    done
-fi
-
-%post -n img-web
-if [ $1 -eq 1 ] ; then
-        for i in \
             update_image_status \
+            request_image \
         ; do
         
         skynet make_participant -n $i -p /usr/share/boss-skynet/$i.py

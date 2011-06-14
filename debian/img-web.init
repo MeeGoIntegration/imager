@@ -1,10 +1,10 @@
 #! /bin/sh
 ### BEGIN INIT INFO
 # Provides:          img-web
-# Required-Start:    networking mysql
-# Required-Stop:     networking
+# Required-Start:    $network mysql
+# Required-Stop:     $network
 # Default-Start:     2 3 4 5
-# Default-Stop:      S 0 1 6
+# Default-Stop:      0 1 6
 # Short-Description: Start FastCGI servers with Django.
 # Description:       Django, in order to operate with FastCGI, must be started
 #                    in a very specific way with manage.py. This must be done

@@ -37,10 +37,8 @@ BuildRequires: python >= 2.5.0
 BuildRequires: python-setuptools
 Requires: python >= 2.5.0
 Requires: lighttpd
-Requires: python-django
-Requires: python-flup
-Requires: python-django-south
-Requires(post): boss-skynet
+Requires: python-django, python-flup, python-django-south, python-mysql, mysql-client, mysql
+Requires: img-boss
 Summary: Image creation service for MeeGo related products, django web interface
 %description -n img-web
 This package provides a django based web interface for imager. It can work with a standalone imager installation communicating over AMQP, or an installation that is part of BOSS.

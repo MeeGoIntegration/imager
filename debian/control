@@ -14,16 +14,17 @@ XB-Python-Version: ${python:Versions}
 Description: image creation service for MeeGo related products
  This package provides the core worker logic of imager. It builds images using mic2 optionally in a virtual machine.
 
-Package: img-web
-Architecture: all
-Depends: ${python:Depends}, ${misc:Depends}, lighttpd, python-django, python-flup, python-django-south
-XB-Python-Version: ${python:Versions}
-Description: image creation service for MeeGo related products
- This package provides a django based web interface for imager. It can work with a standalone imager installation communicating over AMQP, or an installation that is part of BOSS.
-
 Package: img-boss
 Architecture: all
-Depends: ${python:Depends}, ${misc:Depends}, python-boss-skynet, img-core
+Depends: ${python:Depends}, ${misc:Depends}, boss-skynet, python-boss-skynet, img-core
 XB-Python-Version: ${python:Versions}
 Description: image creation service for MeeGo related products
- This package provides imager participants that plugin into a BOSS system to fulfill image building steps of processes 
+ This package provides imager participants that plugin into a BOSS system to 
+ fulfill image building steps of processes 
+
+Package: img-web
+Architecture: all
+Depends: ${python:Depends}, ${misc:Depends}, lighttpd, python-django, python-flup, python-django-south, python-mysqldb, mysql-client, mysql-server, img-boss
+XB-Python-Version: ${python:Versions}
+Description: image creation service for MeeGo related products
+ This package provides a django based web interface for imager. 

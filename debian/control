@@ -2,8 +2,7 @@ Source: img
 Section: python
 Priority: optional
 Maintainer: Islam Amer <islam.amer@nokia.com>
-Architecture: all
-Build-Depends: debhelper, python-support (>= 0.5.0), python-dev, python-setuptools
+Build-Depends: debhelper (>= 7.0.50~), python-support (>= 0.5.0), python, python-setuptools
 Standards-Version: 3.9.2
 XS-Python-Version: >= 2.6
 

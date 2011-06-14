@@ -1,88 +1,58 @@
 INSTALLATION
 
-MANUAL
+Full imager installation on one system.
 
-buildout structure:
- http://www.buildout.org/
- http://jacobian.org/writing/django-apps-with-buildout/
+Debian Squeeze:
+
+cat >> /etc/apt/sources.list.d/mint << EOF
+deb http://repo.pub.meego.com/Project:/MINT:/Testing/Debian_6.0/ /
+EOF
+
+apt-get uodate
+
+apt-get install boss boss-viewer img-web
+
+MIC
+change /etc/mic2/mic2.conf according to your needs, for example proxy.
+
+PARTICIPANTS
+
+cat >> /etc/sudoers.d/nobody << EOF
+nobody ALL=(ALL)NOPASSWD:/usr/bin/mic-image-creator
+EOF
+
+chmod 0440 /etc/sudoers.d/nobody
+
+mkdir /var/www/images
+mkdir /var/www/templates/
+chmod 0777 /var/www/images
+
+for i in build_image build_ks update_image_status request_image ; do 
+  skynet enable $i
+  skynet register -n $i
+done
+
+WEB
+
+Edit /etc/imager/img.conf and set the database and boss settings.
 
 
-Installation
+mysql -u root -p
 
-(depends on python-setuptools)
-run:
-python ./bootstrap.py
-bin/buildout
-bin/django runserver
+create database imgdb CHARACTER SET utf8;
 
-Install kickstarter (git://gitorious.org/meego-developer-tools/kickstarter.git)
-Install meego-image-creator (git://gitorious.org/meego-developer-tools/image-creator.git)
-Install pykickstart (http://git.fedorahosted.org/git/pykickstart.git)
+GRANT ALL ON imgdb.* TO 'img'@'localhost' IDENTIFIED BY 'img';
 
-Also install packages python-simplejson, python-yaml, python-cheetah, yum in the system. Also note that recommended python 
-version is 2.6.x.
+django-admin  syncdb --settings=img_web.settings
 
-Setup:
+django-admin  collectstatic --settings=img_web.settings
 
-Install rabbitmq-server
-
-rabbitmqctl add_user img imgpwd
-rabbitmqctl add_vhost imgvhost
-rabbitmqctl set_permissions -p imgvhost img "" ".*" ".*"
-
-If you want to run in lighttpd, check out debian/img-lighttpd.conf and make 
-sure you modify the paths in that file to reflect your setup.
-
-Run:
-bin/django syncdb
-
-Running the creator service:
-cd src/img_amqp/
-python build_image.py
-
-Run the django project
-
-cd src/img_web
-./manage.py runserver
-
-WEB SERVER INSTALL FROM RPM/DEB:
-
-Install rabbitmq-server
-
-rabbitmqctl add_user img imgpwd
-rabbitmqctl add_vhost imgvhost
-rabbitmqctl set_permissions -p imgvhost img "" ".*" ".*"
-
-Make sure that the modules are loaded like this and on this order:
-
-server.modules              = (
-
-            "mod_access",
-
-            "mod_alias",
-
-            "mod_compress",
-
-            "mod_rewrite",
-
-            "mod_fastcgi",
-
-            "mod_accesslog",
-
-and configure lighttpd for fastcgi in /etc/lighttpd/vhosts.d/img_web.conf , for example :
-
-"""
+cat >> /etc/lighttpd/vhosts.d/img.conf << EOF
 var.namebasedir = "/img"
 
 $HTTP["url"] =~ "^" + namebasedir {
         dir-listing.activate = "disable"
 }
-
-alias.url += (
-  namebasedir + "/site_media" => "/usr/share/img_web/site_media/",
-  namebasedir + "/media" => "/usr/lib/python2.6/site-packages/django/contrib/admin/media/",
-  "/images" => "/srv/www/build/images/",
-)
 
 url.redirect += (
   "^" + namebasedir + "$" => namebasedir + "/"
@@ -99,9 +69,17 @@ fastcgi.server += (
 
 url.rewrite-if-not-file += (
    "^(" + namebasedir + "/.*)$" => "/img.fcgi/$1"
-)
-"""
+
+EOF
 
 
-And then just start the IMG Django project. The initscript is img-web, like
-/etc/init.d/img-web start for both DEB and RPM based distributions.
+Edit /etc/lighttpd/lighttpd.conf and enable mod_rewrite and add the following line at the end
+
+include_shell "cat /etc/lighttpd/vhosts.d/*"
+
+lighttpd-enable-mod fastcgi
+lighttpd-enable-mod accesslog
+
+/etc/init.d/lighttpd force-reload
+
+Point your browser at http://127.0.0.1/img/

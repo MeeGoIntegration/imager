@@ -38,7 +38,6 @@ BuildRequires: python-setuptools
 Requires: python >= 2.5.0
 Requires: lighttpd
 Requires: python-django, python-flup, python-django-south, python-mysql, mysql-client, mysql
-Requires: img-boss
 Summary: Image creation service for MeeGo related products, django web interface
 %description -n img-web
 This package provides a django based web interface for imager. It can work with a standalone imager installation communicating over AMQP, or an installation that is part of BOSS.
@@ -48,6 +47,7 @@ Group: Applications/Engineering
 BuildRequires: python >= 2.5.0
 BuildRequires: python-setuptools
 Requires: img-core
+Requires: lighttpd
 Requires: python-boss-skynet >= 0.2.2
 Requires(post): boss-skynet
 Summary: Image creation service for MeeGo related products, BOSS participants
@@ -73,6 +73,16 @@ if [ $1 -eq 1 ] ; then
         for i in \
             build_image \
             build_ks \
+        ; do
+        
+        skynet make_participant -n $i -p /usr/share/boss-skynet/$i.py
+
+    done
+fi
+
+%post -n img-web
+if [ $1 -eq 1 ] ; then
+        for i in \
             update_image_status \
             request_image \
         ; do
@@ -94,10 +104,14 @@ fi
 %{python_sitelib}/img_web
 %{_datadir}/img_web
 %{_sysconfdir}/init.d/img-web
+%{_datadir}/boss-skynet/update_image_status.py
+%{_datadir}/boss-skynet/request_image.py
+%config(noreplace) %{_sysconfdir}/skynet/request_image.conf
 
 %files -n img-boss
 %defattr(-,root,root,-)
-%{_datadir}/boss-skynet/*.py
+%{_datadir}/boss-skynet/build_image.py
+%{_datadir}/boss-skynet/build_ks.py
 %config(noreplace) %{_sysconfdir}/skynet/build_image.conf
 %config(noreplace) %{_sysconfdir}/skynet/build_ks.conf
-%config(noreplace) %{_sysconfdir}/skynet/request_image.conf
+

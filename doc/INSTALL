@@ -1,41 +1,85 @@
 INSTALLATION
 
-Full imager installation on one system.
-
 Debian Squeeze:
 
-cat >> /etc/apt/sources.list.d/mint << EOF
+cat >> /etc/apt/sources.list.d/mint_testing.list << EOF
 deb http://repo.pub.meego.com/Project:/MINT:/Testing/Debian_6.0/ /
 EOF
 
-apt-get uodate
+apt-get update
 
-apt-get install boss boss-viewer img-web
+Everything on one machine :
+
+apt-get install boss boss-viewer img-boss img-web img-boss-bin
+
+Separate UI and Worker with already existing BOSS installation:
+
+UI : apt-get install img-web
+
+Worker : apt-get install img-boss
+
+Opensuse :
+
+#FIXME: opensuse
+
+Configuration :
 
 MIC
 change /etc/mic2/mic2.conf according to your needs, for example proxy.
 
-PARTICIPANTS
+WORKER PARTICIPANTS
+
+build_ks:
+
+#FIXME: wid
+
+This is a kickstart validator and manipulator
+
+build_image:
+
+#FIXME: wid
+
+This is the actual worker. It can be installed on multiple systems connected to
+the same boss instance. Depending on its configuration in
+/etc/skynet/build_image.conf it will either use sudo to launch mic-image-creator
+or boot a kvm image and do so inside it.
+
+Also two important configuration options are base_url and base_dir: 
+* base_dir points at the place where the images will be saved to
+* base_url sets the URL at which base_dir is served using HTTP
+
+In the case you want to use sudo :
 
 cat >> /etc/sudoers.d/nobody << EOF
 nobody ALL=(ALL)NOPASSWD:/usr/bin/mic-image-creator
 EOF
-
 chmod 0440 /etc/sudoers.d/nobody
+
+In the case you want to use kvm :
+
+#FIXME: kvm
 
 mkdir /var/www/images
 mkdir /var/www/templates/
 chmod 0777 /var/www/images
 
-for i in build_image build_ks update_image_status request_image ; do 
+for i in build_image build_ks ; do 
   skynet enable $i
   skynet register -n $i
 done
 
-WEB
+WEB PARTICIPANTS
+
+On the webui machine
+
+for i in update_image_status request_image ; do 
+  skynet enable $i
+  skynet register -n $i
+done
+
+WEB UI
 
 Edit /etc/imager/img.conf and set the database and boss settings.
-
 
 mysql -u root -p
 
@@ -43,9 +87,9 @@ create database imgdb CHARACTER SET utf8;
 
 GRANT ALL ON imgdb.* TO 'img'@'localhost' IDENTIFIED BY 'img';
 
-django-admin  syncdb --settings=img_web.settings
+django-admin syncdb --settings=img_web.settings
 
-django-admin  collectstatic --settings=img_web.settings
+django-admin collectstatic --settings=img_web.settings
 
 cat >> /etc/lighttpd/vhosts.d/img.conf << EOF
 var.namebasedir = "/img"
@@ -73,7 +117,8 @@ url.rewrite-if-not-file += (
 EOF
 
 
-Edit /etc/lighttpd/lighttpd.conf and enable mod_rewrite and add the following line at the end
+Edit /etc/lighttpd/lighttpd.conf and enable mod_rewrite and add the
+following line at the end :
 
 include_shell "cat /etc/lighttpd/vhosts.d/*"
 
@@ -83,3 +128,12 @@ lighttpd-enable-mod accesslog
 /etc/init.d/lighttpd force-reload
 
 Point your browser at http://127.0.0.1/img/
+
+
+REST API
+
+#FIXME: REST
+
+LAUNCHERS
+
+#FIXME: launchers

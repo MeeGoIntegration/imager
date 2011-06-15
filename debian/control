@@ -16,7 +16,7 @@ Description: image creation service for MeeGo related products
 
 Package: img-boss
 Architecture: all
-Depends: ${python:Depends}, ${misc:Depends}, boss-skynet, python-boss-skynet, img-core
+Depends: ${python:Depends}, ${misc:Depends}, boss-skynet, python-boss-skynet, img-core, lighttpd
 XB-Python-Version: ${python:Versions}
 Description: image creation service for MeeGo related products
  This package provides imager participants that plugin into a BOSS system to 
@@ -24,7 +24,7 @@ Description: image creation service for MeeGo related products
 
 Package: img-web
 Architecture: all
-Depends: ${python:Depends}, ${misc:Depends}, lighttpd, python-django, python-flup, python-django-south, python-mysqldb, mysql-client, mysql-server, img-boss
+Depends: ${python:Depends}, ${misc:Depends}, lighttpd, python-django, python-flup, python-django-south, python-mysqldb, mysql-client, mysql-server, boss-skynet, python-boss-skynet
 XB-Python-Version: ${python:Versions}
 Description: image creation service for MeeGo related products
  This package provides a django based web interface for imager. 

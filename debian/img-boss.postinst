@@ -23,8 +23,6 @@ case "$1" in
         for i in \
             build_image \
             build_ks \
-            update_image_status \
-            request_image \
             ; do
 
             skynet make_participant -n $i -p /usr/share/boss-skynet/$i.py

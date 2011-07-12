@@ -81,13 +81,13 @@ def submit(request):
         imgjob.extra_repos = ",".join(conf)
 
         ksname = ""
-        if data['template']:
+        if 'template' in data and data['template']:
             ksname = data['template']
             filename = os.path.join(settings.TEMPLATESDIR, ksname)
             with open(filename, mode='r') as ffd:
                 imgjob.kickstart = ffd.read()
 
-        elif data['ksfile']:
+        elif 'ksfile' in data and data['ksfile']:
             ksname = data['ksfile'].name
             imgjob.kickstart =  data['ksfile'].read()
 

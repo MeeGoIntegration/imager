@@ -1,39 +1,40 @@
 = INSTALLATION =
 
-FIXME: Disk space; how much and where should it be available
-Used for: images, cache etc
+== Requirements ==
 
-FIXME: There seem to be a *lot* of design issues around IMG. Needs
-reviewing.
+TBD
+
 
 == Debian Squeeze ==
 
 Add the correct repository:
  cat >> /etc/apt/sources.list.d/mint_testing.list << EOF
- deb http://repo.pub.meego.com/Project:/MINT:/RC/Debian_6.0/ /
+ deb http://repo.pub.meego.com/Project:/MINT:/Testing/Debian_6.0/ /
  EOF
 
 Update:
  apt-get update
 
-The UI and Worker can be installed on the same machine or the Worker
-can be installed separately. An existing BOSS installation must be
-accesible.
+Currently the UI and Worker cannot be installed separately.
+An existing BOSS installation must be accesible.
+
 
 === Full Install ===
+
 UI + Worker : apt-get install img-web
 
 During the default installation a mysql server is setup for django.
 
+
 === Worker-only Install ===
 
-Worker : apt-get install img-boss
+TBD
 
-FIXME: not tested yet
 
 == Opensuse ==
 
-FIXME: opensuse
+TBD
+
 
 = Worker Configuration =
 
@@ -43,6 +44,7 @@ This needs to be done on every IMG worker.
 == MIC2 ==
 
 Change /etc/mic2/mic2.conf according to your needs, for example proxy.
+
 
 == SkyNET Configuration ==
 
@@ -60,17 +62,13 @@ installations may need to set proxy information. This can be done in:
 
 By default participants are installed to /var/lib/SkyNET/store and
 logs can be found in /var/lib/SkyNET/store/$NAME/log/main/current
-(FIXME: this isn't nice)
 
 See the SkyNET page for more details.
+
 
 == Worker Participants ==
 
 === build_image ===
-
-FIXME: How are images made available if there are multiple workers?
- Packaging has no apache or anything and it's bad form to serve images
- from workers.
 
 This is the actual image building worker. Instances can be installed
 on multiple systems connected to the same IMG/BOSS instance. Depending
@@ -82,22 +80,24 @@ Configuration is done in:
 
 The two important configuration options are base_url and base_dir: 
 * base_url sets the URL at which base_dir is served using HTTP
-* base_dir points at the place where the images will be saved to. You will need to do
+* base_dir points at the place where the images will be saved to. You will need
+  to do
+
  install -d -m 0777 /var/www/img/images
+
 
 ==== Using sudo ====
 
-In order to run the mic2 tool, the nobody user (FIXME: this should at
-least be a specific user)
+In order to run the mic2 tool, the nobody user needs sudo rights to
+mic-image-creator
 
  cat >> /etc/sudoers.d/nobody << EOF
  nobody ALL=(ALL)NOPASSWD:/usr/bin/mic-image-creator
  EOF
  chmod 0440 /etc/sudoers.d/nobody
 
-==== Using kvm ====
 
-FIXME: kvm setup
+==== Using kvm ====
 
 In KVM mode, IMG first creates an overlay image from the base image
 (not distributed) and then starts it using the overlay image as the
@@ -106,6 +106,9 @@ a specific amount of time has passed, it will copy the kickstart and
 mic2 config file to the guest VM. Then it runs mic2 in the VM with
 parameters specified in the init method. After mic2 has run, the image
 is copied from the guest using scp.
+
+TBD: KVM setup
+
 
 ==== Start and Register ====
 
@@ -118,9 +121,11 @@ Enable (start) the participant:
 Register the participant to SkyNET:
  skynet register -n build_image
 
+
 == Main Participants ==
 
 The following participants are run on the main IMG server.
+
 
 === build_ks ===
 
@@ -161,6 +166,7 @@ Enable (start) the participant
 Register the participant to SkyNET:
  skynet register -n update_image_status
 
+
 === request_image ===
 
 This participant allows IMG to be used by a normal BOSS process.
@@ -170,6 +176,7 @@ Enable (start) the participant
 
 Register the participant to SkyNET:
  skynet register -n request_image
+
 
 ==== BOSS Workitem definition ====
 
@@ -184,6 +191,7 @@ The following defines the input dictionary for the participant:
  "arch":architecture, for image
  "release":release
 
+
 ===== Output =====
 
 The work item can contain the following dictionary entries:
@@ -194,10 +202,12 @@ The work item can contain the following dictionary entries:
  Image: A direct URL to the finished image
  Log: A direct URL to the log file of the mic2 output
 
+
 == WEB UI ==
 
 IMG uses a django web application to provide the UI. This needs a
 MySQL DB to store information about the images.
+
 
 === MySQL Configuration ===
 
@@ -212,24 +222,24 @@ password.
  GRANT ALL ON imgdb.* TO 'img'@'localhost' IDENTIFIED BY 'img';
  exit
 
+
 === Django Configuration ===
 
 Edit /etc/imager/img.conf and set the configuration values.
-FIXME: document the config file
 
 Create locations for the images and templates:
  install -d -m 0777 /var/www/img/images
  install -d -m 0777 /var/www/img/templates
 
 Setup django:
- django-admin syncdb --settings=img_web.settings
+ export DJANGO_SETTINGS_MODULE=img_web.settings
+ django-admin syncdb
 (add a superuser)
 
- django-admin migrate --settings=img_web.settings
- django-admin collectstatic --settings=img_web.settings
+ django-admin migrate
+ django-admin collectstatic
 
 === Configure the web server ===
-FIXME: this should be installed.
 
 <pre>
 mkdir -p /etc/lighttpd/vhosts.d
@@ -269,11 +279,11 @@ Then run:
  lighttpd-enable-mod fastcgi
  lighttpd-enable-mod accesslog
 
- /etc/init.d/lighttpd force-reload
+ service lighttpd force-reload
 
 === Start IMG ===
 To start IMG:
- /etc/init.d/img-web start
+ service img-web start
 
 === Tests ===
 

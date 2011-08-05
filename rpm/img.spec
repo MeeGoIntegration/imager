@@ -49,6 +49,7 @@ BuildRequires: python-setuptools
 Requires: img-core
 Requires: lighttpd
 Requires: python-boss-skynet >= 0.2.2
+Requires: python-xml
 Requires(post): boss-skynet
 Summary: Image creation service for MeeGo related products, BOSS participants
 %description -n img-boss

@@ -1,0 +1,23 @@
+* Gather installation requirements
+  - Disk space; how much and where should it be available
+    Used for: images, cache etc
+
+* Review IMG design
+
+* Refactoring so that worker and UI are independent
+
+* Test on OpenSUSE
+
+* Design image storing and sharing
+  - How are images made available if there are multiple workers?
+    Packaging has no apache or anything and it's bad form to serve images
+    from workers.
+
+* build_image should be run as specific user with sudo rights to
+  mic-image-creator
+
+* KVM setup
+
+* Document the config files
+
+* Include lighttpd configuration in package

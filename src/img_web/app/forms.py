@@ -161,10 +161,12 @@ class UploadFileForm(forms.Form):
                         cleaned_data['email'].split(",")]:
                     validate_email(email)
 
-        if cleaned_data['ksfile'] and cleaned_data['template']:
-                raise forms.ValidationError("Please choose template or upload"\
-                                           " a kickstart, not both!")
-        elif not cleaned_data['template'] and not cleaned_data['ksfile']:
+        if (('ksfile' in cleaned_data and 'template' in cleaned_data) and
+            (cleaned_data['ksfile'] and cleaned_data['template'])):
+            raise forms.ValidationError("Please choose template or upload"\
+                                            " a kickstart, not both!")
+        elif (('ksfile' not in cleaned_data and 'template' not in cleaned_data) and
+              (cleaned_data['ksfile'] and cleaned_data['template'])):
             raise forms.ValidationError("Please choose either a template or"\
-                                        "upload a kickstart file.")
+                                            "upload a kickstart file.")
         return cleaned_data

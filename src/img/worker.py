@@ -181,9 +181,8 @@ class Commands(object):
         mic_comm.append('--arch=%s' % job_args.arch)
         mic_comm.append('--outdir=%s' % job_args.outdir)
 
-        # Workaround until bug is fixed in mic2
         if job_args.image_type == "fs":
-            mic_comm.append('--package=tar.gz')
+            mic_comm.append('--compress-disk-image=tar.bz2')
 
         if job_args.release:
             mic_comm.append('--release=%s' % job_args.release)

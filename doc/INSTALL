@@ -119,7 +119,7 @@ Enable (start) the participant:
  skynet enable build_image
 
 Register the participant to SkyNET:
- skynet register -n build_image
+ skynet register build_image
 
 
 == Main Participants ==

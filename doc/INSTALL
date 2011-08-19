@@ -152,7 +152,7 @@ Then enable (start) the participant
 As a one-off the participant should be registered to BOSS. This tells
 BOSS that there is at least one participant prepared to carry out this
 task. See SkyNET for more info
- skynet register -n build_ks
+ skynet register build_ks
 
 
 === update_image_status ===
@@ -164,7 +164,7 @@ Enable (start) the participant
  skynet enable update_image_status
 
 Register the participant to SkyNET:
- skynet register -n update_image_status
+ skynet register update_image_status
 
 
 === request_image ===
@@ -175,7 +175,7 @@ Enable (start) the participant
  skynet enable request_image
 
 Register the participant to SkyNET:
- skynet register -n request_image
+ skynet register request_image
 
 
 ==== BOSS Workitem definition ====

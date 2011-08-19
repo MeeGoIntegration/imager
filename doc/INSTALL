@@ -272,7 +272,7 @@ EOF
 Edit /etc/lighttpd/lighttpd.conf and enable mod_rewrite and add the
 following line at the end :
 
- include_shell "cat /etc/lighttpd/vhosts.d/*"
+ include_shell "cat /etc/lighttpd/vhosts.d/*.conf"
 
 
 Then run:

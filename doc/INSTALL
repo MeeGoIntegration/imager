@@ -1,11 +1,11 @@
-= INSTALLATION =
-
-== Requirements ==
+Requirements
+------------
 
 TBD
 
 
-== Debian Squeeze ==
+Debian Squeeze
+--------------
 
 Add the correct repository:
  cat >> /etc/apt/sources.list.d/mint_testing.list << EOF
@@ -19,34 +19,40 @@ Currently the UI and Worker cannot be installed separately.
 An existing BOSS installation must be accesible.
 
 
-=== Full Install ===
+Full Install
+------------
 
 UI + Worker : apt-get install img-web
 
 During the default installation a mysql server is setup for django.
 
 
-=== Worker-only Install ===
+Worker-only Install
+-------------------
 
 TBD
 
 
-== Opensuse ==
+Opensuse
+--------
 
 TBD
 
 
-= Worker Configuration =
+Worker Configuration
+--------------------
 
 This needs to be done on every IMG worker.
 
 
-== MIC2 ==
+MIC2
+----
 
 Change /etc/mic2/mic2.conf according to your needs, for example proxy.
 
 
-== SkyNET Configuration ==
+SkyNET Configuration
+--------------------
 
 SkyNET eases managing a collection of participants on a machine.
 

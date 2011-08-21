@@ -1,38 +1,72 @@
-IMGer : Image Me Give
-========================
-IMG (Image Me Give) is a small python client/server application suite, its sole 
-job is to get a kickstart file from a user, via a web interface, command line 
-or BOSS process. Then it runs mic-Image-Creator, either in a host or in a 
-VM. IMG also has the capability to run as a BOSS participant and thus be a 
-part of a build process.
+What is imager
+--------------
+   Imager or IMG is a wrapper around meego-image-creator or mic2, to allow
+   multiple image creation jobs to run in parallel in an automated yet trackable
+   and controllable manner.
+   It has three interfaces:
+   * WEBUI : a small django application which via a web interface collects
+   information about an image creation job and then launches a BOSS process 
+   with a workitem containing that information.
+   * BOSS : RuoteAMPQ based interface triggered as part of a BOSS process,
+   blocks and runs mic-image-creator to produce the requested image as
+   described by the workitem and returns the results of the job.
+   * REST: Not Implemented yet.
 
-Source tree structure:
+   Source tree structure::
+   
+      |-debian : Debian files
+      |-rpm : RPM related files
+      |-src : Sources
+      |---img : Core components for imager
+      |---img-boss : BOSS participants for imager
+      |---img-web : Djang web ui for imager
+      |-----app : Django application
+      |-----templates : Django Templates
+      |-----processes : Default BOSS processes launched by the web ui
 
-   |-debian : Debian files
-   |-rpm : RPM related files
-   |-src : Sources
-   |---img : Main components for IMGer
-   |---img-boss : BOSS components (participant, client) for IMGer
-   |---img-web : Django project
-   |-----app : Django application
-   |-----templates : Django Templates
-   |-------app
+Core module
+^^^^^^^^^^^ 
+   In the src/img directory.
 
-Main scripts
-============
+   * worker
+      The actual dirty work handler, executes mic2 in a a KVM virtual machine or using
+      sudo. The KVM based method is more difficult to setup but recommended for
+      security and cleanup reasons.
 
-src/img/worker.py
+   * common.py
+      A collection of helper functions shared by different imager parts.
 
-The actual dirty work handler, fires up KVM virtual machine on request and 
-executes mic2 in it (for obvious cleanup reasons)
+Participants
+^^^^^^^^^^^^
+   In the src/img_boss directory.
 
-src/img_boss/build_image.py
+   * build_image
+      BOSS/SkyNet participant that listens for messages using RuoteAMQP and
+      launches a worker to run a job.
 
-BOSS participant that listens for workitems from Ruote. For more information 
-about BOSS see http://wiki.meego.com/Infrastructure/BOSS.
+   * build_ks
+      Might be split in the future
+      BOSS/SkyNet participant that can be used to manipulate kickstart files in
+      many ways :
+
+      * Validation : it will disassemble and reassemble a kickstart and raise
+        various exceptions in case of errors.
+      * Augmentation : it can insert repositories, packages, package groups into
+        a kickstart.
+      * Generation : It can generate kickstarts from a YAML kickstarter files
+        (Not yet Implemented)
+
+   * request_image
+      Used in the context of a BOSS process to record an image job request in the
+      django database, which can then be tracked, viewed and controlled from the
+      web based intergace.
+
+   * update_image_status
+      Serves as a callback for build_image to record updated to the status of the
+      image creation job in the django database.
+
 
 Django application
-==================
-
-See http://wiki.meego.com/Infrastructure/IMG#Django_client for all documentation
-regarding Django the django application. Also see INSTALL for setup instructions.
+^^^^^^^^^^^^^^^^^^
+    See http://wiki.meego.com/Infrastructure/IMG#Django_client for all documentation
+    regarding Django the django application. Also see INSTALL for setup instructions.

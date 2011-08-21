@@ -7,8 +7,7 @@ License: GPLv2+
 URL: http://www.meego.com
 Source0: %{name}_%{version}.tar.gz
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-buildroot
-BuildRequires: python 
-BuildRequires: python-setuptools
+BuildRequires: python, python-sphinx, python-setuptools, python-boss-skynet, python-ruote-amqp, python-django
 BuildArch: noarch
 Summary: Image creation service for MeeGo related products
 

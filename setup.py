@@ -2,6 +2,7 @@
 import os, sys
 from distutils.core import setup
 
+from setuptools import find_packages
 
 static_files=[('/etc/imager', ['src/img_web/img.conf']),
                 ('/usr/share/img_web/processes', 

@@ -1,5 +1,5 @@
 Name: img
-Version: 0.60.0
+Version: 0.60.1
 Release: 1
 
 Group: Applications/Engineering
@@ -7,7 +7,7 @@ License: GPLv2+
 URL: http://www.meego.com
 Source0: %{name}_%{version}.tar.gz
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-buildroot
-BuildRequires: python, python-sphinx, python-setuptools, python-boss-skynet, python-ruote-amqp, python-django
+BuildRequires: python, python-sphinx, python-setuptools, python-boss-skynet,python-ruote-amqp, python-django, mic2
 BuildArch: noarch
 Summary: Image creation service for MeeGo related products
 
@@ -36,7 +36,7 @@ BuildRequires: python >= 2.5.0
 BuildRequires: python-setuptools
 Requires: python >= 2.5.0
 Requires: lighttpd
-Requires: python-django, python-flup, python-django-south, python-mysql, mysql-client, mysql
+Requires: python-django, python-flup, python-mysql, mysql-client, mysql
 Summary: Image creation service for MeeGo related products, django web interface
 %description -n img-web
 This package provides a django based web interface for imager. It can work with a standalone imager installation communicating over AMQP, or an installation that is part of BOSS.

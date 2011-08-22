@@ -1,3 +1,10 @@
+img (0.60.1-1) unstable; urgency=low
+
+  * Sphinx docs.
+  * Fix for BMC#22635
+
+ -- Islam Amer <iamer@solitude>  Mon, 22 Aug 2011 11:08:09 +0300
+
 img (0.60.0) unstable; urgency=low
 
   * Request images can be tracked by the webui now

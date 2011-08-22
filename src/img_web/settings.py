@@ -21,7 +21,13 @@ IMGCONF="/etc/imager/img.conf"
 
 import ConfigParser
 config = ConfigParser.ConfigParser()
-config.readfp(open(IMGCONF))
+try:
+    config.readfp(open(IMGCONF))
+except Exception:
+    try:
+        config.readfp(open("src/img_web/img.conf"))
+    except Exception:
+        config.readfp(open("img.conf"))
 
 url_prefix = config.get('web', 'url_prefix')
 static_media_collect = config.get('web', 'static_media_collect')
@@ -169,7 +175,6 @@ INSTALLED_APPS = (
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django.contrib.admin',
-    'south',
     'img_web.app',
 )
 

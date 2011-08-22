@@ -16,9 +16,8 @@ import sys, os
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
-sys.path.append(os.path.abspath('../src/img'))
-sys.path.append(os.path.abspath('../src/img_boss'))
-sys.path.append(os.path.abspath('../src/img_web'))
+sys.path.insert(0, os.path.abspath('../src'))
+sys.path.insert(0, os.path.abspath('../src/img_boss'))
 
 # -- General configuration -----------------------------------------------------
 

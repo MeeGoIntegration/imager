@@ -103,7 +103,8 @@ class ParticipantHandler(object):
             or not jargs.name or not jargs.arch):
             missing = [fname for fname in ("image_id", "kickstart",
                                            "image_type", "name", "arch")
-                             if not args_dict[fname]]
+                             if not (args_dict.has_key(fname) and
+                                     args_dict[fname])]
             f.__error__ = "One of the mandatory fields: id, kickstart, type,"\
                           " name and arch in the image namespace doesn't exist."
             f.msg.append(f.__error__)

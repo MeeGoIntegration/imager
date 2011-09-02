@@ -101,10 +101,14 @@ class ParticipantHandler(object):
 
         if (not jargs.image_id or not jargs.kickstart or not jargs.image_type
             or not jargs.name or not jargs.arch):
+            missing = [fname for fname in ("image_id", "kickstart",
+                                           "image_type", "name", "arch")
+                             if not args_dict[fname]]
             f.__error__ = "One of the mandatory fields: id, kickstart, type,"\
                           " name and arch in the image namespace doesn't exist."
             f.msg.append(f.__error__)
-            raise RuntimeError("Missing mandatory field")
+            raise RuntimeError("Missing mandatory fields: %s"
+                               % ",".join(missing))
 
         if jargs.extra_opts:
             if not isinstance(jargs.extra_opts, list):

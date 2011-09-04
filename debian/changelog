@@ -1,3 +1,13 @@
+img (0.60.1-1) unstable; urgency=low
+
+  * Many bug fixes in packaging (remove python-xml dependency)
+  * More verbose message on missing mandatory field
+  * Fixes BMC#22635
+  * Avoid key errors on missing values
+  * Move to non-native packaging
+
+ -- David Greaves <david@dgreaves.com>  Sun, 04 Sep 2011 12:14:07 +0000
+
 img (0.60.0) unstable; urgency=low
 
   * Request images can be tracked by the webui now

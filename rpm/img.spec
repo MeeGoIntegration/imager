@@ -1,11 +1,11 @@
 Name: img
-Version: 0.60.0
+Version: 0.60.1
 Release: 1
 
 Group: Applications/Engineering
 License: GPLv2+
 URL: http://www.meego.com
-Source0: %{name}_%{version}.tar.gz
+Source0: %{name}_%{version}.orig.tar.gz
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-buildroot
 BuildRequires: python 
 BuildRequires: python-setuptools

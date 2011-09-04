@@ -64,6 +64,8 @@ class ParticipantHandler(object):
         packages = []
         if wid.params.packages_from :
             packages = f.as_dict()[wid.params.packages_from]
+        elif wid.params.packages_event :
+            packages = [act['sourcepackage'] for act in f.ev.actions]
         elif f.image.packages:
             packages = f.image.packages
 

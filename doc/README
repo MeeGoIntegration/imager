@@ -1,72 +1,79 @@
-What is imager
---------------
-   Imager or IMG is a wrapper around meego-image-creator or mic2, to allow
-   multiple image creation jobs to run in parallel in an automated yet trackable
-   and controllable manner.
-   It has three interfaces:
-   * WEBUI : a small django application which via a web interface collects
+About imager
+------------
+Imager or IMG is a wrapper around meego-image-creator or mic2, to allow
+multiple image creation jobs to run in parallel in an automated yet trackable
+and controllable manner.
+
+It has three interfaces :
+
+ * WEBUI : a small django application which via a web interface collects 
    information about an image creation job and then launches a BOSS process 
    with a workitem containing that information.
-   * BOSS : RuoteAMPQ based interface triggered as part of a BOSS process,
+
+ * BOSS : RuoteAMPQ based interface triggered as part of a BOSS process,
    blocks and runs mic-image-creator to produce the requested image as
    described by the workitem and returns the results of the job.
-   * REST: Not Implemented yet.
 
-   Source tree structure::
-   
-      |-debian : Debian files
-      |-rpm : RPM related files
-      |-src : Sources
-      |---img : Core components for imager
-      |---img-boss : BOSS participants for imager
-      |---img-web : Djang web ui for imager
-      |-----app : Django application
-      |-----templates : Django Templates
-      |-----processes : Default BOSS processes launched by the web ui
+ * REST: Not Implemented yet.
+
+Source tree structure ::
+
+   |-debian : Debian files
+   |-rpm : RPM related files
+   |-src : Sources
+   |---img : Core components for imager
+   |---img-boss : BOSS participants for imager
+   |---img-web : Djang web ui for imager
+   |-----app : Django application
+   |-----templates : Django Templates
+   |-----processes : Default BOSS processes launched by the web ui
 
 Core module
 ^^^^^^^^^^^ 
-   In the src/img directory.
 
-   * worker
-      The actual dirty work handler, executes mic2 in a a KVM virtual machine or using
-      sudo. The KVM based method is more difficult to setup but recommended for
-      security and cleanup reasons.
+In the src/img directory.
 
-   * common.py
-      A collection of helper functions shared by different imager parts.
+ * worker
+   The actual dirty work handler, executes mic2 in a a KVM virtual machine or using
+   sudo. The KVM based method is more difficult to setup but recommended for
+   security and cleanup reasons.
+ 
+ * common.py
+   A collection of helper functions shared by different imager parts.
 
 Participants
 ^^^^^^^^^^^^
-   In the src/img_boss directory.
 
-   * build_image
-      BOSS/SkyNet participant that listens for messages using RuoteAMQP and
-      launches a worker to run a job.
+In the src/img_boss directory.
 
-   * build_ks
-      Might be split in the future
-      BOSS/SkyNet participant that can be used to manipulate kickstart files in
-      many ways :
+ * build_image
+   BOSS/SkyNet participant that listens for messages using RuoteAMQP and
+   launches a worker to run a job.
 
-      * Validation : it will disassemble and reassemble a kickstart and raise
-        various exceptions in case of errors.
-      * Augmentation : it can insert repositories, packages, package groups into
-        a kickstart.
-      * Generation : It can generate kickstarts from a YAML kickstarter files
-        (Not yet Implemented)
+ * build_ks
+   Might be split in the future
+   BOSS/SkyNet participant that can be used to manipulate kickstart files in
+   many ways :
 
-   * request_image
-      Used in the context of a BOSS process to record an image job request in the
-      django database, which can then be tracked, viewed and controlled from the
-      web based intergace.
+   * Validation : it will disassemble and reassemble a kickstart and raise
+     various exceptions in case of errors.
+   * Augmentation : it can insert repositories, packages, package groups into
+     a kickstart.
+   * Generation : It can generate kickstarts from a YAML kickstarter files
+     (Not yet Implemented)
 
-   * update_image_status
-      Serves as a callback for build_image to record updated to the status of the
-      image creation job in the django database.
+ * request_image
+   Used in the context of a BOSS process to record an image job request in the
+   django database, which can then be tracked, viewed and controlled from the
+   web based intergace.
+
+ * update_image_status
+   Serves as a callback for build_image to record updated to the status of the
+   image creation job in the django database.
 
 
 Django application
 ^^^^^^^^^^^^^^^^^^
-    See http://wiki.meego.com/Infrastructure/IMG#Django_client for all documentation
-    regarding Django the django application. Also see INSTALL for setup instructions.
+
+See http://wiki.meego.com/Infrastructure/IMG#Django_client for all documentation
+regarding Django the django application. Also see INSTALL for setup instructions.

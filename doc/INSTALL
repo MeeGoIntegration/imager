@@ -1,309 +1,54 @@
 Requirements
 ------------
 
-TBD
+Imager can be deployed a single "appliance" or in a distributed, multi worker fashion.
+The UI part can be deployed to a small machine or VM, while each worker that
+does the actual image building needs at least 1Gb of RAM and 8GB of disk space.
 
+An already existing BOSS installation is expected to be accesible. For
+instructions on deploying BOSS refer to: http://wiki.meego.com/Release_Infrastructure/BOSS/Installation
+
+The installation of the UI includes a web server and a mysql server for django.
 
 Debian Squeeze
 --------------
 
-Add the correct repository:
+Add the correct repository ::
+
  cat >> /etc/apt/sources.list.d/mint_testing.list << EOF
  deb http://repo.pub.meego.com/Project:/MINT:/Testing/Debian_6.0/ /
  EOF
-
-Update:
  apt-get update
 
-Currently the UI and Worker cannot be installed separately.
-An existing BOSS installation must be accesible.
+UI only ::
+  
+ apt-get install img-web
 
+Worker only ::
 
-Full Install
-------------
+ apt-get install img-boss
 
-UI + Worker : apt-get install img-web
+UI + Worker ::
 
-During the default installation a mysql server is setup for django.
+ apt-get install img-web img-boss
 
-
-Worker-only Install
--------------------
-
-TBD
-
-
-Opensuse
+OpenSUSE
 --------
 
-TBD
+Add the correct repository ::
 
+ zypper ar http://repo.pub.meego.com/Project:/MINT:/Testing/openSUSE_11.4/Project:MINT:Testing.repo
+ zypper --no-gpg-checks --gpg-auto-import-keys ref
 
-Worker Configuration
---------------------
+UI only ::
 
-This needs to be done on every IMG worker.
+ zypper --non-interactive in img-web 
 
+Worker only ::
 
-MIC2
-----
+ zypper --non-interactive in img-boss
 
-Change /etc/mic2/mic2.conf according to your needs, for example proxy.
+UI + Worker ::
 
+ zypper --non-interactive in img-web img-boss
 
-SkyNET Configuration
---------------------
-
-SkyNET eases managing a collection of participants on a machine.
-
-The configuration is done in :
- /etc/skynet/skynet.conf
-
-The main value that needs to be set is the amqp_host and this should
-point to the pre-existing BOSS installation.
-
-SkyNET launches participants without any system environment. Some
-installations may need to set proxy information. This can be done in:
- /etc/skynet/skynet.env
-
-By default participants are installed to /var/lib/SkyNET/store and
-logs can be found in /var/lib/SkyNET/store/$NAME/log/main/current
-
-See the SkyNET page for more details.
-
-
-== Worker Participants ==
-
-=== build_image ===
-
-This is the actual image building worker. Instances can be installed
-on multiple systems connected to the same IMG/BOSS instance. Depending
-on its configuration it will either use sudo to launch mic2 or boot a
-kvm image and run mic2 inside that.
-
-Configuration is done in:
- /etc/skynet/build_image.conf
-
-The two important configuration options are base_url and base_dir: 
-* base_url sets the URL at which base_dir is served using HTTP
-* base_dir points at the place where the images will be saved to. You will need
-  to do
-
- install -d -m 0777 /var/www/img/images
-
-
-==== Using sudo ====
-
-In order to run the mic2 tool, the nobody user needs sudo rights to
-mic-image-creator
-
- cat >> /etc/sudoers.d/nobody << EOF
- nobody ALL=(ALL)NOPASSWD:/usr/bin/mic-image-creator
- EOF
- chmod 0440 /etc/sudoers.d/nobody
-
-
-==== Using kvm ====
-
-In KVM mode, IMG first creates an overlay image from the base image
-(not distributed) and then starts it using the overlay image as the
-hard disk. Virtio is used as a speed optimisation method for KVM. When
-a specific amount of time has passed, it will copy the kickstart and
-mic2 config file to the guest VM. Then it runs mic2 in the VM with
-parameters specified in the init method. After mic2 has run, the image
-is copied from the guest using scp.
-
-TBD: KVM setup
-
-
-==== Start and Register ====
-
-Once the worker has been configured it should be started and
-registered.
-
-Enable (start) the participant:
- skynet enable build_image
-
-Register the participant to SkyNET:
- skynet register build_image
-
-
-== Main Participants ==
-
-The following participants are run on the main IMG server.
-
-
-=== build_ks ===
-
-This participant validates and manipulates the kickstart file. Eg when
-extra repositories and packages are added to a ks this participant
-manages that.
-
-Only one of these needs to be running and it should be running on the
-same machine as img-web. (FIXME: check the packaging does sane stuff
-here).
-
-To configure, edit
- /etc/skynet/build_ks.conf
-
-Set '''reposerver''' to point to the OBS http repository server (the
-user-facing download server, not the backend bs_reposrv system).
-
-Set '''ksstore''' to point to the location that will hold the
-kickstart files referenced by the webui... I think FIXME
-
-Then enable (start) the participant
- skynet enable build_ks
-
-As a one-off the participant should be registered to BOSS. This tells
-BOSS that there is at least one participant prepared to carry out this
-task. See SkyNET for more info
- skynet register build_ks
-
-
-=== update_image_status ===
-
-This participant updates the queue data for the IMG web ui when a
-worker finishes a job. No configuration is needed.
-
-Enable (start) the participant
- skynet enable update_image_status
-
-Register the participant to SkyNET:
- skynet register update_image_status
-
-
-=== request_image ===
-
-This participant allows IMG to be used by a normal BOSS process.
-
-Enable (start) the participant
- skynet enable request_image
-
-Register the participant to SkyNET:
- skynet register request_image
-
-
-==== BOSS Workitem definition ====
-
-===== Input =====
-
-The following defines the input dictionary for the participant:
- "kickstart" : a kickstart file, in raw, not a path
- "email": email address, not parsed so can be a dummy address
- "id": a simple UUID, eg. from pythons uuid library
- "type":type, from values: livecd, liveusb, loop, raw, nand, mrstnand, vdi or vmdk
- "name":name, a simple string for the image name
- "arch":architecture, for image
- "release":release
-
-
-===== Output =====
-
-The work item can contain the following dictionary entries:
-
- Status: Status, is either "DONE" or "ERROR" in the final workitem, depending on success/failure
- URL: URL to a image/log/kickstart file location on the worker
- Error: An error string with details of the error, if any
- Image: A direct URL to the finished image
- Log: A direct URL to the log file of the mic2 output
-
-
-== WEB UI ==
-
-IMG uses a django web application to provide the UI. This needs a
-MySQL DB to store information about the images.
-
-
-=== MySQL Configuration ===
-
-MySQL is installed by default and during installation a root account
-will have been created. The password is needed to create an img user.
-
-Ammend the <code>IDENTIFIED BY 'img';</code> to use an appropriate img
-password.
-
- mysql -u root -p
- create database imgdb CHARACTER SET utf8;
- GRANT ALL ON imgdb.* TO 'img'@'localhost' IDENTIFIED BY 'img';
- exit
-
-
-=== Django Configuration ===
-
-Edit /etc/imager/img.conf and set the configuration values.
-
-Create locations for the images and templates:
- install -d -m 0777 /var/www/img/images
- install -d -m 0777 /var/www/img/templates
-
-Setup django:
- export DJANGO_SETTINGS_MODULE=img_web.settings
- django-admin syncdb
-(add a superuser)
-
- django-admin migrate
- django-admin collectstatic
-
-=== Configure the web server ===
-
-<pre>
-mkdir -p /etc/lighttpd/vhosts.d
-cat > /etc/lighttpd/vhosts.d/img.conf << 'EOF'
-var.namebasedir = "/img"
-
-$HTTP["url"] =~ "^" + namebasedir {
-        dir-listing.activate = "disable"
-}
-
-url.redirect += (
-  "^" + namebasedir + "$" => namebasedir + "/"
-)
-
-fastcgi.server += (
-    "/img.fcgi" => (
-        "main" => (
-            "socket" => "/var/run/img_web" + ".socket",
-            "check-local" => "disable",
-        )
-    ),
-)
-
-url.rewrite-if-not-file += (
-   "^(" + namebasedir + "/.*)$" => "/img.fcgi/$1"
-)
-EOF
-</pre>
-
-Edit /etc/lighttpd/lighttpd.conf and enable mod_rewrite and add the
-following line at the end :
-
- include_shell "cat /etc/lighttpd/vhosts.d/*.conf"
-
-
-Then run:
- lighttpd-enable-mod fastcgi
- lighttpd-enable-mod accesslog
-
- service lighttpd force-reload
-
-=== Start IMG ===
-To start IMG:
- service img-web start
-
-=== Tests ===
-
-The user web UI should appear at http://127.0.0.1/img/
-
-The admin web UI should appear at http://127.0.0.1/img/admin/
-
-
-= Diagnostics =
-
-See SkyNet for extra details
-
-To see running participants:
- skynet list
-
-To view a participant log: 
- skynet log build_image

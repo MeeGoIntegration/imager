@@ -1,5 +1,9 @@
+TODO
+====
+
 * Gather installation requirements
-  - Disk space; how much and where should it be available
+
+  * Disk space; how much and where should it be available
     Used for: images, cache etc
 
 * Review IMG design
@@ -9,7 +13,8 @@
 * Test on OpenSUSE
 
 * Design image storing and sharing
-  - How are images made available if there are multiple workers?
+
+  * How are images made available if there are multiple workers?
     Packaging has no apache or anything and it's bad form to serve images
     from workers.
 

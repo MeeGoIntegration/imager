@@ -13,10 +13,11 @@ WORK IN PROGRESS
 
    readme
    install
-   todo
+   configuration
    participants
    img_web
    img
+   todo
 
 Indices and tables
 ==================

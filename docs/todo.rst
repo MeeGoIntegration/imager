@@ -1,5 +1,2 @@
-TODO
-====
-
 .. include:: ../doc/TODO
 

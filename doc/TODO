@@ -8,8 +8,6 @@ TODO
 
 * Review IMG design
 
-* Refactoring so that worker and UI are independent
-
 * Test on OpenSUSE
 
 * Design image storing and sharing

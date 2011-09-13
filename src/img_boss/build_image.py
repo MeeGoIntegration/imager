@@ -13,22 +13,69 @@
 
 #~ You should have received a copy of the GNU General Public License
 #~ along with this program.  If not, see <http://www.gnu.org/licenses/>.
+"""builds images from kickstart files using MIC2 image creation tools. 
+Supports either KVM or normal MIC2 operation. KVM operations offer more 
+flexibility and cleaner building but is much slower as each time a new clean
+root filesystem is built using qemu from a base image.
+
+.. warning ::
+
+   * The build_ks participant should be used to read and validate kickstart files,
+     and fill the image.kickstart field.
+   * The image_id field is expected to be unique, as provided by the 
+     request_image participant which records it in a django database
+
+
+:term:`Workitem` fields IN:
+
+:Parameters:
+   image.kickstart(string): 
+      Contents of a kickstart file. Refer to :
+      `<http://wiki.meego.com/Image_Configurations_-_KickStart_Files>`_
+      for a description of kickstart files
+   image.image_id(string):
+      Unique ID of this image job
+   image.prefix(string):
+      added as another directory layer under which images will be saved
+      Optional. If not provided "requests" will be used. 
+   image.image_type(string):
+      Format of image as supported by mic2. ex: livecd, raw, etc..
+      Check the available formats in mic2 --help
+   image.name(string):
+      Name of the image, usually the name of the kickstart in the format
+      `$VERTICAL-$ARCH-$VARIANT` , required by mic2 when using the --release
+      option ex: meego-core-ia32-minimal
+   image.release(string):
+      Turns on release creation in mic2
+   image.arch(string):
+      Architecture of image. ex: i586, armv7l, etc ..,
+   image.extra_opts(list):
+      list of extra options to be passed verbatim to mic2
+
+:term:`Workitem` fields OUT:
+
+:Returns:
+   image.result(Boolean):
+      True if mic2 returned with status 0, False otherwise
+  image.files_url(string):
+      base URL at which all files produced by mic2 can be accessed
+  image.image_url(string):
+      URL to download the image file directly
+  image.logfile_url(string):
+      URL to the mic2 logfile
+  image.error(string):
+      Any errors returned by mic2
+  result(Boolean)
+      True if everything was OK, False otherwise
+"""
 
 from img.common import worker_config
 from img.worker import ImageWorker
-from  RuoteAMQP.workitem import DictAttrProxy as dap
-from  RuoteAMQP import Launcher 
+from RuoteAMQP.workitem import DictAttrProxy as dap
+from RuoteAMQP import Launcher 
 
 class ParticipantHandler(object):
-    """Participant class as defined by the SkyNET API, builds images from
-    kickstart files using MIC2 image creation tools. Supports either KVM or
-    normal MIC2 operation.
-    
-    KVM operations offer more flexibility and cleaner building as each time
-    when the image is being created, a new root filesystem is built using qemu
-    image creation from a base image, so that the new root filesystem is always
-    clean.
-    """
+    """Participant class as defined by the SkyNET API"""
 
     def __init__(self):
         self.worker_config = None

@@ -28,6 +28,10 @@ Worker only ::
 
  apt-get install img-boss
 
+.. note::
+   If you are going to serve the built images directly from the workers install
+   an HTTP server as well. Refer to worker configuration for more details
+
 UI + Worker ::
 
  apt-get install img-web img-boss
@@ -48,7 +52,13 @@ Worker only ::
 
  zypper --non-interactive in img-boss
 
+.. note::
+   If you are going to serve the built images directly from the workers install
+   an HTTP server as well. Refer to worker configuration for more details
+
 UI + Worker ::
 
  zypper --non-interactive in img-web img-boss
+
+
 

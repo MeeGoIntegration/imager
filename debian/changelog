@@ -1,4 +1,11 @@
+img (0.60.2-1) unstable; urgency=low
+
+  * Sphinx docs
+
+ -- Islam Amer <islam.amer@nokia.com>  Tue, 13 Sep 2011 16:57:00 +0300
+
 img (0.60.1-1) unstable; urgency=low
+
   * Many bug fixes in packaging (remove python-xml dependency)
   * More verbose message on missing mandatory field
   * Fixes BMC#22635

@@ -9,7 +9,7 @@ Welcome to BOSS Imager's documentation!
 WORK IN PROGRESS
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 3
 
    readme
    install

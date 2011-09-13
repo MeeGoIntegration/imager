@@ -10,14 +10,20 @@ This is the defalt configuration in /etc/skynet/build_image.conf
 
 .. literalinclude:: ../../src/img_boss/build_image.conf
 
-
 The two important configuration options are base_url and base_dir:
-* base_url sets the URL at which base_dir is served using HTTP
-* base_dir points at the place where the images will be saved to. You will need
-to do ::
+
+* base_dir points at the place where the images will be saved to.
+* base_url sets the URL at which base_dir is served using HTTP. This can
+  either be from the worker itself or a central location where base_dir is 
+  shared to using NFS.
+
+.. attention ::
+   Instructions on setting up the NFS sharing are beyond the scope of this
+   documentation
+
+You also need to create the directory you set as the value of base_dir ::
 
    install -d -m 0777 /var/www/img/images
-
 
 Using sudo
 ----------
@@ -29,7 +35,6 @@ mic-image-creator ::
  nobody ALL=(ALL)NOPASSWD:/usr/bin/mic-image-creator
  EOF
  chmod 0440 /etc/sudoers.d/nobody
-
 
 Using KVM
 ---------

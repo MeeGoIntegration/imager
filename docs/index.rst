@@ -14,9 +14,8 @@ WORK IN PROGRESS
    readme
    install
    configuration
-   participants
-   img_web
-   img
+   usage
+   code
    todo
 
 Indices and tables

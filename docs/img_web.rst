@@ -1,6 +1,11 @@
 Web UI
 ======
 
-.. automodule:: img_web
+.. automodule:: img_web.app.models
    :members:
-   :undoc-members:
+
+.. automodule:: img_web.app.forms
+   :members:
+
+.. automodule:: img_web.app.views
+   :members:

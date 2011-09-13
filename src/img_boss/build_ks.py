@@ -61,13 +61,19 @@
 :term:`Workitem` params IN
 
 :Parameters:
+   :pacakges (list):
+      If preset will be added to the extra packages list
    :packages_event (Boolean):
       If present the packages in the actions array from a submit request are
       added to the kickstart file
    :packages_from (string):
-      Arbitary field name from which to get a list of package names
+      Arbitary field name from which to get a list of package names, typically
+      used when a participant provides package names in a new namespace
+   :groups (list):
+      If preset will be added to the extra groups list
    :groups_from (string):
-      Arbitary field name from which to get a list of group names
+      Arbitary field name from which to get a list of group names, typicall used
+      when a participant provides group names in a new namespace
 
 :term:`Workitem` fields OUT:
 
@@ -131,18 +137,52 @@ class ParticipantHandler(object):
             projects.extend(f.image.extra_repos)
 
         packages = []
-        if wid.params.packages_from :
-            packages = f.as_dict()[wid.params.packages_from]
-        if wid.params.packages_event :
-            packages = [act['sourcepackage'] for act in f.ev.actions]
+        if wid.params.packages:
+            if isinstance(f.params.packages, list):
+                packages.extend(wid.params.packages)
+            else:
+                f.__error__ = "packages parameter expected to be a list"
+                f.msg.append(f.__error__)
+                raise RuntimeError("Wrong parameter type")
+        if wid.params.packages_from:
+            extra_packages = f.as_dict()[wid.params.packages_from]
+            if isinstance(extra_packages, list):
+                packages.extend(extra_packages)
+            else:
+                f.__error__ = "field %s expected to be a list" % \
+                wid.params.packages_from
+                f.msg.append(f.__error__)
+                raise RuntimeError("Wrong field type")
+        if wid.params.packages_event:
+            packages.extend( [act['sourcepackage'] for act in f.ev.actions] )
         if f.image.packages:
-            packages = f.image.packages
+            if isinstance(f.image.packages, list):
+                packages.extend(f.image.packages)
+            else:
+                f.__error__ = "field %s expected to be a list" % \
+                wid.params.packages_from
+                f.msg.append(f.__error__)
+                raise RuntimeError("Wrong field type")
 
         groups = []
-        if wid.params.groups_from :
-            groups = f.as_dict()[wid.params.groups_from]
+        if wid.params.groups:
+            if isinstance(f.params.groups, list):
+                groups.extend(wid.params.groups)
+            else:
+                f.__error__ = "groups parameter expected to be a list"
+                f.msg.append(f.__error__)
+                raise RuntimeError("Wrong parameter type")
+        if wid.params.groups_from:
+            extra_groups = f.as_dict()[wid.params.groups_from]
+            if isinstance(extra_groups, list):
+                groups.extend(extra_groups)
+            else:
+                f.__error__ = "field %s expected to be a list" % \
+                wid.params.groups_from
+                f.msg.append(f.__error__)
+                raise RuntimeError("Wrong field type")
         if f.image.groups:
-            groups = f.image.groups
+            groups.extend(f.image.groups)
 
         remove = False
         ksfile = ""

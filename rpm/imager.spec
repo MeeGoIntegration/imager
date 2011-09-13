@@ -28,7 +28,8 @@ BuildRequires: python-setuptools
 Requires: python >= 2.5.0, mic2, sudo, pykickstart
 Summary: Image creation service for MeeGo related products, core package
 %description -n img-core
-This package provides the core worker logic of imager. It builds images using mic2 optionally in a virtual machine.
+This package provides the core worker logic of imager.
+It builds images using mic2 optionally in a virtual machine.
 
 %package -n img-web
 Group: Applications/Engineering
@@ -36,23 +37,41 @@ BuildRequires: python >= 2.5.0
 BuildRequires: python-setuptools
 Requires: python >= 2.5.0
 Requires: lighttpd
+Requires: boss-skynet
+Requires: python-xml
+Requires(post): boss-skynet
 Requires: python-django, python-flup, python-mysql, mysql-client, mysql
 Summary: Image creation service for MeeGo related products, django web interface
 %description -n img-web
-This package provides a django based web interface for imager. It can work with a standalone imager installation communicating over AMQP, or an installation that is part of BOSS.
+This package provides a django based web interface for imager that is part of BOSS.
 
-%package -n img-boss
+%package -n img-worker
 Group: Applications/Engineering
 BuildRequires: python >= 2.5.0
 BuildRequires: python-setuptools
 Requires: img-core
-Requires: lighttpd
 Requires: python-boss-skynet >= 0.2.2
+Requires: boss-skynet
 Requires: python-xml
 Requires(post): boss-skynet
 Summary: Image creation service for MeeGo related products, BOSS participants
-%description -n img-boss
-This package provides imager participants that plugin into a BOSS system to fulfill image building steps of processes
+%description -n img-worker
+This package provides imager participants that plugin into a BOSS system to 
+fulfill image building steps of processes
+
+%package -n img-ks
+Group: Applications/Engineering
+BuildRequires: python >= 2.5.0
+BuildRequires: python-setuptools
+Requires: img-core
+Requires: python-boss-skynet >= 0.2.2
+Requires: boss-skynet
+Requires: python-xml
+Requires(post): boss-skynet
+Summary: Image creation service for MeeGo related products, BOSS participants
+%description -n img-ks
+This package provides imager participants that plugin into a BOSS system to
+handle kickstarts
 
 %prep
 %setup -q %{name}-%{version}
@@ -108,10 +127,13 @@ fi
 %{_datadir}/boss-skynet/request_image.py
 %config(noreplace) %{_sysconfdir}/skynet/request_image.conf
 
-%files -n img-boss
+%files -n img-worker
 %defattr(-,root,root,-)
 %{_datadir}/boss-skynet/build_image.py
-%{_datadir}/boss-skynet/build_ks.py
 %config(noreplace) %{_sysconfdir}/skynet/build_image.conf
+
+‰files -n img-ks
+%defattr(-,root,root,-)
+%{_datadir}/boss-skynet/build_ks.py
 %config(noreplace) %{_sysconfdir}/skynet/build_ks.conf
 

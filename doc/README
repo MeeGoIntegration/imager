@@ -34,7 +34,7 @@ Core module
 In the src/img directory.
 
  * worker
-   The actual dirty work handler, executes mic2 in a a KVM virtual machine or using
+   The actual dirty work handler, executes mic2 in a KVM virtual machine or using
    sudo. The KVM based method is more difficult to setup but recommended for
    security and cleanup reasons.
  

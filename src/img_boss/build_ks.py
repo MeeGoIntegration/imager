@@ -14,6 +14,68 @@
 #~ You should have received a copy of the GNU General Public License
 #~ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+"""Used to manipulate kickstart files in many ways :
+
+   * Validation : it will disassemble and reassemble a kickstart and raise
+     various exceptions in case of errors.
+   * Augmentation : it can insert repositories, packages, package groups into
+     a kickstart.
+   * Generation : It can generate kickstarts from a YAML kickstarter files
+     (Not yet Implemented)
+
+   Refer to :
+   `<http://wiki.meego.com/Image_Configurations_-_KickStart_Files>`_
+   for a description of kickstart files.
+
+:term:`Workitem` fields IN:
+
+:Parameters:
+   actions(list):
+      OPTIONAL, only used if the "packages_event" parameter is passed
+      submit request data structure :term:`actions`
+   image.ksfile(string):
+      Full path to a local readable kickstart file under the "ksstore" directory
+      which is configured in the conf file
+   image.kickstart(string):
+      Contents of a kickstart file
+   image.extra_repos(list):
+      OPTIONAL URLs of package repositories that will be added to the kickstart
+      file
+   image.groups(list):
+      OPTIONAL Group names to be added to the kickstart file
+   image.packages(list):
+      OPTIONAL Package names to be added to the kickstart file
+   project(string):
+      OPTIONAL Name of an OBS project which publishes packages to the
+      "reposerver" set in the configuration
+   repository(string):
+      OPTIONAL Name of the repository in the above project
+   
+   
+:term:`Workitem` params IN
+
+:Parameters:
+   packages_event(Boolean):
+      If present the packages in the actions array from a submit request are
+      added to the kickstart file
+   packages_from(string):
+      Arbitary field name from which to get a list of package names
+   groups_from(string):
+      Arbitary field name from which to get a list of group names
+
+:term:`Workitem` fields OUT:
+
+:Returns:
+   image.kickstart(string):
+      Validated and augmented kickstart file contents
+   image.name(string):
+      If not already set, the basename of the kickstart file is used
+   result(Boolean):
+      True if the kickstart handling went OK, False otherwise
+
+"""
+
+
 import os, tempfile
 from img.common import build_kickstart
 
@@ -34,6 +96,7 @@ class ParticipantHandler(object):
             self.ksstore = ctrl.config.get("build_ks", "ksstore")
 
     def handle_wi(self, wid):
+        """ Workitem handling function """
         # We may want to examine the fields structure
         if wid.fields.debug_dump or wid.params.debug_dump:
             print wid.dump()
@@ -64,15 +127,15 @@ class ParticipantHandler(object):
         packages = []
         if wid.params.packages_from :
             packages = f.as_dict()[wid.params.packages_from]
-        elif wid.params.packages_event :
+        if wid.params.packages_event :
             packages = [act['sourcepackage'] for act in f.ev.actions]
-        elif f.image.packages:
+        if f.image.packages:
             packages = f.image.packages
 
         groups = []
         if wid.params.groups_from :
             groups = f.as_dict()[wid.params.groups_from]
-        elif f.image.groups:
+        if f.image.groups:
             groups = f.image.groups
 
         remove = False

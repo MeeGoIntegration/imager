@@ -1,5 +1,4 @@
 img (0.60.1-1) unstable; urgency=low
-
   * Many bug fixes in packaging (remove python-xml dependency)
   * More verbose message on missing mandatory field
   * Fixes BMC#22635

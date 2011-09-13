@@ -20,8 +20,8 @@ root filesystem is built using qemu from a base image.
 
 .. warning ::
 
-   * The build_ks participant should be used to read and validate kickstart files,
-     and fill the image.kickstart field.
+   * The build_ks participant should be used to read and validate kickstart 
+     files, and subsequently fills the image.kickstart field.
    * The image_id field is expected to be unique, as provided by the 
      request_image participant which records it in a django database
 

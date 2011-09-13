@@ -27,6 +27,12 @@
    `<http://wiki.meego.com/Image_Configurations_-_KickStart_Files>`_
    for a description of kickstart files.
 
+.. warning ::
+
+   * Running the defineimage participant first might be useful in adding some 
+     meaningful extra packages in the image.packages field, usually in the 
+     context of a process handling a promotion request
+
 :term:`Workitem` fields IN:
 
 :Parameters:

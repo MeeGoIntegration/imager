@@ -1,5 +1,40 @@
 #!/usr/bin/python
-""" Image status update participant """
+"""Private participant used by imager to catch status update processes pushed by
+the build_image participants
+
+.. warning ::
+
+   * You probably don't want to use this participant in your process, it is
+     used privately by the build_image participants
+
+:term:`Workitem` fields IN:
+
+:Parameters:
+   image.image_id(string):
+      Unique ID of this image job
+   image.logfile_url(string):
+      Copied to the database when the job enters "BUILDING" state and then used
+      to download the image building logfile
+   image.files_url(string):
+      Copied to the database when the job enters "DONE" or "ERROR" state
+   image.image_url(string):
+      Copied to the database when the job enters "DONE" state
+   image.test_result(string):
+      Copied to the database when the job enters "DONE, TESTED" state
+      
+:term:`Workitem` params IN
+
+:Parameters:
+   status(string):
+      one of "DONE", "DONE, TESTED", "ERROR"
+
+:term:`Workitem` fields OUT:
+
+:Returns:
+   result(Boolean)
+      True if everything was OK, False otherwise
+"""
+
 import os
 from datetime import datetime
 from urllib2 import urlopen, HTTPError

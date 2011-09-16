@@ -78,23 +78,14 @@ This is only an example, your installation may vary::
  )
  EOF
 
-Edit /etc/lighttpd/lighttpd.conf and enable mod_rewrite and add the
-following line at the end ::
+Edit /etc/lighttpd/lighttpd.conf and enable mod_rewrite;
+then add the following line at the end ::
 
- include "/etc/lighttpd/vhosts.d/*.conf"
+ include_shell "cat /etc/lighttpd/vhosts.d/*.conf"
 
 Then run::
 
  lighttpd-enable-mod fastcgi
  lighttpd-enable-mod accesslog
  service lighttpd force-reload
-
-
-Then start img fastcgi server::
-
- service img-web start
-
-The user web UI should appear at http://127.0.0.1/img/
-
-The admin web UI should appear at http://127.0.0.1/img/admin/
 

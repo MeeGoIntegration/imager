@@ -1,11 +1,15 @@
 Usage
 *****
 
-Start the needed services on their respective machines.
+Once a participant has been installed and configured it should be started and
+registered. To see the installed participants do ::
+
+   skynet list
 
 Worker ::
 
    skynet enable build_image
+   skynet register build_image
 
 Web UI ::
 
@@ -14,6 +18,9 @@ Web UI ::
    skynet enable request_image
    skynet enable update_image_status
    skynet enable build_ks
+   skynet register request_image
+   skynet register update_image_status
+   skynet register build_ks
 
 
 Making lighttpd and img_web system services start by default on boot is a

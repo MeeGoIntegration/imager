@@ -32,6 +32,11 @@ from django.db import transaction
 @login_required
 @transaction.autocommit
 def submit(request):    
+    """
+    GET: returns an unbound UploadFileForm
+
+    POST: process a user submitted UploadFileForm
+    """
     
     if request.method == 'GET':
         form = UploadFileForm(initial = {'devicegroup':settings.DEVICEGROUP,
@@ -105,6 +110,12 @@ def submit(request):
 
 @login_required
 def queue(request, queue_name=None, dofilter=False):
+    """ Shows the job queue state
+
+    :param request: request object
+    :param queu_name: Queue name to display
+    :param dofilter: if True shows only current user's object
+    """
     imgjobs = ImageJob.objects.all().order_by('created').reverse()
     if dofilter:
         imgjobs = imgjobs.filter(user = request.user)
@@ -129,7 +140,12 @@ def queue(request, queue_name=None, dofilter=False):
                               context_instance=RequestContext(request))
     
 @login_required
-def job(request, msgid): 
+def job(request, msgid):
+    """ Show details about an ImageJob which are either errors or the creation
+    log
+
+    :param msgid: ImageJob ID
+    """
     imgjob = ImageJob.objects.get(image_id__exact=msgid)
     error = "" 
     if imgjob.status == "IN QUEUE":
@@ -149,5 +165,6 @@ def job(request, msgid):
                                 context_instance=RequestContext(request)) 
 
 def index(request):
+    """ Index page """
     return render_to_response('index.html',
                               context_instance=RequestContext(request))

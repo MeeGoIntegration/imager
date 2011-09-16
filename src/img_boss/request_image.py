@@ -16,49 +16,43 @@
 """Records an image job request in the django database of the web UI. Thus
 facilitating tracking and controlling it and later on removing it.
 
-.. warning ::
-
-   * The build_ks participant should be used to read and validate kickstart 
-     files, and subsequently fills the image.kickstart field.
-
-
 :term:`Workitem` fields IN:
 
 :Parameters:
-   image.kickstart(string): 
+   :image.kickstart (string):
       Contents of a kickstart file. Refer to :
       `<http://wiki.meego.com/Image_Configurations_-_KickStart_Files>`_
       for a description of kickstart files
-   image.image_type(string):
+   :image.image_type (string):
       Format of image as supported by mic2. ex: livecd, raw, etc..
       Check the available formats in mic2 --help
-   image.name(string):
+   :image.name (string):
       Name of the image, usually the name of the kickstart in the format
       `$VERTICAL-$ARCH-$VARIANT` , required by mic2 when using the --release
       option ex: meego-core-ia32-minimal
-   image.release(string):
+   :image.release (string):
       Turns on release creation in mic2
-   image.arch(string):
+   :image.arch (string):
       Architecture of image. ex: i586, armv7l, etc..
-   image.emails(list):
+   :image.emails (list):
       emails that will be notified. Django will not handle notifications for
       jobs that originate from BOSS process, this is just a record. The process
       is responsible for doing its own notifications as it sees fit
-   image.devicegroup(string):
+   :image.devicegroup (string):
       OTS devicegroup. Testing is handled by the process and this is only just
       a record of it
-   image.extra_opts(list):
+   :image.extra_opts (list):
       list of extra options to be passed verbatim to mic2
 
 :term:`Workitem` fields OUT:
 
 :Returns:
-   image.image_id(string):
+   :image.image_id (string):
       Unique ID of this image job
-   image.prefix(string):
+   :image.prefix (string):
       added as another directory layer under which images will be saved
       Optional. "requests/username" will be used. 
-  result(Boolean)
+   :result (Boolean):
       True if everything was OK, False otherwise
 """
 

@@ -19,6 +19,7 @@ import sys, os
 sys.path.insert(0, os.path.abspath('../src'))
 sys.path.insert(0, os.path.abspath('../src/img_boss'))
 os.environ['DJANGO_SETTINGS_MODULE'] = 'img_web.settings'
+autoclass_content = 'both'
 
 # -- General configuration -----------------------------------------------------
 
@@ -220,3 +221,50 @@ man_pages = [
 
 # Example configuration for intersphinx: refer to the Python standard library.
 intersphinx_mapping = {'http://docs.python.org/': None}
+
+# -- http://djangosnippets.org/snippets/2533/ Easy django model docs -----------
+# -- modified to do forms as well ------------
+import inspect
+from django.core.management import setup_environ
+from django.utils.html import strip_tags
+
+def process_docstring(app, what, name, obj, options, lines):
+    # This causes import errors if left outside the function
+    from django.db import models
+    from django import forms
+    # Only look at objects that inherit from Django's base model class
+    if inspect.isclass(obj) and issubclass(obj, models.Model):
+        # Grab the field list from the meta class
+        fields = obj._meta._fields()
+        for field in fields:
+            # Decode and strip any html out of the field's help text
+            help_text = strip_tags(field.help_text.decode())
+            # Decode and capitalize the verbose name, for use if there isn't
+            # any help text
+            verbose_name = field.verbose_name.decode().capitalize()
+            if help_text:
+                # Add the model field to the end of the docstring as a param
+                # using the help text as the description
+                lines.append(':param %s: %s' % (field.attname, help_text))
+            else:
+                # Add the model field to the end of the docstring as a param
+                # using the verbose name as the description
+                lines.append(':param %s: %s' % (field.attname, verbose_name))
+            # Add the field's type to the docstring
+            lines.append(':type %s: %s' % (field.attname, type(field).__name__))
+    if inspect.isclass(obj) and issubclass(obj, forms.Form):
+        fields = obj.base_fields
+        for fieldname, field in fields.items():
+            # Decode and strip any html out of the field's help text
+            help_text = strip_tags(field.help_text.decode())
+            if help_text:
+                # Add the model field to the end of the docstring as a param
+                # using the help text as the description
+                lines.append(':param %s: %s' % (field.label, help_text))
+            # Add the field's type to the docstring
+            lines.append(':type %s: %s' % (field.label, type(field).__name__))
+    # Return the extended docstring
+    return lines  
+def setup(app):
+    # Register the docstring processor with sphinx
+    app.connect('autodoc-process-docstring', process_docstring) 

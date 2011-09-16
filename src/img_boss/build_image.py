@@ -29,44 +29,44 @@ root filesystem is built using qemu from a base image.
 :term:`Workitem` fields IN:
 
 :Parameters:
-   image.kickstart(string): 
+   :image.kickstart (string):
       Contents of a kickstart file. Refer to :
       `<http://wiki.meego.com/Image_Configurations_-_KickStart_Files>`_
       for a description of kickstart files
-   image.image_id(string):
+   :image.image_id (string):
       Unique ID of this image job
-   image.prefix(string):
+   :image.prefix (string):
       added as another directory layer under which images will be saved
       Optional. If not provided "requests" will be used. 
-   image.image_type(string):
+   :image.image_type (string):
       Format of image as supported by mic2. ex: livecd, raw, etc..
       Check the available formats in mic2 --help
-   image.name(string):
+   :image.name (string):
       Name of the image, usually the name of the kickstart in the format
       `$VERTICAL-$ARCH-$VARIANT` , required by mic2 when using the --release
       option ex: meego-core-ia32-minimal
-   image.release(string):
+   :image.release (string):
       Turns on release creation in mic2
-   image.arch(string):
+   :image.arch (string):
       Architecture of image. ex: i586, armv7l, etc ..,
-   image.extra_opts(list):
+   :image.extra_opts (list):
       list of extra options to be passed verbatim to mic2
 
 :term:`Workitem` fields OUT:
 
 :Returns:
-   image.result(Boolean):
-      True if mic2 returned with status 0, False otherwise
-  image.files_url(string):
-      base URL at which all files produced by mic2 can be accessed
-  image.image_url(string):
-      URL to download the image file directly
-  image.logfile_url(string):
-      URL to the mic2 logfile
-  image.error(string):
-      Any errors returned by mic2
-  result(Boolean)
-      True if everything was OK, False otherwise
+  :image.result (Boolean):
+     True if mic2 returned with status 0, False otherwise
+  :image.files_url (string):
+     base URL at which all files produced by mic2 can be accessed
+  :image.image_url (string):
+     URL to download the image file directly
+  :image.logfile_url (string):
+     URL to the mic2 logfile
+  :image.error (string):
+     Any errors returned by mic2
+  :result (Boolean):
+     True if everything was OK, False otherwise
 """
 
 from img.common import worker_config

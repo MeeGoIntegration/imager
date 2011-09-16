@@ -13,6 +13,7 @@
 
 #~ You should have received a copy of the GNU General Public License
 #~ along with this program.  If not, see <http://www.gnu.org/licenses/>.
+"""MIC2 mic-image-creator wrapper"""
 
 import subprocess as sub
 import os
@@ -22,18 +23,24 @@ from copy import copy
 
 def getport():
     """Gets a random port for the KVM virtual machine communtication, target 
-    always being the SSH port."""
+    always being the SSH port.
+
+    :returns: random port number between 49152 and 65535
+    """
     return random.randint(49152, 65535)
 
 def find_largest_file(indir):
     """Find the largest file in a given directory string.
     indir: Directory to find as string
     Returns the largest file in the given directory
-    
     BACKGROUND:
     Essentially Imager needs to return the url to the image and this is the 
     best way to find out which one is the image (biggest file is usually the 
     image).
+
+    :param indir: Directory to search in
+
+    :returns: largest file in the directory
     """
     fmap = {}
     for path, dirs, files in os.walk(indir):    
@@ -52,20 +59,19 @@ def find_largest_file(indir):
     return largest_file
 
 class Commands(object):
-    """Commands object for running various image building commands eg. MIC2.
-    """
+    """Commands object for running various image building commands"""
+
     def __init__(self, use_sudo=None, ssh_key=None, log_filename=None):
         """Constructor, creates the object with necessary parameters to run 
-        commands.
+        commands
         
-        use_sudo: Are we using sudo to run commands, if so, append one in the
-        beginning. Mainly used in running KVM and MIC2.
-        
-        ssh_key: Path to the ssh private key used to connect to the base KVM
-        image.
-        
-        log_filename: Filename to pipe the output to. Used by both KVM and 
-        MIC2.
+        :param use_sudo: Are we using sudo to run commands, if so, append one in
+           the beginning. Mainly used in running KVM and MIC2
+        :param ssh_key: Path to the ssh private key used to connect to the base
+           KVM image.
+        :param log_filename: Filename to pipe the output to. Used by both KVM
+           and MIC2
+
         """
         self.port = getport()
 
@@ -123,6 +129,8 @@ class Commands(object):
         """Method to run an arbitrary command and pipe the log output to a file.
         Uses subprocess.check_call to properly execute and catch if any errors
         occur.
+
+        :param command: Arbitary command to run
         """
         with open(self._logf, 'a+b') as logf:
             logf.write(" ".join(command))
@@ -130,7 +138,11 @@ class Commands(object):
                            stderr=logf, stdin=sub.PIPE)
 
     def scpto(self, source="", dest=""):
-        """Generic ssh copy file method, from KVM to host."""
+        """Generic ssh copy file method, from KVM to host.
+
+        :param source: file to copy
+        :param dest: destination file to copy to
+        """
         scp_comm = copy(self.scpbase)
         scp_comm.extend(self.sopts)
         scp_comm.append(source)
@@ -138,7 +150,11 @@ class Commands(object):
         self.run(scp_comm)
 
     def scpfrom(self, source="", dest=""):
-        """Generic ssh copy file method, from host to KVM."""
+        """Generic ssh copy file method, from host to KVM.
+
+        :param source: file to copy
+        :param dest: destination file to copy to
+        """
         scp_comm = copy(self.scpbase)
         scp_comm.extend(self.sopts)
         scp_comm.append("root@127.0.0.1:%s" % source)
@@ -146,7 +162,10 @@ class Commands(object):
         self.run(scp_comm)
 
     def ssh(self, command=""):
-        """Execute an arbitrary command in the KVM guest."""
+        """Execute an arbitrary command in the KVM guest.
+        
+        :param command: Arbitary command to run over ssh inside kvm
+        """
         ssh_comm = copy(self.sshbase)
         ssh_comm.extend(self.sopts)
         ssh_comm.extend(command)
@@ -154,13 +173,21 @@ class Commands(object):
 
     def overlaycreate(self, baseimg, tmpoverlay):
         """Create an overlay image based on a base image, usually a minimal OS
-        with a static ssh-key built-in, as long its capable of running MIC2."""
+        with a static ssh-key built-in, as long its capable of running MIC2.
+        
+        :param baseimg: path to base qcow2 file
+        :param tmpoverlay: path to qcow2 overlay going to be created
+        """
         overlay_comm = copy(self.overlaybase)
         overlay_comm.extend([baseimg, tmpoverlay])
         self.run(overlay_comm)
 
     def runkvm(self, overlayimg):
-        """Run KVM using the created overlay image."""
+        """Run KVM using the created overlay image.
+
+        :param overlayimg: path to qcow2 overlay based on the configured 
+           minimal KVM image
+        """
         kvm_comm = copy(self.kvmbase)
         filearg = kvm_comm.pop()
         filearg = filearg.replace("@KVMIMAGEFILE@", overlayimg)
@@ -173,8 +200,10 @@ class Commands(object):
 
     def runmic(self, ssh=False, job_args=None):
         """Run MIC2, using ssh or executing on the host, with arguments.
-        ssh: Use ssh?
-        job_args: Arguments for MIC2."""
+
+        :param ssh: wether to use ssh
+        :pram job_args: Arguments for MIC2
+        """
         mic_comm = copy(self.micbase)
         mic_comm.append('--config=%s' % job_args.ksfile_name)
         mic_comm.append('--format=%s' % job_args.image_type)
@@ -203,7 +232,11 @@ class Commands(object):
 class ImageWorker(object):
     """Actual worker class that does the heavy lifting."""
     def __init__(self, config=None, job_args=None):
-        """Initialize the worker using a config and job args."""
+        """Initialize the worker using a config and job args.
+
+        :param config: Worker config in a hash proxy object
+        :param job_args: hash proxy object describing the image job 
+        """
         self.config = config
         
         self._image_dir = os.path.join(config.base_dir, job_args.prefix,
@@ -315,7 +348,10 @@ class ImageWorker(object):
                                                  self.config.base_url)
 
     def get_results(self):
-        """Returns the results in a dictionary."""
+        """Returns the results in a dictionary.
+
+        :returns: results dictionary
+        """
         results = {
                     "result"     : self.result,
                     "files_url"  : self.files_url,

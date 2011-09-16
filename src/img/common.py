@@ -1,8 +1,7 @@
-'''
-Created on Oct 11, 2010
+"""
+Common Imager functions
+"""
 
-@author: locusfwork
-'''
 import os
 
 from urlparse import urlparse
@@ -31,8 +30,17 @@ class KSHandlers(KSCLASS):
         KSCLASS.__init__(self, mapping=commandMap[ver])
     
 def build_kickstart(base_ks, packages=[], groups=[], projects=[]):
-    """Build a kickstart file using the handler class, with custom kickstart, 
-    packages, groups and projects."""
+    """Build a kickstart file using the handler class, with custom kickstart,
+    packages, groups and projects.
+
+    :param base_ks: Full path to the original kickstart file
+    :param packages: list of packagenames
+    :param groups: list of groupnames
+    :param projects: list of rpm repository URLs
+
+    :returns: Validated kickstart with any extra packages, groups or repourls
+       added
+    """
     ks = ksparser.KickstartParser(KSHandlers())
     ks.readKickstart(base_ks)
     ks.handler.packages.add(packages)
@@ -47,9 +55,15 @@ def build_kickstart(base_ks, packages=[], groups=[], projects=[]):
     return ks_txt
 
 def worker_config(config=None, conffile="/etc/imager/img.conf"):
-    """"Utility function which parses the either given or  imager configuration
+    """Utility function which parses the either given or  imager configuration
         file and passes a dictionary proxy containing the configuration keys
-        and values in return."""
+        and values in return.
+
+    :param config: initialized ConfigParser object
+    :param conffile: Full path to ini style config file
+
+    :returns: configuration dict
+    """
     if not config:
         config = ConfigParser.ConfigParser()
         config.read(conffile)

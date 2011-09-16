@@ -10,28 +10,28 @@ the build_image participants
 :term:`Workitem` fields IN:
 
 :Parameters:
-   image.image_id(string):
+   :image.image_id (string):
       Unique ID of this image job
-   image.logfile_url(string):
+   :image.logfile_url (string):
       Copied to the database when the job enters "BUILDING" state and then used
       to download the image building logfile
-   image.files_url(string):
+   :image.files_url (string):
       Copied to the database when the job enters "DONE" or "ERROR" state
-   image.image_url(string):
+   :image.image_url (string):
       Copied to the database when the job enters "DONE" state
-   image.test_result(string):
+   :image.test_result (string):
       Copied to the database when the job enters "DONE, TESTED" state
       
 :term:`Workitem` params IN
 
 :Parameters:
-   status(string):
+   :status (string):
       one of "DONE", "DONE, TESTED", "ERROR"
 
 :term:`Workitem` fields OUT:
 
 :Returns:
-   result(Boolean)
+   :result (Boolean):
       True if everything was OK, False otherwise
 """
 

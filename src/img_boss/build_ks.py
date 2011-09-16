@@ -36,47 +36,47 @@
 :term:`Workitem` fields IN:
 
 :Parameters:
-   actions(list):
-      OPTIONAL, only used if the "packages_event" parameter is passed
-      submit request data structure :term:`actions`
-   image.ksfile(string):
-      Full path to a local readable kickstart file under the "ksstore" directory
-      which is configured in the conf file
-   image.kickstart(string):
+   :ev.actions (list):
+      OPTIONAL Only used if the "packages_event" parameter is passed submit
+      request data structure :term:`actions`
+   :image.ksfile (string):
+      Full path to a local readable kickstart file under the "ksstore" 
+      directory which is configured in the conf file
+   :image.kickstart (string):
       Contents of a kickstart file
-   image.extra_repos(list):
+   :image.extra_repos (list):
       OPTIONAL URLs of package repositories that will be added to the kickstart
       file
-   image.groups(list):
+   :image.groups (list):
       OPTIONAL Group names to be added to the kickstart file
-   image.packages(list):
+   :image.packages (list):
       OPTIONAL Package names to be added to the kickstart file
-   project(string):
+   :project (string):
       OPTIONAL Name of an OBS project which publishes packages to the
       "reposerver" set in the configuration
-   repository(string):
+   :repository (string):
       OPTIONAL Name of the repository in the above project
    
    
 :term:`Workitem` params IN
 
 :Parameters:
-   packages_event(Boolean):
+   :packages_event (Boolean):
       If present the packages in the actions array from a submit request are
       added to the kickstart file
-   packages_from(string):
+   :packages_from (string):
       Arbitary field name from which to get a list of package names
-   groups_from(string):
+   :groups_from (string):
       Arbitary field name from which to get a list of group names
 
 :term:`Workitem` fields OUT:
 
 :Returns:
-   image.kickstart(string):
+   :image.kickstart (string):
       Validated and augmented kickstart file contents
-   image.name(string):
+   :image.name (string):
       If not already set, the basename of the kickstart file is used
-   result(Boolean):
+   :result (Boolean):
       True if the kickstart handling went OK, False otherwise
 
 """

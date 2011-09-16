@@ -60,5 +60,3 @@ UI + Worker ::
 
  zypper --non-interactive in img-web img-boss
 
-
-

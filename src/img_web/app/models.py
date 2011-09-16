@@ -24,6 +24,11 @@ from RuoteAMQP import Launcher
 GETLOG = django.dispatch.Signal(providing_args=["image_id"])
 
 def launch(process, fields):
+    """ BOSS process launcher
+
+    :param process: process definition
+    :param fields: dict of workitem fields
+    """
 
     launcher = Launcher(amqp_host = settings.boss_host,
                         amqp_user = settings.boss_user,
@@ -33,6 +38,9 @@ def launch(process, fields):
     launcher.launch(process, fields)
 
 def imagejob_getlog(sender, **kwargs):
+    """ utility function to launch the getlog process in response to the GETLOG
+    signal """
+
     with open(settings.getlog_process, mode='r') as process_file:
         process = process_file.read()
 
@@ -41,9 +49,18 @@ def imagejob_getlog(sender, **kwargs):
     launch(process, fields)
 
 def imagejob_delete_callback(sender, **kwargs):
+    """ utility function to launch the delete process as a callback to the
+    post_delete signal of the an ImageJob object """
+
     pass
 
 def imagejob_save_callback(sender, **kwargs):
+    """ utility function to launch the save process as a callback to the
+    post_save signal of the an ImageJob object. if the associated Queue object
+    has handling enabled and this is a just created object  it will launch a
+    create image process, else if it is an update to an already existing object
+    notify and test processes are optionally launched """
+
     job = kwargs['instance']
 
     if not job.queue.handle_launch:
@@ -110,6 +127,9 @@ class Queue(models.Model):
         return self.name
 
 class ImageJob(models.Model):    
+    """ An instance of this ImageJob model contains all the information needed
+    to reproduce an image usin mic2 """
+
     image_id = models.CharField(max_length=30)
     created = models.DateTimeField(auto_now_add=True)
     done = models.DateTimeField(blank=True, null=True)

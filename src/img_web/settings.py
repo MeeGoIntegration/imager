@@ -25,8 +25,10 @@ try:
     config.readfp(open(IMGCONF))
 except Exception:
     try:
+        # during docs build
         config.readfp(open("src/img_web/img.conf"))
-    except Exception:
+    except IOError:
+        # when developing it is in cwd
         config.readfp(open("img.conf"))
 
 url_prefix = config.get('web', 'url_prefix')

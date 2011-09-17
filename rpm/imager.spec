@@ -7,7 +7,7 @@ License: GPLv2+
 URL: http://www.meego.com
 Source0: %{name}_%{version}.orig.tar.gz
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-buildroot
-BuildRequires: python, python-sphinx, python-setuptools, python-boss-skynet,python-ruote-amqp, python-django, python-mysql, mic2
+BuildRequires: python, python-setuptools, python-sphinx, python-setuptools, python-boss-skynet,python-ruote-amqp, python-django, python-mysql, mic2
 BuildArch: noarch
 Summary: Image creation service for MeeGo related products
 
@@ -23,8 +23,6 @@ Image creation service for MeeGo related products
 
 %package -n img-core
 Group: Applications/Engineering
-BuildRequires: python >= 2.5.0
-BuildRequires: python-setuptools
 Requires: python >= 2.5.0, mic2, sudo, pykickstart
 Summary: Image creation service for MeeGo related products, core package
 %description -n img-core
@@ -33,8 +31,6 @@ It builds images using mic2 optionally in a virtual machine.
 
 %package -n img-web
 Group: Applications/Engineering
-BuildRequires: python >= 2.5.0
-BuildRequires: python-setuptools
 Requires: python >= 2.5.0
 Requires: lighttpd
 Requires: boss-skynet
@@ -47,8 +43,6 @@ This package provides a django based web interface for imager that is part of BO
 
 %package -n img-worker
 Group: Applications/Engineering
-BuildRequires: python >= 2.5.0
-BuildRequires: python-setuptools
 Requires: img-core
 Requires: python-boss-skynet >= 0.2.2
 Requires: boss-skynet
@@ -61,8 +55,6 @@ fulfill image building steps of processes
 
 %package -n img-ks
 Group: Applications/Engineering
-BuildRequires: python >= 2.5.0
-BuildRequires: python-setuptools
 Requires: img-core
 Requires: python-boss-skynet >= 0.2.2
 Requires: boss-skynet

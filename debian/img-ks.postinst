@@ -17,14 +17,13 @@ set -e
 # for details, see http://www.debian.org/doc/debian-policy/ or
 # the debian-policy package
 
+PARTS="build_ks"
 
 case "$1" in
     install|upgrade|configure)
-        for i in \
-            build_ks \
-            ; do
+        for i in $PARTS ; do
 
-            skynet make_participant -n $i -p /usr/share/boss-skynet/$i.py
+            skynet install -u img -n $i -p /usr/share/boss-skynet/$i.py
 
         done
 

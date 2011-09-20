@@ -17,15 +17,14 @@ set -e
 # for details, see http://www.debian.org/doc/debian-policy/ or
 # the debian-policy package
 
+PARTS="update_image_status
+request_image"
 
 case "$1" in
     install|upgrade|configure)
-        for i in \
-            update_image_status \
-            request_image \
-            ; do
+        for i in $PARTS ; do
 
-            skynet make_participant -n $i -p /usr/share/boss-skynet/$i.py
+            skynet install -n $i -p /usr/share/boss-skynet/$i.py
 
         done
 

@@ -79,13 +79,23 @@ make PREFIX=%{_prefix} DESTDIR=%{buildroot} install
 %clean
 rm -rf %{buildroot}
 
-%post -n img-boss
+%post -n img-worker
 if [ $1 -eq 1 ] ; then
         for i in \
-            build_image \
-            build_ks \
+            build_image
         ; do
-        
+
+        skynet make_participant -n $i -p /usr/share/boss-skynet/$i.py
+
+    done
+fi
+
+%post -n img-ks
+if [ $1 -eq 1 ] ; then
+        for i in \
+            build_ks
+        ; do
+
         skynet make_participant -n $i -p /usr/share/boss-skynet/$i.py
 
     done

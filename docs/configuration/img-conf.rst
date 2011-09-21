@@ -47,6 +47,10 @@ Setup django (add a superuser)::
  django-admin migrate
  django-admin collectstatic
 
+.. note::
+
+   Ignore any errors that are produced by the migrate command.
+
 Configure Lighttpd
 ------------------
 

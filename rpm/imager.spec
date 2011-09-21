@@ -134,7 +134,7 @@ fi
 %{_datadir}/boss-skynet/build_image.py
 %config(noreplace) %{_sysconfdir}/skynet/build_image.conf
 
-‰files -n img-ks
+%files -n img-ks
 %defattr(-,root,root,-)
 %{_datadir}/boss-skynet/build_ks.py
 %config(noreplace) %{_sysconfdir}/skynet/build_ks.conf

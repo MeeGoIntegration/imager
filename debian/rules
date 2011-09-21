@@ -4,6 +4,6 @@ export DH_VERBOSE=1
 export PREFIX=/usr
 
 %:
-	dh $@
+	dh $@ --with=python2
 override_dh_installinit:
 	dh_installinit -pimg-web --no-start

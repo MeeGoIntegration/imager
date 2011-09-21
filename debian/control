@@ -2,22 +2,19 @@ Source: img
 Section: python
 Priority: optional
 Maintainer: Islam Amer <islam.amer@nokia.com>
-Build-Depends: debhelper (>= 7.0.50~), python-support (>= 0.5.0), python, python-setuptools, python-sphinx, python-ruote-amqp, python-boss-skynet, python-django, python-pykickstart, mic2, python-mysqldb
+Build-Depends: debhelper (>= 7.0.50~), python (>= 2.6.6-3~), python-setuptools, python-sphinx, python-ruote-amqp, python-boss-skynet, python-django, python-pykickstart, mic2, python-mysqldb
 Standards-Version: 3.9.2
-XS-Python-Version: >= 2.6
 
 Package: img-core
 Architecture: all
 Depends: ${python:Depends}, ${misc:Depends}, mic2, sudo, python-pykickstart
 Suggests: qemu-kvm
-XB-Python-Version: ${python:Versions}
 Description: image creation service for MeeGo related products
  This package provides the core worker logic of imager. It builds images using mic2 optionally in a virtual machine.
 
 Package: img-worker
 Architecture: all
 Depends: ${python:Depends}, ${misc:Depends}, boss-skynet, python-boss-skynet, img-core
-XB-Python-Version: ${python:Versions}
 Description: image creation service for MeeGo related products
  This package provides imager participants that plugin into a BOSS system to
  fulfill image building steps of processes 
@@ -25,7 +22,6 @@ Description: image creation service for MeeGo related products
 Package: img-ks
 Architecture: all
 Depends: ${python:Depends}, ${misc:Depends}, boss-skynet, python-boss-skynet, img-core
-XB-Python-Version: ${python:Versions}
 Description: image creation service for MeeGo related products
  This package provides imager participants that plugin into a BOSS system to 
  handle kickstart files
@@ -33,7 +29,6 @@ Description: image creation service for MeeGo related products
 Package: img-web
 Architecture: all
 Depends: ${python:Depends}, ${misc:Depends}, lighttpd, python-django, python-flup, python-mysqldb, mysql-client, mysql-server, boss-skynet, python-boss-skynet
-XB-Python-Version: ${python:Versions}
 Description: image creation service for MeeGo related products
  This package provides a django based web interface for imager. 
 

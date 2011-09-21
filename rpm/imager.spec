@@ -24,6 +24,7 @@ Image creation service for MeeGo related products
 %package -n img-core
 Group: Applications/Engineering
 Requires: python >= 2.5.0, mic2, sudo, pykickstart
+Requires(pre): shadow-utils
 Summary: Image creation service for MeeGo related products, core package
 %description -n img-core
 This package provides the core worker logic of imager.
@@ -79,37 +80,31 @@ make PREFIX=%{_prefix} DESTDIR=%{buildroot} install
 %clean
 rm -rf %{buildroot}
 
+%pre -n img-core
+getent group imgadm >/dev/null || groupadd -r imgadm
+getent passwd img >/dev/null || \
+    useradd -r -g imgadm -d /home/img -s /sbin/nologin \
+    -c "IMG user" img
+exit 0
+
 %post -n img-worker
 if [ $1 -eq 1 ] ; then
-        for i in \
-            build_image
-        ; do
-
-        skynet make_participant -n $i -p /usr/share/boss-skynet/$i.py
-
+    for i in build_image ; do
+        skynet install -u img -n $i -p /usr/share/boss-skynet/$i.py
     done
 fi
 
 %post -n img-ks
 if [ $1 -eq 1 ] ; then
-        for i in \
-            build_ks
-        ; do
-
-        skynet make_participant -n $i -p /usr/share/boss-skynet/$i.py
-
+    for i in build_ks ; do
+        skynet install -u img -n $i -p /usr/share/boss-skynet/$i.py
     done
 fi
 
 %post -n img-web
 if [ $1 -eq 1 ] ; then
-        for i in \
-            update_image_status \
-            request_image \
-        ; do
-        
+    for i in update_image_status request_image ; do
         skynet make_participant -n $i -p /usr/share/boss-skynet/$i.py
-
     done
 fi
 

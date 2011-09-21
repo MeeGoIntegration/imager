@@ -24,7 +24,7 @@ Image creation service for MeeGo related products
 %package -n img-core
 Group: Applications/Engineering
 Requires: python >= 2.5.0, mic2, sudo, pykickstart
-Requires(pre): shadow-utils
+Requires(pre): pwdutils
 Summary: Image creation service for MeeGo related products, core package
 %description -n img-core
 This package provides the core worker logic of imager.

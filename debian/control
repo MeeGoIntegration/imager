@@ -15,6 +15,7 @@ Description: image creation service for MeeGo related products
 Package: img-worker
 Architecture: all
 Depends: ${python:Depends}, ${misc:Depends}, boss-skynet, python-boss-skynet, img-core
+Replaces: img-boss
 Description: image creation service for MeeGo related products
  This package provides imager participants that plugin into a BOSS system to
  fulfill image building steps of processes 
@@ -22,6 +23,7 @@ Description: image creation service for MeeGo related products
 Package: img-ks
 Architecture: all
 Depends: ${python:Depends}, ${misc:Depends}, boss-skynet, python-boss-skynet, img-core
+Replaces: img-boss
 Description: image creation service for MeeGo related products
  This package provides imager participants that plugin into a BOSS system to 
  handle kickstart files

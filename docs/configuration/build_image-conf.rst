@@ -23,7 +23,7 @@ The two important configuration options are base_url and base_dir:
 
 You also need to create the directory you set as the value of base_dir ::
 
-   install -d -m 0777 /var/www/img/images
+   install -o img -g www-data -d -m 0777 /var/www/images
 
 Using sudo
 ----------

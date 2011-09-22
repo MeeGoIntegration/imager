@@ -2,8 +2,6 @@
 Common Imager functions
 """
 
-import os
-
 from urlparse import urlparse
 
 import pykickstart.parser as ksparser
@@ -70,8 +68,8 @@ def worker_config(config=None, conffile="/etc/imager/img.conf"):
 
     section = "worker"
     conf = {}
-    for item in ["base_url", "base_dir", "mic_opts", "img_tmp", "ssh_key",
-                 "base_img"]:
+    for item in ["base_url", "base_dir", "mic_opts", "img_tmp", "vm_ssh_pubkey",
+                 "vm_base_img", "vm_kernel"]:
         conf[item] = config.get(section, item)
 
     for item in ["use_kvm", "use_sudo"]:

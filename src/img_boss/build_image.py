@@ -163,8 +163,11 @@ class ParticipantHandler(object):
                 f.__error__ = "Expected extra_opts field to be a list"
                 f.msg.append(f.__error__)
                 raise RuntimeError("Wrong type of field")
-            if self.worker_config.extra_opts:
-                jargs.extra_opts.extend(self.worker_config.extra_opts)
+        else:
+            jargs.extra_opts = []
+
+        if self.worker_config.extra_opts:
+            jargs.extra_opts.extend(self.worker_config.extra_opts)
 
         if not jargs.prefix or jargs.prefix == "":
             jargs.prefix = "requests"

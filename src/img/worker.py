@@ -61,10 +61,12 @@ def find_largest_file(indir):
 class Commands(object):
     """Commands object for running various image building commands"""
 
-    def __init__(self, use_sudo=None, ssh_key=None, log_filename=None):
+    def __init__(self, vm_kernel, use_sudo=None, ssh_key=None,
+                 log_filename=None):
         """Constructor, creates the object with necessary parameters to run 
         commands
         
+        :param vm_kernel: linux kernel to boot the vm
         :param use_sudo: Are we using sudo to run commands, if so, append one in
            the beginning. Mainly used in running KVM and MIC2
         :param ssh_key: Path to the ssh private key used to connect to the base
@@ -111,9 +113,10 @@ class Commands(object):
 
         self.kvmbase = [
                     '/usr/bin/qemu-kvm',
-                    '-nographic',
-                    '-daemonize',
-                    '-m', '256M',
+                    '-nographic', '-no-reboot',
+                    '-daemonize', '-m', '256M',
+                    '-kernel', vm_kernel,
+                    '-append', 'root=/dev/vda panic=1 quiet rw elevator=noop',
                     '-net', 'nic,model=virtio',
                     '-net', 'user,hostfwd=tcp:127.0.0.1:%s-:22' % self.port,
                     '-drive', 'index=0,if=virtio,media=disk,cache=writeback,' \
@@ -266,8 +269,9 @@ class ImageWorker(object):
         config and proxy settings to the guest. Then create the output 
         directory and then run MIC2. When its ready, copy the entire image 
         directory."""
-        commands = Commands(use_sudo=self.config.use_sudo,
-                            ssh_key=self.config.ssh_key,
+        commands = Commands(self.config.vm_kernel,
+                            use_sudo=self.config.use_sudo,
+                            ssh_key=self.config.vm_ssh_pubkey,
                             log_filename=self.logfile_name)
 
         print self._image_dir
@@ -290,7 +294,7 @@ class ImageWorker(object):
                                          (self.job_args.image_id, \
                                           commands.port))
 
-                commands.overlaycreate(self.config.base_img, overlayimg)
+                commands.overlaycreate(self.config.vm_base_img, overlayimg)
 
                 commands.runkvm(overlayimg)
 

@@ -28,11 +28,11 @@ You also need to create the directory you set as the value of base_dir ::
 Using sudo
 ----------
 
-In order to run the mic2 tool, the nobody user needs sudo rights to
+In order to run the mic2 tool, the img user needs sudo rights to
 mic-image-creator ::
 
- cat >> /etc/sudoers.d/nobody << EOF
- nobody ALL=(ALL)NOPASSWD:/usr/bin/mic-image-creator
+ cat >> /etc/sudoers.d/img << EOF
+ img ALL=(ALL)NOPASSWD:/usr/bin/mic-image-creator
  EOF
  chmod 0440 /etc/sudoers.d/nobody
 

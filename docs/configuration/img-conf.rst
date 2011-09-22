@@ -71,7 +71,7 @@ This is only an example, your installation may vary::
  fastcgi.server += (
      "/img.fcgi" => (
          "main" => (
-             "socket" => "/var/run/img_web" + ".socket",
+             "socket" => "/var/run/img_web/img_web" + ".socket",
              "check-local" => "disable",
          )
      ),

@@ -70,21 +70,12 @@ def worker_config(config=None, conffile="/etc/imager/img.conf"):
 
     section = "worker"
     conf = {}
-    for item in ["base_url", "base_dir", "mic_opts", "img_home", "img_tmp"]:
+    for item in ["base_url", "base_dir", "mic_opts", "img_tmp", "ssh_key",
+                 "base_img"]:
         conf[item] = config.get(section, item)
 
     for item in ["use_kvm", "use_sudo"]:
         conf[item] = config.getboolean(section, item)
-
-    if config.has_option(section, "ssh_key"):
-        conf["ssh_key"] = config.get(section, "ssh_key")
-    else:
-        conf["ssh_key"] = os.path.join(conf["img_home"], 'id_rsa')
-    
-    if config.has_option(section, "base_img"):
-        conf["base_img"] = config.get(section, "base_img")
-    else:
-        conf["base_img"] = os.path.join(conf["img_home"], 'base.img')
 
     if config.has_option(section, "mic_opts"):
         extra_opts = config.get(section, "mic_opts")

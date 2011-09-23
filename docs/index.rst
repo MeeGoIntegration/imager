@@ -18,6 +18,11 @@ WORK IN PROGRESS
    code
    todo
 
+.. toctree::
+   :hidden:
+
+   glossary
+
 Indices and tables
 ==================
 

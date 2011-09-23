@@ -61,14 +61,11 @@ def find_largest_file(indir):
 class Commands(object):
     """Commands object for running various image building commands"""
 
-    def __init__(self, vm_kernel, use_sudo=None, ssh_key=None,
-                 log_filename=None):
+    def __init__(self, vm_kernel, ssh_key=None, log_filename=None):
         """Constructor, creates the object with necessary parameters to run 
         commands
         
         :param vm_kernel: linux kernel to boot the vm
-        :param use_sudo: Are we using sudo to run commands, if so, append one in
-           the beginning. Mainly used in running KVM and MIC2
         :param ssh_key: Path to the ssh private key used to connect to the base
            KVM image.
         :param log_filename: Filename to pipe the output to. Used by both KVM
@@ -78,9 +75,6 @@ class Commands(object):
         self.port = getport()
 
         self._logf = log_filename
-
-        if use_sudo:
-            self.use_sudo = True
 
         self.sudobase = [
                      'sudo', '-n'
@@ -195,10 +189,9 @@ class Commands(object):
         filearg = kvm_comm.pop()
         filearg = filearg.replace("@KVMIMAGEFILE@", overlayimg)
         kvm_comm.append(filearg)
-        if self.use_sudo:
-            sudo = copy(self.sudobase)
-            sudo.extend(kvm_comm)
-            kvm_comm = sudo
+        sudo = copy(self.sudobase)
+        sudo.extend(kvm_comm)
+        kvm_comm = sudo
         self.run(kvm_comm)
 
     def runmic(self, ssh=False, job_args=None):
@@ -225,10 +218,9 @@ class Commands(object):
         if ssh:
             self.ssh(mic_comm)
         else:
-            if self.use_sudo:
-                sudo = copy(self.sudobase)
-                sudo.extend(mic_comm)
-                mic_comm = sudo
+            sudo = copy(self.sudobase)
+            sudo.extend(mic_comm)
+            mic_comm = sudo
             self.run(mic_comm)
 
 
@@ -270,8 +262,7 @@ class ImageWorker(object):
         directory and then run MIC2. When its ready, copy the entire image 
         directory."""
         commands = Commands(self.config.vm_kernel,
-                            use_sudo=self.config.use_sudo,
-                            ssh_key=self.config.vm_ssh_pubkey,
+                            ssh_key=self.config.vm_ssh_key,
                             log_filename=self.logfile_name)
 
         print self._image_dir

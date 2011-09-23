@@ -80,6 +80,10 @@ class Commands(object):
                      'sudo', '-n'
                    ]
 
+        self.killkvmbase = [
+                     'pkill', '-f'
+                   ]
+
         self.overlaybase = [
                         '/usr/bin/qemu-img', 'create', '-f', 'qcow2', '-b'
                       ]
@@ -120,6 +124,8 @@ class Commands(object):
         self.micbase = [
                     'mic-image-creator'
                   ]
+
+        self.kvm_comm = None
 
 
     def run(self, command):
@@ -193,6 +199,13 @@ class Commands(object):
         sudo.extend(kvm_comm)
         kvm_comm = sudo
         self.run(kvm_comm)
+        self.kvm_comm = kvm_comm
+
+    def killkvm(self):
+        """Kill the KVM instance launched by the command we recorded"""
+        killkvm_comm = copy(self.killkvmbase)
+        killkvm_comm.append(" ".join(self.kvm_comm))
+        self.run(killkvm_comm)
 
     def runmic(self, ssh=False, job_args=None):
         """Run MIC2, using ssh or executing on the host, with arguments.
@@ -231,6 +244,7 @@ class ImageWorker(object):
 
         :param config: Worker config in a hash proxy object
         :param job_args: hash proxy object describing the image job 
+        
         """
         self.config = config
         
@@ -319,8 +333,8 @@ class ImageWorker(object):
                 try:
                     commands.ssh(['poweroff', '-f'])
                 except Exception, err:
-                    #FIXME: try -KILL using PID if set (where?)
-                    print "error %s" % err
+                    print "error %s trying to kill kvm" % err
+                    commands.killkvm()
                 finally:
                     os.remove(overlayimg)
 

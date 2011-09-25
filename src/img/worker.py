@@ -17,7 +17,7 @@
 
 import subprocess as sub
 import os
-import time
+import time, datetime
 import random
 from copy import copy
 
@@ -136,7 +136,9 @@ class Commands(object):
         :param command: Arbitary command to run
         """
         with open(self._logf, 'a+b') as logf:
-            logf.write(" ".join(command))
+            logf.write("\n%s : %s\n" % (datetime.datetime.now(),
+                                        " ".join(command)))
+            logf.flush()
             sub.check_call(command, shell=False, stdout=logf, 
                            stderr=logf, stdin=sub.PIPE)
 
@@ -195,11 +197,8 @@ class Commands(object):
         filearg = kvm_comm.pop()
         filearg = filearg.replace("@KVMIMAGEFILE@", overlayimg)
         kvm_comm.append(filearg)
-        sudo = copy(self.sudobase)
-        sudo.extend(kvm_comm)
-        kvm_comm = sudo
-        self.run(kvm_comm)
         self.kvm_comm = kvm_comm
+        self.run(kvm_comm)
 
     def killkvm(self):
         """Kill the KVM instance launched by the command we recorded"""
@@ -308,8 +307,9 @@ class ImageWorker(object):
                 commands.scpto(source='/etc/mic2/mic2.conf',
                                dest='/etc/mic2/')
 
-                commands.scpto(source='/etc/sysconfig/proxy',
-                               dest='/etc/sysconfig/')
+                if os.path.exists('/etc/sysconfig/proxy'):
+                    commands.scpto(source='/etc/sysconfig/proxy',
+                                   dest='/etc/sysconfig/')
 
                 commands.ssh(['mkdir', '-p', self._image_dir])
 

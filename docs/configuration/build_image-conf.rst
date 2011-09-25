@@ -47,12 +47,11 @@ mic2 config file to the guest VM. Then it runs mic2 in the VM with
 parameters specified in the init method. After mic2 has run, the image
 is copied from the guest using scp.
 
-::
+.. attention ::
 
- cat >> /etc/sudoers.d/img << EOF
- img ALL=(ALL)NOPASSWD:/usr/bin/qemu-kvm
- EOF
- chmod 0440 /etc/sudoers.d/img
+   The img user is added to the kvm system group so it can launch virtual
+   machines without root privileges. This is more secure. The main requirement
+   is /dev/kvm should be rw for the img user or a group it belongs to
 
 A suitable KVM image would have 20Gb of diskspace and boots in 20 seconds or
 less and can run mic2. It can run any Linux distrobution but it is recommended
@@ -90,7 +89,11 @@ And paste the ssh key to a file
 
 * Move the ssh key, qcow2 file and kernel vmlinuz files to somewhere like 
   /home/img/ on the worker machine and make sure they are readable by the img
-  user
+  user ::
+
+   chown img:imgadm /home/img/*
+   chmod 0600 /home/img/rsa_id
+   chmod 0770 /home/img/meego-core-ia32-mint.qcow2 /home/img/vmlinuz
 
 * Set the files' locations in /etc/skynet/build_image.conf
 

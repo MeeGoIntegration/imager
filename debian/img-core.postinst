@@ -22,6 +22,7 @@ case "$1" in
 
         addgroup --quiet --system imgadm 2>/dev/null ||true
         adduser img --quiet --system --ingroup imgadm --home /home/img
+        usermod -a -G kvm img
 
 	;;
     abort-upgrade|abort-remove|abort-deconfigure)

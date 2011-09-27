@@ -1,3 +1,12 @@
+img (0.60.3) unstable; urgency=low
+
+  * Worker kvm mode reworked
+  * any command will run upto a max timeout seconds
+  * img-boss split to img-ks and img-worker
+  * worker participants run as img user
+
+ -- Islam Amer <islam.amer@nokia.com>  Tue, 27 Sep 2011 12:38:11 +0300
+
 img (0.60.2-1) unstable; urgency=low
 
   * Sphinx docs

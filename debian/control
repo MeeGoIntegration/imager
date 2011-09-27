@@ -8,7 +8,7 @@ Standards-Version: 3.9.2
 Package: img-core
 Architecture: all
 Depends: ${python:Depends}, ${misc:Depends}, mic2, sudo, python-pykickstart
-Suggests: qemu-kvm
+Suggests: qemu-kvm, dropto, procps
 Description: image creation service for MeeGo related products
  This package provides the core worker logic of imager. It builds images using mic2 optionally in a virtual machine.
 

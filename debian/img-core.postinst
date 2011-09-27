@@ -20,9 +20,9 @@ set -e
 case "$1" in
     install|upgrade|configure)
 
-        addgroup --quiet --system imgadm 2>/dev/null ||true
-        adduser img --quiet --system --ingroup imgadm --home /home/img
-        usermod -a -G kvm img
+        addgroup --quiet --system imgadm 2>/dev/null || true
+        adduser img --quiet --system --ingroup imgadm --home /home/img || true
+        usermod -a -G kvm img || true
 
 	;;
     abort-upgrade|abort-remove|abort-deconfigure)

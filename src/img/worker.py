@@ -16,7 +16,7 @@
 """MIC2 mic-image-creator wrapper"""
 
 import subprocess as sub
-import os
+import os, signal
 import time, datetime
 import random
 from copy import copy
@@ -58,10 +58,18 @@ def find_largest_file(indir):
 
     return largest_file
 
+class TimeoutException(Exception): 
+    pass 
+
+def alarm_handler(signum, frame):
+    raise TimeoutException("Command timed out!")
+
+
 class Commands(object):
     """Commands object for running various image building commands"""
 
-    def __init__(self, vm_kernel, ssh_key=None, log_filename=None):
+    def __init__(self, vm_kernel, ssh_key=None, log_filename=None,
+                 timeout=3600):
         """Constructor, creates the object with necessary parameters to run 
         commands
         
@@ -70,11 +78,15 @@ class Commands(object):
            KVM image.
         :param log_filename: Filename to pipe the output to. Used by both KVM
            and MIC2
+        :param timeout: integer value used to set an alarm signal that
+           interrupts any command that runs for too long
 
         """
         self.port = getport()
 
         self._logf = log_filename
+
+        self.timeout = timeout
 
         self.sudobase = [
                      'sudo', '-n'
@@ -127,7 +139,6 @@ class Commands(object):
 
         self.kvm_comm = None
 
-
     def run(self, command):
         """Method to run an arbitrary command and pipe the log output to a file.
         Uses subprocess.check_call to properly execute and catch if any errors
@@ -139,8 +150,28 @@ class Commands(object):
             logf.write("\n%s : %s\n" % (datetime.datetime.now(),
                                         " ".join(command)))
             logf.flush()
-            sub.check_call(command, shell=False, stdout=logf, 
-                           stderr=logf, stdin=sub.PIPE)
+            # set new alarm handler preserving any old signal handler
+            cur_alarm_handler = signal.signal(signal.SIGALRM, alarm_handler)
+            # set our alarm
+            signal.alarm(self.timeout)
+            # call orig function catching any return value
+            try:
+                sub.check_call(command, shell=False, stdout=logf, 
+                                stderr=logf, stdin=sub.PIPE)
+            except TimeoutException:
+                logf.write("\n%s : Command timed out after %s seconds!" %
+                           (datetime.datetime.now(), self.timeout))
+                logf.flush()
+                raise
+            else:
+                # cancel our alarm
+                signal.alarm(0)
+            finally:
+                if cur_alarm_handler:
+                    # reset original alarm if any
+                    signal.signal(signal.SIGALRM, cur_alarm_handler)
+
+
 
     def scpto(self, source="", dest=""):
         """Generic ssh copy file method, from KVM to host.
@@ -276,7 +307,8 @@ class ImageWorker(object):
         directory."""
         commands = Commands(self.config.vm_kernel,
                             ssh_key=self.config.vm_ssh_key,
-                            log_filename=self.logfile_name)
+                            log_filename=self.logfile_name,
+                            timeout=int(self.config.timeout))
 
         print self._image_dir
         os.makedirs(self._image_dir, 0775)
@@ -336,7 +368,10 @@ class ImageWorker(object):
                     print "error %s trying to kill kvm" % err
                     commands.killkvm()
                 finally:
-                    os.remove(overlayimg)
+                    try:
+                        os.remove(overlayimg)
+                    except Exception, error:
+                        print "error %s" % err
 
         elif not self.config.use_kvm:
             try:

@@ -69,7 +69,7 @@ def worker_config(config=None, conffile="/etc/imager/img.conf"):
     section = "worker"
     conf = {}
     for item in ["base_url", "base_dir", "mic_opts", "img_tmp", "vm_ssh_key",
-                 "vm_base_img", "vm_kernel"]:
+                 "vm_base_img", "vm_kernel", "timeout"]:
         conf[item] = config.get(section, item)
 
     for item in ["use_kvm"]:

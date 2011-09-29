@@ -43,15 +43,16 @@ d_start()
             echo -n " already running"
         else
             mkdir -p $RUNFILES_PATH/$SITE
-            chown -f img:www-data $LOGDIR/$SITE.log $LOGDIR/$SITE.err $RUNFILES_PATH/$SITE
+            mkdir -p $LOGDIR/$SITE
+            chown -f img:www-data $RUNFILES_PATH/$SITE $LOGDIR/$SITE
             start-stop-daemon --start -c $RUN_AS \
             --pidfile $RUNFILES_PATH/$SITE/$SITE.pid \
             --exec /usr/bin/django-admin \
             -- runfcgi --settings=$SITE.settings method=threaded \
             socket=$RUNFILES_PATH/$SITE/$SITE.socket \
-            daemonize=True outlog=$LOGDIR/$SITE.log \
+            daemonize=True outlog=$LOGDIR/$SITE/$SITE.log \
             pidfile=$RUNFILES_PATH/$SITE/$SITE.pid \
-            errlog=$LOGDIR/$SITE.err
+            errlog=$LOGDIR/$SITE/$SITE.err
             chmod -f 400 $RUNFILES_PATH/$SITE/$SITE.pid
 	        chmod -f 0770 $RUNFILES_PATH/$SITE/$SITE.socket
 	        chgrp -f www-data $RUNFILES_PATH/$SITE/$SITE.socket

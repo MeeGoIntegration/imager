@@ -1,3 +1,9 @@
+img (0.60.3-2) unstable; urgency=low
+
+  * fixed typo in postinst
+
+ -- Islam Amer <islam.amer@nokia.com>  Thu, 29 Sep 2011 16:13:44 +0300
+
 img (0.60.3-1) unstable; urgency=low
 
   * Worker kvm mode reworked

@@ -1,3 +1,9 @@
+img (0.60.3-3) unstable; urgency=low
+
+  * fix init script for first start
+
+ -- Islam Amer <islam.amer@nokia.com>  Thu, 29 Sep 2011 18:00:32 +0300
+
 img (0.60.3-2) unstable; urgency=low
 
   * fixed typo in postinst

@@ -39,7 +39,7 @@ d_start()
     for SITE in $DJANGO_SITES
     do
         echo -n ", $SITE"
-        if [ -f $RUNFILES_PATH/$SITE.pid ]; then
+        if [ -f $RUNFILES_PATH/$SITE/$SITE.pid ]; then
             echo -n " already running"
         else
             mkdir -p $RUNFILES_PATH/$SITE

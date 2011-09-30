@@ -36,6 +36,13 @@ mic-image-creator ::
  EOF
  chmod 0440 /etc/sudoers.d/img
 
+Make sure the sudoers file contains a line that looks like ::
+
+ #includedir /etc/sudoers.d
+
+The # is correct and not an error. Use the visudo command to edit the file
+because it validates your changes.
+
 Using KVM
 ---------
 

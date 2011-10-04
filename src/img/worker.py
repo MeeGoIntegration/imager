@@ -162,6 +162,8 @@ class Commands(object):
             proc.terminate()
             raise TimeoutError("Command was still running after %s "\
                                "seconds" % self.timeout)
+        elif not proc.exitcode:
+            raise sub.CalledProcessError(command, proc.exitcode)
 
     def scpto(self, source="", dest=""):
         """Generic ssh copy file method, from KVM to host.

@@ -15,8 +15,9 @@
 #~ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """MIC2 mic-image-creator wrapper"""
 
+import os
 import subprocess as sub
-import os, signal
+from multiprocessing import Process, TimeoutError
 import time, datetime
 import random
 from copy import copy
@@ -58,11 +59,10 @@ def find_largest_file(indir):
 
     return largest_file
 
-class TimeoutException(Exception): 
-    pass 
-
-def alarm_handler(signum, frame):
-    raise TimeoutException("Command timed out!")
+def fork(logfile, command):
+    with open(logfile, 'a+b') as logf:
+        sub.check_call(command, shell=False, stdout=logf, 
+                       stderr=logf, stdin=sub.PIPE)
 
 
 class Commands(object):
@@ -150,28 +150,18 @@ class Commands(object):
             logf.write("\n%s : %s\n" % (datetime.datetime.now(),
                                         " ".join(command)))
             logf.flush()
-            # set new alarm handler preserving any old signal handler
-            cur_alarm_handler = signal.signal(signal.SIGALRM, alarm_handler)
-            # set our alarm
-            signal.alarm(self.timeout)
-            # call orig function catching any return value
-            try:
-                sub.check_call(command, shell=False, stdout=logf, 
-                                stderr=logf, stdin=sub.PIPE)
-            except TimeoutException:
-                logf.write("\n%s : Command timed out after %s seconds!" %
-                           (datetime.datetime.now(), self.timeout))
+        proc = Process(target=fork, args=(self._logf, command))
+        proc.start()
+        proc.join(self.timeout)
+        if proc.is_alive():
+            with open(self._logf, 'a+b') as logf:
+                logf.write("\n%s : Command still running after %s seconds" %
+                          (datetime.datetime.now(), self.timeout))
                 logf.flush()
-                raise
-            else:
-                # cancel our alarm
-                signal.alarm(0)
-            finally:
-                if cur_alarm_handler:
-                    # reset original alarm if any
-                    signal.signal(signal.SIGALRM, cur_alarm_handler)
 
-
+            proc.terminate()
+            raise TimeoutError("Command was still running after %s "\
+                               "seconds" % self.timeout)
 
     def scpto(self, source="", dest=""):
         """Generic ssh copy file method, from KVM to host.
@@ -371,7 +361,7 @@ class ImageWorker(object):
                     try:
                         os.remove(overlayimg)
                     except Exception, error:
-                        print "error %s" % err
+                        print "error %s" % error
 
         elif not self.config.use_kvm:
             try:

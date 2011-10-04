@@ -1,3 +1,10 @@
+img (0.60.4-1) unstable; urgency=low
+
+  * Reimplement timeout using multiprocessing to work with the new threaded 
+    python-boss-skynet
+
+ -- Islam Amer <islam.amer@nokia.com>  Tue, 04 Oct 2011 16:44:33 +0300
+
 img (0.60.3-3) unstable; urgency=low
 
   * fix init script for first start

@@ -16,6 +16,10 @@
 """Records an image job request in the django database of the web UI. Thus
 facilitating tracking and controlling it and later on removing it.
 
+.. warning::
+    The build_ks participant should have run first to provide the name and
+    kickstart fields
+
 :term:`Workitem` fields IN:
 
 :Parameters:
@@ -57,7 +61,6 @@ facilitating tracking and controlling it and later on removing it.
 """
 
 import os, time
-from  RuoteAMQP.workitem import DictAttrProxy as dap
 
 os.environ['DJANGO_SETTINGS_MODULE'] = 'img_web.settings'
 from img_web.app.models import ImageJob, Queue
@@ -91,32 +94,35 @@ class ParticipantHandler(object):
         if not f.msg:
             f.msg = []
 
-        if (not f.ev.rid):
-            f.__error__ = "One of the mandatory fields: rid,"\
-                          " name and arch in the image namespace doesn't exist."
+        if (not f.ev or not f.ev.id or not f.image.kickstart or not f.image_type
+            or not f.image.arch or not f.image.name):
+            f.__error__ = "One of the mandatory fields: ev.id,"\
+                          " image.kickstart, image_type, image.arch,"\
+                          " or image.name doesn't exist."
             f.msg.append(f.__error__)
             raise RuntimeError("Missing mandatory field")
 
         job = ImageJob()
 
-        job.image_id = "%s-%s" % ( str(f.ev.rid),
+        job.image_id = "%s-%s" % ( str(f.ev.id),
                                    time.strftime('%Y%m%d-%H%M%S') )
 
         job.queue = Queue.objects.get(name="requests")
         job.user = self.user
-        job.email = f.image.emails
         job.image_type = f.image.image_type
         job.arch = f.image.arch
+        job.kickstart = f.image.kickstart
+        job.name = f.image.name
+        if f.emails:
+            job.emails = ",".join(f.emails)
+        else:
+            job.emails = self.user.email
         if f.image.release:
             job.release = f.image.release
         if f.image.devicegroup:
             job.devicegroup = f.image.devicegroup
         if f.image.extra_opts:
             job.test_options = f.image.extra_opts
-
-        job.kickstart = f.image.kickstart
-        job.name = f.image.name
-
         job.save()
 
         f.image.prefix = "%s/%s" % (job.queue.name,

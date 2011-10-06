@@ -1,3 +1,9 @@
+img (0.60.5-1) unstable; urgency=low
+
+  * Fix request_image validation
+
+ -- Islam Amer <islam.amer@nokia.com>  Thu, 06 Oct 2011 08:31:22 +0300
+
 img (0.60.4-1) unstable; urgency=low
 
   * Reimplement timeout using multiprocessing to work with the new threaded 

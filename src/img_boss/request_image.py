@@ -94,8 +94,8 @@ class ParticipantHandler(object):
         if not f.msg:
             f.msg = []
 
-        if (not f.ev or not f.ev.id or not f.image.kickstart or not f.image_type
-            or not f.image.arch or not f.image.name):
+        if (not f.ev or not f.ev.id or not f.image.kickstart
+            or not f.image.image_type or not f.image.arch or not f.image.name):
             f.__error__ = "One of the mandatory fields: ev.id,"\
                           " image.kickstart, image_type, image.arch,"\
                           " or image.name doesn't exist."

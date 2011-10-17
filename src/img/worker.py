@@ -347,7 +347,7 @@ class ImageWorker(object):
 
                 self.result = True
 
-            except Exception, err:
+            except (sub.CalledProcessError, TimeoutError), err:
                 print "error %s" % err
                 self.error = str(err)
                 self.result = False
@@ -356,14 +356,17 @@ class ImageWorker(object):
 
                 try:
                     commands.ssh(['poweroff', '-f'])
-                except Exception, err:
-                    print "error %s trying to kill kvm" % err
-                    commands.killkvm()
+                except (sub.CalledProcessError, TimeoutError), err:
+                    try:
+                        print "error %s trying to kill kvm" % err
+                        commands.killkvm()
+                    except (sub.CalledProcessError, TimeoutError), err:
+                        print "error %s" % err
                 finally:
                     try:
                         os.remove(overlayimg)
-                    except Exception, error:
-                        print "error %s" % error
+                    except (sub.CalledProcessError, TimeoutError), err:
+                        print "error %s" % err
 
         elif not self.config.use_kvm:
             try:
@@ -371,7 +374,7 @@ class ImageWorker(object):
                 commands.runmic(ssh=False, job_args=self.job_args)
                 self.result = True
 
-            except Exception, err:
+            except (sub.CalledProcessError, TimeoutError), err:
                 print "error %s" % err
                 self.error = str(err)
                 self.result = False

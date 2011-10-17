@@ -10,7 +10,7 @@ bootloader --timeout=5
 user --name meego  --groups audio,video --password meego
 
 repo --name=oss --baseurl=http://repo.meego.com/MeeGo/releases/1.2.0/repos/oss/ia32/packages/ --gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-meego
-repo --name=tools --baseurl=http://download.meego.com/live/Tools:/Building/Trunk/ --gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-meego
+repo --name=tools --baseurl=http://download.meego.com/live/Tools:/Building/MeeGo_1.2.0/ --gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-meego
 repo --name=dhcpcd --baseurl=http://repo.pub.meego.com/home:/iamer:/dhcpcd/MeeGo_1.2.0/
 
 %packages  --excludedocs

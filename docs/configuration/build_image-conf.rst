@@ -69,23 +69,22 @@ and qemu installed.
 
 * Generate a loop file using mic2 and the included kickstart at [#f1]_ ::
 
-   sudo -n mic-image-creator --config=meego-core-ia32-mint.ks --format=loop
-   --arch=i586 --outdir=./mint/ --save-kernel
+   sudo -n mic-image-creator --config=meego-core-ia32-mint.ks --format=loop --arch=i586 --outdir=./mint/ --save-kernel --suffix=""
 
 * Expand the loop file to 20Gb ::
 
-   dd if=/dev/zero of=./mint/*.img bs=1M count=1 seek=20480
+   dd if=/dev/zero of=./mint/<name of image> bs=1M count=1 seek=20480
 
 * Resize the filesystem inside the loop file ::
 
    fsck.ext3 -f ./mint/*.img
    resize2fs ./mint/*.img
    fsck.ext3 -f ./mint/*.img
+   tune2fs -c 0 -i 0 ./mint/*.img
 
 * Convert it to qcow2 format ::
 
-   qemu-img convert -p -O qcow2 -o preallocation=off ./mint/*.img
-   ./mint/meego-core-ia32-mint.qcow2
+   qemu-img convert -p -O qcow2 -o preallocation=off ./mint/*.img ./mint/meego-core-ia32-mint.qcow2
 
 * Open the mic2 log and look for lines that look like ::
 
@@ -99,7 +98,7 @@ And paste the ssh key to a file
   user ::
 
    chown img:imgadm /home/img/*
-   chmod 0600 /home/img/rsa_id
+   chmod 0600 /home/img/id_rsa
    chmod 0770 /home/img/meego-core-ia32-mint.qcow2 /home/img/vmlinuz
 
 * Set the files' locations in /etc/skynet/build_image.conf

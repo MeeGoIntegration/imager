@@ -91,5 +91,6 @@ Then run::
 
  lighttpd-enable-mod fastcgi
  lighttpd-enable-mod accesslog
+ lighttpd-enable-mod dir-listing
  service lighttpd force-reload
 

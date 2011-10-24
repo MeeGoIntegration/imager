@@ -1,3 +1,9 @@
+img (0.60.5-2) unstable; urgency=low
+
+  * Various documentation fixes
+
+ -- Islam Amer <islam.amer@nokia.com>  Mon, 24 Oct 2011 14:53:57 +0300
+
 img (0.60.5-1) unstable; urgency=low
 
   * Fix request_image validation

@@ -44,7 +44,9 @@ Setup django (add a superuser)::
 
  export DJANGO_SETTINGS_MODULE=img_web.settings
  django-admin syncdb
+then
  django-admin migrate
+then
  django-admin collectstatic
 
 .. note::
@@ -94,3 +96,11 @@ Then run::
  lighttpd-enable-mod dir-listing
  service lighttpd force-reload
 
+To start the img application server run:
+ service img-web start
+
+If you use the config described here you should be able to login at
+http://127.0.0.1/img/admin using the superuser. There you can add more
+users.
+
+The main IMG application can then be reached at : http://127.0.0.1/img/

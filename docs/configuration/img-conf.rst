@@ -44,9 +44,9 @@ Setup django (add a superuser)::
 
  export DJANGO_SETTINGS_MODULE=img_web.settings
  django-admin syncdb
-then
+ #then
  django-admin migrate
-then
+ #then
  django-admin collectstatic
 
 .. note::

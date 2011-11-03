@@ -1,3 +1,5 @@
+COVERAGE := $(shell which python-coverage)
+
 docs:
 	python setup.py build_sphinx
 
@@ -14,6 +16,23 @@ install:
 clean:
 	python setup.py clean
 	rm -rf docs/_build
+	rm -f test_results.txt code_coverage.txt .coverage
 
-.PHONY: docs
+test_results.txt:
+	PYTHONPATH=src/img_boss:$$PYTHONPATH \
+	  nosetests -v -w src -e img_web --with-coverage --cover-erase --cover-package=img,img_boss 2> $@ \
+	  && cat $@ || (cat $@; exit 1)
+
+code_coverage.txt: test_results.txt
+ifdef COVERAGE
+	$(COVERAGE) -rm src/img/*.py src/img_boss/*.py 2>&1 | tee code_coverage.txt
+else
+	@echo "Coverage not available" > code_coverage.txt
+endif
+
+retest:
+	@rm -f test_results.txt code_coverage.txt .coverage
+	$(MAKE) code_coverage.txt
+
+.PHONY: docs retest
 all: docs

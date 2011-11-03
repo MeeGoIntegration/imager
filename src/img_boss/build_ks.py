@@ -134,8 +134,11 @@ class ParticipantHandler(object):
             url = "%s/%s/%s" % (self.reposerver, project, repo)
             projects = [ url ]
 
-        if f.image.extra_repos and isinstance(f.image.extra_repos, list):
-            projects.extend(f.image.extra_repos)
+        if f.image.extra_repos:
+            if isinstance(f.image.extra_repos, list):
+                projects.extend(f.image.extra_repos)
+            else:
+                raise RuntimeError("extra_repos field should be a list")
 
         packages = []
         if wid.params.packages:
@@ -172,7 +175,10 @@ class ParticipantHandler(object):
                 raise RuntimeError("field %s should be a list"
                                    % wid.params.groups_from)
         if f.image.groups:
-            groups.extend(f.image.groups)
+            if isinstance(f.image.groups, list):
+                groups.extend(f.image.groups)
+            else:
+                raise RuntimeError("groups field should be a list")
 
         remove = False
         ksfile = ""

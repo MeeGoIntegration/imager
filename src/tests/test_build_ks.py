@@ -32,29 +32,29 @@ class TestParticipantHandler(unittest.TestCase):
 
     def setUp(self):
         self.participant = mut.ParticipantHandler()
+        self.participant.reposerver = "http://example.com/repo"
+        self.participant.ksstore = "tests/test_data/ksstore"
         self.wid = Workitem(WI_TEMPLATE)
         self.wid.fields.image = {}
         self.wid.fields.image.ksfile = "generic.ks"
-
-    def setup_participant(self):
-        self.participant.reposerver = "http://example.com/repo"
-        self.participant.ksstore = "tests/test_data/ksstore"
 
     def test_wi_control(self):
         ctrl = ParticipantCtrl()
         self.participant.handle_wi_control(ctrl)
 
     def test_lifecycle_control(self):
+        # Use a fresh participant without any config initialization
+        self.participant = mut.ParticipantHandler()
         ctrl = WorkItemCtrl('start')
         ctrl.config = SafeConfigParser()
         ctrl.config.read("img_boss/build_ks.conf")
 	self.participant.handle_lifecycle_control(ctrl)
 
     def test_handle_wi(self):
-        self.setup_participant()
         self.participant.handle_wi(self.wid)
         self.assertTrue(self.wid.result)
         self.assertTrue(self.wid.fields.image.kickstart)
+        self.assertEqual(self.wid.fields.image.name, "generic")
         # workitem with no parameters should have left it unchanged
         kickstart = open("tests/test_data/ksstore/generic.ks").read()
         self.assertEqual(self.wid.fields.image.kickstart, kickstart)
@@ -69,3 +69,93 @@ class TestParticipantHandler(unittest.TestCase):
         self.wid.fields.image.ksfile = None
         self.assertRaisesRegexp(RuntimeError, "kickstart",
                           self.participant.handle_wi, self.wid)
+
+    def handle_wi_helper(self, strings):
+        """Call handle_wi and check that it was successful and the
+           resulting kickstarts contains certain strings."""
+        self.participant.handle_wi(self.wid)
+        self.assertTrue(self.wid.result)
+        for string in strings:
+            self.assertTrue(string in self.wid.fields.image.kickstart,
+                            "%s not found in kickstart" % string)
+
+    def test_extra_repos(self):
+        repos = ['http://example.com/extra1', 'http://example.com/extra2']
+        self.wid.fields.image.extra_repos = repos[:]
+        self.handle_wi_helper(repos)
+
+        self.wid.fields.image.extra_repos = "not a list"
+        self.assertRaisesRegexp(RuntimeError, "list",
+                          self.participant.handle_wi, self.wid)
+
+    def test_packages_field(self):
+        packages = ['package1', 'package2', 'package3', 'package4']
+        self.wid.fields.image.packages = packages[:]
+        self.handle_wi_helper(packages)
+
+        self.wid.fields.image.packages = "not a list"
+        self.assertRaisesRegexp(RuntimeError, "list",
+                          self.participant.handle_wi, self.wid)
+
+    def test_packages_param(self):
+        packages = ['package1', 'package2', 'package3', 'package4']
+        self.wid.params.packages = packages[:]
+        self.handle_wi_helper(packages)
+
+        self.wid.params.packages = "not a list"
+        self.assertRaisesRegexp(RuntimeError, "list",
+                          self.participant.handle_wi, self.wid)
+
+    def test_packages_param_added(self):
+        packages1 = ['package1', 'package2']
+        packages2 = ['parmpackage1', 'parmpackage2']
+        self.wid.fields.image.packages = packages1[:]
+        self.wid.params.packages = packages2[:]
+        self.handle_wi_helper(packages1 + packages2)
+
+    def test_packages_from(self):
+        packages = ['package1', 'package2', 'package3', 'package4']
+        self.wid.params.packages_from = "arglblargl"
+        self.wid.fields.arglblargl = packages[:]
+        self.handle_wi_helper(packages)
+
+        self.wid.fields.arglblargl = "not a list"
+        self.assertRaisesRegexp(RuntimeError, "list",
+                          self.participant.handle_wi, self.wid)
+
+    def test_groups_field(self):
+        groups = ['group one', 'group two']
+        self.wid.fields.image.groups = groups[:]
+        self.handle_wi_helper(groups)
+
+        self.wid.fields.image.groups = "not a list"
+        self.assertRaisesRegexp(RuntimeError, "list",
+                          self.participant.handle_wi, self.wid)
+
+    def test_groups_param(self):
+        groups = ['group1', 'group2', 'group3', 'group4']
+        self.wid.params.groups = groups[:]
+        self.handle_wi_helper(groups)
+
+        self.wid.params.groups = "not a list"
+        self.assertRaisesRegexp(RuntimeError, "list",
+                          self.participant.handle_wi, self.wid)
+
+    def test_groups_param_added(self):
+        groups1 = ['group1', 'group2']
+        groups2 = ['parmgroup1', 'parmgroup2']
+        self.wid.fields.image.groups = groups1[:]
+        self.wid.params.groups = groups2[:]
+        self.handle_wi_helper(groups1 + groups2)
+
+    def test_groups_from(self):
+        groups = ['group1', 'group2', 'group3', 'group4']
+        self.wid.params.groups_from = "arglblargl"
+        self.wid.fields.arglblargl = groups[:]
+        self.handle_wi_helper(groups)
+
+        self.wid.fields.arglblargl = "not a list"
+        self.assertRaisesRegexp(RuntimeError, "list",
+                          self.participant.handle_wi, self.wid)
+
+    # TODO: test project field, packages_event param

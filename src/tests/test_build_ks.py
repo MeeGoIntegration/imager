@@ -1,3 +1,4 @@
+import re
 import unittest
 from ConfigParser import SafeConfigParser
 
@@ -13,6 +14,22 @@ WI_TEMPLATE = """{
 }"""
 
 class TestParticipantHandler(unittest.TestCase):
+
+    def assertRaisesRegexp(self, exc, rex, method, *args, **kwargs):
+        # python 2.7 provides this method by default but we don't require
+        # that version yet.
+        try:
+            method(*args, **kwargs)
+        except exc, exobj:
+            if isinstance(rex, basestring):
+               rex = re.compile(rex)
+            exstr = str(exobj)
+            if not rex.search(exstr):
+                raise AssertionError('"%s" does not match "%s"' %
+                                     (rex.pattern, exstr))
+            return
+        raise AssertionError('"%s" not raised"' % exc.__name__)
+
     def setUp(self):
         self.participant = mut.ParticipantHandler()
         self.wid = Workitem(WI_TEMPLATE)
@@ -44,11 +61,11 @@ class TestParticipantHandler(unittest.TestCase):
 
     def test_missing_imagefields(self):
         self.wid.fields.image = None
-        #self.assertRaises(RuntimeError, self.participant.handle_wi, self.wid)
-        #self.assertTrue(["Missing" in msg for msg in self.wid.fields.msg])
+        self.assertRaisesRegexp(RuntimeError, "image",
+                                self.participant.handle_wi, self.wid)
 
     def test_missing_ks(self):
         self.wid.fields.image.kickstart = None
         self.wid.fields.image.ksfile = None
-        self.assertRaises(RuntimeError, self.participant.handle_wi, self.wid)
-        self.assertTrue(["Missing" in msg for msg in self.wid.fields.msg])
+        self.assertRaisesRegexp(RuntimeError, "kickstart",
+                          self.participant.handle_wi, self.wid)

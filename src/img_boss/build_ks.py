@@ -118,11 +118,12 @@ class ParticipantHandler(object):
         if not f.msg:
             f.msg = []
 
+        if not f.image:
+            raise RuntimeError("Missing mandatory field: image")
+
         if not f.image.ksfile and not f.image.kickstart:
-            f.__error__ = "One of the mandatory fields: kickstart or ksfile"\
-                          " in the image namespace does not exist."
-            f.msg.append(f.__error__)
-            raise RuntimeError("Missing mandatory field")
+            raise RuntimeError("Missing mandatory field: image.kickstart"\
+                               " or image.ksfile")
 
         projects = []
         if f.project and f.repository:
@@ -141,46 +142,35 @@ class ParticipantHandler(object):
             if isinstance(f.params.packages, list):
                 packages.extend(wid.params.packages)
             else:
-                f.__error__ = "packages parameter expected to be a list"
-                f.msg.append(f.__error__)
-                raise RuntimeError("Wrong parameter type")
+                raise RuntimeError("packages parameter should be a list")
         if wid.params.packages_from:
             extra_packages = f.as_dict()[wid.params.packages_from]
             if isinstance(extra_packages, list):
                 packages.extend(extra_packages)
             else:
-                f.__error__ = "field %s expected to be a list" % \
-                wid.params.packages_from
-                f.msg.append(f.__error__)
-                raise RuntimeError("Wrong field type")
+                raise RuntimeError("field %s should be a list"
+                                   % wid.params.packages_from)
         if wid.params.packages_event:
             packages.extend( [act['sourcepackage'] for act in f.ev.actions] )
         if f.image.packages:
             if isinstance(f.image.packages, list):
                 packages.extend(f.image.packages)
             else:
-                f.__error__ = "field %s expected to be a list" % \
-                wid.params.packages_from
-                f.msg.append(f.__error__)
-                raise RuntimeError("Wrong field type")
+                raise RuntimeError("image.packages field should be a list")
 
         groups = []
         if wid.params.groups:
             if isinstance(f.params.groups, list):
                 groups.extend(wid.params.groups)
             else:
-                f.__error__ = "groups parameter expected to be a list"
-                f.msg.append(f.__error__)
-                raise RuntimeError("Wrong parameter type")
+                raise RuntimeError("groups parameter should be a list")
         if wid.params.groups_from:
             extra_groups = f.as_dict()[wid.params.groups_from]
             if isinstance(extra_groups, list):
                 groups.extend(extra_groups)
             else:
-                f.__error__ = "field %s expected to be a list" % \
-                wid.params.groups_from
-                f.msg.append(f.__error__)
-                raise RuntimeError("Wrong field type")
+                raise RuntimeError("field %s should be a list"
+                                   % wid.params.groups_from)
         if f.image.groups:
             groups.extend(f.image.groups)
 
@@ -198,10 +188,6 @@ class ParticipantHandler(object):
             ks = build_kickstart(ksfile, packages=packages, groups=groups,
                                  projects=projects)
             f.image.kickstart = ks
-        except Exception, error:
-            f.__error__ = "Failed to handle kickstart. %s" % error
-            f.msg.append(f.__error__)
-            raise
         finally:
             if remove:
                 os.remove(remove)

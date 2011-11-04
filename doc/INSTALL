@@ -96,7 +96,11 @@ There are 3 different participants used by both processes:
 * build_image : Runs mic2 to creates the actual image - this can take
   a few minutes to finish. (part of img-worker package)
 
-Each of these participants should be registered and enabled.
+Each of these participants should be configured, registered and enabled.
+
+*** The configuration is quite complex and should be studied carefully. ***
+
+Once configured the participants can be started:
 
 UI machine ::
 
@@ -115,3 +119,4 @@ Each worker machine ::
   skynet enable build_image
   # Only really needs to be done once
   skynet register build_image
+

@@ -1,4 +1,5 @@
 import re
+import os
 import unittest
 from ConfigParser import SafeConfigParser
 
@@ -12,6 +13,10 @@ WI_TEMPLATE = """{
  "fields": {"params": {}, "ev":{}},
  "participant_name": "fake_participant"
 }"""
+
+KSSTORE="tests/test_data/ksstore"
+KSFILE="generic.ks"
+IMAGENAME="generic"
 
 class TestParticipantHandler(unittest.TestCase):
 
@@ -33,10 +38,10 @@ class TestParticipantHandler(unittest.TestCase):
     def setUp(self):
         self.participant = mut.ParticipantHandler()
         self.participant.reposerver = "http://example.com/repo"
-        self.participant.ksstore = "tests/test_data/ksstore"
+        self.participant.ksstore = KSSTORE
         self.wid = Workitem(WI_TEMPLATE)
         self.wid.fields.image = {}
-        self.wid.fields.image.ksfile = "generic.ks"
+        self.wid.fields.image.ksfile = KSFILE
 
     def test_wi_control(self):
         ctrl = ParticipantCtrl()
@@ -54,9 +59,9 @@ class TestParticipantHandler(unittest.TestCase):
         self.participant.handle_wi(self.wid)
         self.assertTrue(self.wid.result)
         self.assertTrue(self.wid.fields.image.kickstart)
-        self.assertEqual(self.wid.fields.image.name, "generic")
+        self.assertEqual(self.wid.fields.image.name, IMAGENAME)
         # workitem with no parameters should have left it unchanged
-        kickstart = open("tests/test_data/ksstore/generic.ks").read()
+        kickstart = open(os.path.join(KSSTORE, KSFILE)).read()
         self.assertEqual(self.wid.fields.image.kickstart, kickstart)
 
     def test_missing_imagefields(self):
@@ -157,5 +162,19 @@ class TestParticipantHandler(unittest.TestCase):
         self.wid.fields.arglblargl = "not a list"
         self.assertRaisesRegexp(RuntimeError, "list",
                           self.participant.handle_wi, self.wid)
+
+    def test_kickstart_field(self):
+        kickstart = open(os.path.join(KSSTORE, KSFILE)).read()
+        self.wid.fields.image.name = IMAGENAME
+        self.wid.fields.image.kickstart = kickstart
+        self.wid.fields.image.ksfile = None
+
+        self.participant.handle_wi(self.wid)
+
+        self.assertTrue(self.wid.result)
+        self.assertEqual(self.wid.fields.image.name, IMAGENAME)
+        self.assertTrue(self.wid.fields.image.kickstart)
+        # workitem with no parameters should have left it unchanged
+        self.assertEqual(self.wid.fields.image.kickstart, kickstart)
 
     # TODO: test project field, packages_event param

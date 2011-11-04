@@ -177,4 +177,14 @@ class TestParticipantHandler(unittest.TestCase):
         # workitem with no parameters should have left it unchanged
         self.assertEqual(self.wid.fields.image.kickstart, kickstart)
 
+    def test_packages_event_param(self):
+        self.wid.fields.ev.actions = [
+            dict(sourceproject="fakesource", sourcepackage="fakesourcep1",
+                 targetproject="faketarget", targetpackage="faketargetp1"),
+            dict(sourceproject="fakesource", sourcepackage="fakesourcep2",
+                 targetproject="faketarget", targetpackage="faketargetp2"),
+        ]
+        self.wid.params.packages_event = 'True'
+        self.handle_wi_helper(["faketargetp1", "faketargetp2"])
+
     # TODO: test project field, packages_event param

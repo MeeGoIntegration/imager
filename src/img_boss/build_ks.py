@@ -147,7 +147,7 @@ class ParticipantHandler(object):
                 raise RuntimeError("field %s should be a list"
                                    % wid.params.packages_from)
         if wid.params.packages_event:
-            packages.extend( [act['sourcepackage'] for act in f.ev.actions] )
+            packages.extend([act['targetpackage'] for act in f.ev.actions])
         if f.image.packages:
             if isinstance(f.image.packages, list):
                 packages.extend(f.image.packages)

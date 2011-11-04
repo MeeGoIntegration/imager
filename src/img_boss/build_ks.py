@@ -61,8 +61,8 @@
 :term:`Workitem` params IN
 
 :Parameters:
-   :pacakges (list):
-      If preset will be added to the extra packages list
+   :packages (list):
+      If present will be added to the extra packages list
    :packages_event (Boolean):
       If present the packages in the actions array from a submit request are
       added to the kickstart file
@@ -109,10 +109,6 @@ class ParticipantHandler(object):
 
     def handle_wi(self, wid):
         """ Workitem handling function """
-        # We may want to examine the fields structure
-        if wid.fields.debug_dump or wid.params.debug_dump:
-            print wid.dump()
-
         wid.result = False
         f = wid.fields
         if not f.msg:
@@ -127,11 +123,8 @@ class ParticipantHandler(object):
 
         projects = []
         if f.project and f.repository:
-            project = f.project
-            repo = f.repository
-            project = project.replace(":", ":/")
-            repo = repo.replace(":", ":/")
-            url = "%s/%s/%s" % (self.reposerver, project, repo)
+            url = "%s/%s/%s" % (self.reposerver, f.project.replace(":", ":/"),
+                                f.repository.replace(":", ":/"))
             projects = [ url ]
 
         if f.image.extra_repos:

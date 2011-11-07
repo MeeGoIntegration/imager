@@ -1,3 +1,4 @@
+import json
 import re
 import os
 import unittest
@@ -197,4 +198,14 @@ class TestParticipantHandler(unittest.TestCase):
         self.wid.params.packages_event = 'True'
         self.handle_wi_helper(["faketargetp1", "faketargetp2"])
 
-    # TODO: test project field, packages_event param
+    def test_stringified_lists(self):
+        """For convenience in ruote syntax, the participant should be
+           able to take lists in json encoded form. Test this for
+           just one parameter because the handling is the same for all
+           of them.
+        """
+        packages = ['package1', 'package2', 'package3', 'package4']
+        self.wid.params.packages = json.dumps(packages)
+        self.handle_wi_helper(packages)
+
+    # TODO: test project field

@@ -88,7 +88,10 @@
 """
 
 
-import os, tempfile
+import json
+import os
+import tempfile
+
 from img.common import build_kickstart
 
 def get_list(value, desc):
@@ -96,6 +99,11 @@ def get_list(value, desc):
     """
     if not value:
         return []
+    if isinstance(value, basestring):
+        try:
+            value = json.loads(value)
+        except ValueError:
+            pass
     if isinstance(value, list):
         return value
     raise RuntimeError("%s should be a list" % desc)

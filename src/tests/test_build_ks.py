@@ -128,6 +128,11 @@ class TestParticipantHandler(unittest.TestCase):
         self.assertRaisesRegexp(RuntimeError, "list",
                           self.participant.handle_wi, self.wid)
 
+        # nonexistent packages_from field should be treated like an empty list
+        self.wid.params.packages_from = "nonexistentfield"
+        self.participant.handle_wi(self.wid)
+        self.assertTrue(self.wid.result)
+
     def test_groups_field(self):
         groups = ['group one', 'group two']
         self.wid.fields.image.groups = groups[:]
@@ -162,6 +167,11 @@ class TestParticipantHandler(unittest.TestCase):
         self.wid.fields.arglblargl = "not a list"
         self.assertRaisesRegexp(RuntimeError, "list",
                           self.participant.handle_wi, self.wid)
+
+        # nonexistent groups_from field should be treated like an empty list
+        self.wid.params.groups_from = "nonexistentfield"
+        self.participant.handle_wi(self.wid)
+        self.assertTrue(self.wid.result)
 
     def test_kickstart_field(self):
         kickstart = open(os.path.join(KSSTORE, KSFILE)).read()

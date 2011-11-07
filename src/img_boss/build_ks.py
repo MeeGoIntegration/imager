@@ -142,7 +142,7 @@ class ParticipantHandler(object):
         packages = []
         packages.extend(get_list(wid.params.packages, "packages parameter"))
         if wid.params.packages_from:
-            extra_packages = f.as_dict()[wid.params.packages_from]
+            extra_packages = f.as_dict().get(wid.params.packages_from, None)
             packages.extend(get_list(extra_packages,
                             "field %s" % wid.params.packages_from))
         if wid.params.packages_event:
@@ -152,7 +152,7 @@ class ParticipantHandler(object):
         groups = []
         groups.extend(get_list(wid.params.groups, "groups parameter"))
         if wid.params.groups_from:
-            extra_groups = f.as_dict()[wid.params.groups_from]
+            extra_groups = f.as_dict().get(wid.params.groups_from, None)
             groups.extend(get_list(extra_groups,
                                    "field %s" % wid.params.groups_from))
         groups.extend(get_list(f.image.groups, "groups field"))

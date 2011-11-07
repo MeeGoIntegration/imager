@@ -39,6 +39,9 @@
    :ev.actions (list):
       OPTIONAL Only used if the "packages_event" parameter is passed submit
       request data structure :term:`actions`
+   :ev.namespace (string):
+      OPTIONAL Only used if the "project" field is set and the "repository"
+      parameter is not set. Used to contact the right OBS instance.
    :image.ksfile (string):
       Full path to a local readable kickstart file under the "ksstore" 
       directory which is configured in the conf file
@@ -53,9 +56,8 @@
       OPTIONAL Package names to be added to the kickstart file
    :project (string):
       OPTIONAL Name of an OBS project which publishes packages to the
-      "reposerver" set in the configuration
-   :repository (string):
-      OPTIONAL Name of the repository in the above project
+      "reposerver" set in the configuration. URLs to all repositories in
+      this project will be added to the kickstart file.
    
    
 :term:`Workitem` params IN
@@ -74,6 +76,9 @@
    :groups_from (string):
       Arbitary field name from which to get a list of group names, typicall used
       when a participant provides group names in a new namespace
+   :repository (string):
+      OPTIONAL Only used if the "project" field is set. Add only this repository
+      to the kickstart file.
 
 :term:`Workitem` fields OUT:
 
@@ -113,6 +118,7 @@ class ParticipantHandler(object):
     def __init__(self):
         self.reposerver = ""
         self.ksstore = ""
+        self.oscrc = ""
 
     def handle_wi_control(self, ctrl):
         """ job control thread """
@@ -123,6 +129,20 @@ class ParticipantHandler(object):
         if ctrl.message == "start":
             self.reposerver = ctrl.config.get("build_ks", "reposerver")
             self.ksstore = ctrl.config.get("build_ks", "ksstore")
+            if ctrl.config.has_option("obs", "oscrc"):
+                self.oscrc = ctrl.config.get("obs", "oscrc")
+
+    def get_repositories(self, wid, project):
+        if not wid.fields.ev or not wid.fields.ev.namespace:
+            raise RuntimeError("Missing field: ev.namespace")
+        obs = BuildService(oscrc=self.oscrc, apiurl=wid.fields.ev.namespace)
+        try:
+            repositories = obs.getProjectRepositories(project)
+        except HTTPError, exobj:
+            if exobj.code == 404:
+               raise RuntimeError("Project %s not found in OBS" % project)
+            raise
+        return repositories
 
     def handle_wi(self, wid):
         """ Workitem handling function """
@@ -139,10 +159,15 @@ class ParticipantHandler(object):
                                " or image.ksfile")
 
         projects = []
-        if f.project and f.repository:
-            url = "%s/%s/%s" % (self.reposerver, f.project.replace(":", ":/"),
-                                f.repository.replace(":", ":/"))
-            projects = [ url ]
+        if f.project:
+            if wid.params.repository:
+                repositories = [ wid.params.repository ]
+            else:
+                repositories = self.get_repositories(wid, f.project)
+            for repo in repositories:
+                projects.append("%s/%s/%s" % (self.reposerver,
+                                              f.project.replace(":", ":/"),
+                                              repo.replace(":", ":/")))
 
         if f.image.extra_repos:
             projects.extend(get_list(f.image.extra_repos, "extra_repos field"))

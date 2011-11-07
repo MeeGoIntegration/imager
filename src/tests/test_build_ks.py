@@ -3,8 +3,10 @@ import re
 import os
 import unittest
 from ConfigParser import SafeConfigParser
+from mock import Mock
 
 from RuoteAMQP import Workitem
+from buildservice import BuildService
 from SkyNET.Control import WorkItemCtrl, ParticipantCtrl
 
 import build_ks as mut
@@ -15,6 +17,7 @@ WI_TEMPLATE = """{
  "participant_name": "fake_participant"
 }"""
 
+REPOSERVER="http://example.com/repo"
 KSSTORE="tests/test_data/ksstore"
 KSFILE="generic.ks"
 IMAGENAME="generic"
@@ -38,7 +41,7 @@ class TestParticipantHandler(unittest.TestCase):
 
     def setUp(self):
         self.participant = mut.ParticipantHandler()
-        self.participant.reposerver = "http://example.com/repo"
+        self.participant.reposerver = REPOSERVER
         self.participant.ksstore = KSSTORE
         self.wid = Workitem(WI_TEMPLATE)
         self.wid.fields.image = {}
@@ -208,4 +211,21 @@ class TestParticipantHandler(unittest.TestCase):
         self.wid.params.packages = json.dumps(packages)
         self.handle_wi_helper(packages)
 
-    # TODO: test project field
+    def test_project_field(self):
+        self.wid.fields.project = "Chalk:Testing"
+        self.wid.params.repository = "standard_chalk"
+        self.handle_wi_helper([REPOSERVER + "/Chalk:/Testing/standard_chalk"])
+
+    def test_project_repository_lookup(self):
+        self.wid.fields.project = "Chalk:Testing"
+        self.wid.fields.ev.namespace = "OBS"
+        obs = Mock(spec_set=BuildService)
+        obs.getProjectRepositories.return_value = ["standard_chalk", "other"]
+        mut.BuildService = Mock(return_value=obs)
+        urls = [REPOSERVER + "/Chalk:/Testing/standard_chalk",
+                REPOSERVER + "/Chalk:/Testing/other"]
+        self.handle_wi_helper(urls)
+
+        self.wid.fields.ev.namespace = None
+        self.assertRaisesRegexp(RuntimeError, "namespace",
+                          self.participant.handle_wi, self.wid)

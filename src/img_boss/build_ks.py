@@ -91,6 +91,15 @@
 import os, tempfile
 from img.common import build_kickstart
 
+def get_list(value, desc):
+    """Check if the value is a list, and complain (RuntimeError) if it's not.
+    """
+    if not value:
+        return []
+    if isinstance(value, list):
+        return value
+    raise RuntimeError("%s should be a list" % desc)
+
 class ParticipantHandler(object):
     """ Participant class as defined by the SkyNET API """
     def __init__(self):
@@ -128,50 +137,25 @@ class ParticipantHandler(object):
             projects = [ url ]
 
         if f.image.extra_repos:
-            if isinstance(f.image.extra_repos, list):
-                projects.extend(f.image.extra_repos)
-            else:
-                raise RuntimeError("extra_repos field should be a list")
+            projects.extend(get_list(f.image.extra_repos, "extra_repos field"))
 
         packages = []
-        if wid.params.packages:
-            if isinstance(f.params.packages, list):
-                packages.extend(wid.params.packages)
-            else:
-                raise RuntimeError("packages parameter should be a list")
+        packages.extend(get_list(wid.params.packages, "packages parameter"))
         if wid.params.packages_from:
             extra_packages = f.as_dict()[wid.params.packages_from]
-            if isinstance(extra_packages, list):
-                packages.extend(extra_packages)
-            else:
-                raise RuntimeError("field %s should be a list"
-                                   % wid.params.packages_from)
+            packages.extend(get_list(extra_packages,
+                            "field %s" % wid.params.packages_from))
         if wid.params.packages_event:
             packages.extend([act['targetpackage'] for act in f.ev.actions])
-        if f.image.packages:
-            if isinstance(f.image.packages, list):
-                packages.extend(f.image.packages)
-            else:
-                raise RuntimeError("image.packages field should be a list")
+        packages.extend(get_list(f.image.packages, "image.packages field"))
 
         groups = []
-        if wid.params.groups:
-            if isinstance(f.params.groups, list):
-                groups.extend(wid.params.groups)
-            else:
-                raise RuntimeError("groups parameter should be a list")
+        groups.extend(get_list(wid.params.groups, "groups parameter"))
         if wid.params.groups_from:
             extra_groups = f.as_dict()[wid.params.groups_from]
-            if isinstance(extra_groups, list):
-                groups.extend(extra_groups)
-            else:
-                raise RuntimeError("field %s should be a list"
-                                   % wid.params.groups_from)
-        if f.image.groups:
-            if isinstance(f.image.groups, list):
-                groups.extend(f.image.groups)
-            else:
-                raise RuntimeError("groups field should be a list")
+            groups.extend(get_list(extra_groups,
+                                   "field %s" % wid.params.groups_from))
+        groups.extend(get_list(f.image.groups, "groups field"))
 
         remove = False
         ksfile = ""

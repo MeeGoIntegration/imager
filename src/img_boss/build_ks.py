@@ -96,6 +96,7 @@
 import json
 import os
 import tempfile
+from urllib2 import HTTPError
 
 from img.common import build_kickstart
 from buildservice import BuildService
@@ -141,7 +142,7 @@ class ParticipantHandler(object):
             repositories = obs.getProjectRepositories(project)
         except HTTPError, exobj:
             if exobj.code == 404:
-               raise RuntimeError("Project %s not found in OBS" % project)
+                raise RuntimeError("Project %s not found in OBS" % project)
             raise
         return repositories
 

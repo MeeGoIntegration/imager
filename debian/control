@@ -2,7 +2,7 @@ Source: img
 Section: python
 Priority: optional
 Maintainer: Islam Amer <islam.amer@nokia.com>
-Build-Depends: debhelper (>= 7.0.50~), python (>= 2.6.6-3~), python-setuptools, python-sphinx, python-ruote-amqp, python-boss-skynet, python-django, python-pykickstart, mic2, python-mysqldb, python-mock (>= 0.7)
+Build-Depends: debhelper (>= 7.0.50~), python (>= 2.6.6-3~), python-setuptools, python-sphinx, python-ruote-amqp, python-boss-skynet, python-django, python-pykickstart, mic2, python-mysqldb, python-mock (>= 0.7), python-buildservice
 Standards-Version: 3.9.2
 
 Package: img-core
@@ -22,7 +22,7 @@ Description: image creation service for MeeGo related products
 
 Package: img-ks
 Architecture: all
-Depends: ${python:Depends}, ${misc:Depends}, boss-skynet, python-boss-skynet, img-core
+Depends: ${python:Depends}, ${misc:Depends}, boss-skynet, python-boss-skynet, img-core, python-buildservice
 Replaces: img-boss
 Description: image creation service for MeeGo related products
  This package provides imager participants that plugin into a BOSS system to 

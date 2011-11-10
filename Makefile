@@ -35,4 +35,4 @@ retest:
 	$(MAKE) code_coverage.txt
 
 .PHONY: docs retest
-all: docs
+all: docs retest

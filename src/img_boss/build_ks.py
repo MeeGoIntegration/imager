@@ -98,6 +98,7 @@ import os
 import tempfile
 
 from img.common import build_kickstart
+from buildservice import BuildService
 
 def get_list(value, desc):
     """Check if the value is a list, and complain (RuntimeError) if it's not.

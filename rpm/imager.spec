@@ -60,6 +60,8 @@ Requires: img-core
 Requires: python-boss-skynet >= 0.2.2
 Requires: boss-skynet
 Requires: python-xml
+Requires: python-buildservice
+Requires: boss-standard-workflow-common
 Requires(post): boss-skynet
 Summary: Image creation service for MeeGo related products, BOSS participants
 %description -n img-ks
@@ -70,7 +72,7 @@ handle kickstarts
 %setup -q %{name}-%{version}
 
 %build
-make
+make docs
 
 %install
 rm -rf %{buildroot}
@@ -97,7 +99,7 @@ fi
 %post -n img-ks
 if [ $1 -eq 1 ] ; then
     for i in build_ks ; do
-        skynet install -u img -n $i -p /usr/share/boss-skynet/$i.py
+        skynet install -u bossmaintainer -n $i -p /usr/share/boss-skynet/$i.py
     done
 fi
 

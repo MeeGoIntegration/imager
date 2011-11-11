@@ -23,7 +23,7 @@ case "$1" in
     install|upgrade|configure)
         for i in $PARTS ; do
 
-            skynet install -u img -n $i -p /usr/share/boss-skynet/$i.py
+            skynet install -u bossmaintainer -n $i -p /usr/share/boss-skynet/$i.py
 
         done
 

@@ -1,5 +1,7 @@
 COVERAGE := $(shell which python-coverage)
 
+all: docs retest
+
 docs:
 	python setup.py build_sphinx
 
@@ -35,4 +37,3 @@ retest:
 	$(MAKE) code_coverage.txt
 
 .PHONY: docs retest
-all: docs retest

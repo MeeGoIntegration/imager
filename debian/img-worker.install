@@ -1,2 +1,3 @@
 usr/share/boss-skynet/build_image.py
 etc/skynet/build_image.conf
+etc/supervisor/conf.d/build_image.conf

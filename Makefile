@@ -14,6 +14,10 @@ install:
 	install -D -m 755 src/img_boss/update_image_status.py $(DESTDIR)/usr/share/boss-skynet/update_image_status.py
 	install -D -m 755 src/img_boss/request_image.py       $(DESTDIR)/usr/share/boss-skynet/request_image.py
 	install -D -m 644 src/img_boss/request_image.conf     $(DESTDIR)/etc/skynet/request_image.conf
+	install -D -m 644 conf/supervisor/request_image.conf  $(DESTDIR)/etc/supervisor/conf.d/request_image.conf
+	install -D -m 644 conf/supervisor/build_ks.conf       $(DESTDIR)/etc/supervisor/conf.d/build_ks.conf
+	install -D -m 644 conf/supervisor/build_image.conf    $(DESTDIR)/etc/supervisor/conf.d/build_image.conf
+	install -D -m 644 conf/supervisor/update_image_status.conf $(DESTDIR)/etc/supervisor/conf.d/update_image_status.conf
 
 clean:
 	python setup.py clean

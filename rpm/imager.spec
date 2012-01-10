@@ -1,5 +1,7 @@
+%define svdir %{_sysconfdir}/supervisor/conf.d/
+
 Name: img
-Version: 0.61.0
+Version: 0.61.1
 Release: 1
 
 Group: Applications/Engineering
@@ -7,7 +9,7 @@ License: GPLv2+
 URL: http://www.meego.com
 Source0: %{name}_%{version}.orig.tar.gz
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-buildroot
-BuildRequires: python, python-setuptools, python-sphinx, python-setuptools, python-boss-skynet,python-ruote-amqp, python-django, python-mysql, mic2
+BuildRequires: python, python-distribute, python-sphinx, python-boss-skynet, python-ruote-amqp, python-django, python-mysql, mic2
 BuildArch: noarch
 Summary: Image creation service for MeeGo related products
 
@@ -34,9 +36,9 @@ It builds images using mic2 optionally in a virtual machine.
 Group: Applications/Engineering
 Requires: python >= 2.5.0
 Requires: lighttpd
-Requires: boss-skynet
 Requires: python-xml
-Requires(post): boss-skynet
+Requires: python-boss-skynet
+Requires(post): python-boss-skynet
 Requires: python-django, python-flup, python-mysql, mysql-client, mysql
 Summary: Image creation service for MeeGo related products, django web interface
 %description -n img-web
@@ -45,10 +47,9 @@ This package provides a django based web interface for imager that is part of BO
 %package -n img-worker
 Group: Applications/Engineering
 Requires: img-core
-Requires: python-boss-skynet >= 0.2.2
-Requires: boss-skynet
 Requires: python-xml
-Requires(post): boss-skynet
+Requires: python-boss-skynet
+Requires(post): python-boss-skynet
 Summary: Image creation service for MeeGo related products, BOSS participants
 %description -n img-worker
 This package provides imager participants that plugin into a BOSS system to 
@@ -57,12 +58,11 @@ fulfill image building steps of processes
 %package -n img-ks
 Group: Applications/Engineering
 Requires: img-core
-Requires: python-boss-skynet >= 0.2.2
-Requires: boss-skynet
 Requires: python-xml
 Requires: python-buildservice
 Requires: boss-standard-workflow-common
-Requires(post): boss-skynet
+Requires: python-boss-skynet
+Requires(post): python-boss-skynet
 Summary: Image creation service for MeeGo related products, BOSS participants
 %description -n img-ks
 This package provides imager participants that plugin into a BOSS system to
@@ -90,24 +90,22 @@ getent passwd img >/dev/null || \
 exit 0
 
 %post -n img-worker
-if [ $1 -eq 1 ] ; then
-    for i in build_image ; do
-        skynet install -u img -n $i -p /usr/share/boss-skynet/$i.py
-    done
+if [ $1 -ge 1 ] ; then
+        skynet apply || true
+        # can wait upto 2 hours
+        skynet reload build_image &
 fi
 
 %post -n img-ks
-if [ $1 -eq 1 ] ; then
-    for i in build_ks ; do
-        skynet install -u bossmaintainer -n $i -p /usr/share/boss-skynet/$i.py
-    done
+if [ $1 -ge 1 ] ; then
+    skynet apply || true
+    skynet reload build_ks || true
 fi
 
 %post -n img-web
-if [ $1 -eq 1 ] ; then
-    for i in update_image_status request_image ; do
-        skynet make_participant -n $i -p /usr/share/boss-skynet/$i.py
-    done
+if [ $1 -ge 1 ] ; then
+    skynet apply || true
+    skynet reload update_image_status request_image || true
 fi
 
 %files -n img-core
@@ -125,14 +123,26 @@ fi
 %{_datadir}/boss-skynet/update_image_status.py
 %{_datadir}/boss-skynet/request_image.py
 %config(noreplace) %{_sysconfdir}/skynet/request_image.conf
+%config(noreplace) %{svdir}/request_image.conf
+%config(noreplace) %{svdir}/update_image_status.conf
+%dir /etc/supervisor
+%dir /etc/supervisor/conf.d
+%dir /usr/share/boss-skynet
 
 %files -n img-worker
 %defattr(-,root,root,-)
 %{_datadir}/boss-skynet/build_image.py
 %config(noreplace) %{_sysconfdir}/skynet/build_image.conf
+%config(noreplace) %{svdir}/build_image.conf
+%dir /etc/supervisor
+%dir /etc/supervisor/conf.d
+%dir /usr/share/boss-skynet
 
 %files -n img-ks
 %defattr(-,root,root,-)
 %{_datadir}/boss-skynet/build_ks.py
 %config(noreplace) %{_sysconfdir}/skynet/build_ks.conf
-
+%config(noreplace) %{svdir}/build_ks.conf
+%dir /etc/supervisor
+%dir /etc/supervisor/conf.d
+%dir /usr/share/boss-skynet

@@ -21,12 +21,9 @@ PARTS="build_image"
 
 case "$1" in
     install|upgrade|configure)
-        for i in $PARTS ; do
-
-            skynet install -u img -n $i -p /usr/share/boss-skynet/$i.py
-
-        done
-
+        skynet apply || true
+        # can wait upto 2 hours
+        skynet reload build_image &
 	;;
     abort-upgrade|abort-remove|abort-deconfigure)
 	;;

@@ -17,16 +17,10 @@ set -e
 # for details, see http://www.debian.org/doc/debian-policy/ or
 # the debian-policy package
 
-PARTS="build_ks"
-
 case "$1" in
     install|upgrade|configure)
-        for i in $PARTS ; do
-
-            skynet install -u bossmaintainer -n $i -p /usr/share/boss-skynet/$i.py
-
-        done
-
+        skynet apply || true
+        skynet reload build_ks || true
 	;;
     abort-upgrade|abort-remove|abort-deconfigure)
 	;;

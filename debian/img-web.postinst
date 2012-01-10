@@ -17,20 +17,14 @@ set -e
 # for details, see http://www.debian.org/doc/debian-policy/ or
 # the debian-policy package
 
-PARTS="update_image_status
-request_image"
-
 case "$1" in
     install|upgrade|configure)
 
         addgroup --quiet --system imgadm 2>/dev/null ||true
         adduser img --quiet --system --ingroup imgadm --home /home/img
 
-        for i in $PARTS ; do
-
-            skynet install -n $i -p /usr/share/boss-skynet/$i.py
-
-        done
+        skynet apply || true
+        skynet reload update_image_status request_image || true
 
 	;;
     abort-upgrade|abort-remove|abort-deconfigure)

@@ -9,9 +9,14 @@ import pykickstart.version as ksversion
 from pykickstart.handlers.control import commandMap
 from pykickstart.handlers.control import dataMap
 
-from mic.imgcreate.kscommands import desktop 
-from mic.imgcreate.kscommands import moblinrepo
-from mic.imgcreate.kscommands import micboot
+try:
+    from mic.imgcreate.kscommands import desktop
+    from mic.imgcreate.kscommands import moblinrepo
+    from mic.imgcreate.kscommands import micboot
+except:
+    from mic.kickstart.custom_commands import desktop
+    from mic.kickstart.custom_commands import moblinrepo
+    from mic.kickstart.custom_commands import micboot
 
 import ConfigParser
 

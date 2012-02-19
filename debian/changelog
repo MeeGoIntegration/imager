@@ -1,3 +1,9 @@
+img (0.61.2-1) unstable; urgency=low
+
+  * Add support for new mic tool.
+
+ -- Islam Amer <islam.amer@nokia.com>  Sun, 19 Feb 2012 14:24:27 +0200
+
 img (0.61.1-1) unstable; urgency=low
 
   * Fix for new python-boss-skynet

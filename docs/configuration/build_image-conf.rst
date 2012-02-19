@@ -36,6 +36,14 @@ mic-image-creator ::
  EOF
  chmod 0440 /etc/sudoers.d/img
 
+In case you are using the new mic tool, then the sudo rights would look like
+this ::
+
+ cat >> /etc/sudoers.d/img << EOF
+ img ALL=(ALL)NOPASSWD:/usr/bin/mic
+ EOF
+ chmod 0440 /etc/sudoers.d/img
+
 Make sure the sudoers file contains a line that looks like ::
 
  #includedir /etc/sudoers.d

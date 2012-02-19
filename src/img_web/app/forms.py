@@ -74,8 +74,8 @@ class UploadFileForm(forms.Form):
 
     architecture = forms.ChoiceField(label='Architecture',
                                      choices=[
-                                                ('i586', "i586"),
                                                 ('i686', "i686"),
+                                                ('i486', "i486"),
                                                 ('armv7l',"armv7l"),
                                                 ('armv7hl','armv7hl'),
                                                 ('armv7nhl','armv7nhl'),

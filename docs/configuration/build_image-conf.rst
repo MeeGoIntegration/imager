@@ -51,6 +51,23 @@ Make sure the sudoers file contains a line that looks like ::
 The # is correct and not an error. Use the visudo command to edit the file
 because it validates your changes.
 
+On Debian and openSuse in this mode mic2 will usually create a bootstrap rootfs
+on first run, using packages grabbed from the "mainrepo" deduced from the kickstart
+being built. If the mainrepo does not contain the needed packages (as is the case 
+with minimal Mer core) it will fail. A needed workaround is to manually create
+the initial bootstrap. The instructions on how to do that for Mer (non-meego distro) can be found here :
+http://wiki.merproject.org/wiki/Image_Creation_For_Beginners
+
+The new mic tool seems to be able to run natively without bootstrap, however it can be
+configured to do so by adding "runtime= bootstrap" to the create section of /etc/mic/mic.conf
+and configuring the appropriate bootstrap section with the repositories that contain the needed packages.
+(zypper package manager will be used here regardless of any configurations to use yum)
+
+Extra configurations can be added to /etc/mic2/mic2.conf or /etc/mic/mic.conf
+depending on which version you installed. Useful configurations to know about :
+
+* "pkgmgr = yum" : when zypper appears to be buggy for some use cases, switching to yum can get you going.
+
 Using KVM
 ---------
 

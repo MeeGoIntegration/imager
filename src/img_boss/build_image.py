@@ -82,8 +82,8 @@ class ParticipantHandler(object):
         self.launcher = None
         self.process = \
         """Ruote.process_definition 'create_image_ondemand' do
-             set 'debug_dump' => 'true'
              sequence do
+               set :f => 'debug_dump', :value => 'true'
                update_image_status :status => '%s'
              end
            end

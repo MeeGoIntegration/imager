@@ -133,9 +133,21 @@ class Commands(object):
                               'file=@KVMIMAGEFILE@'
                   ]
 
-        self.micbase = [
-                    'mic-image-creator'
-                  ]
+        # use the existence if mic-image-creator as a sign mic2 is installed
+        # even inside the kvm which could be incorrect, but good for now
+        if os.path.exists("/usr/bin/mic-image-creator"):
+            self.micbase = [
+                        'mic-image-creator'
+                      ]
+            self.ict = "mic2"
+        elif os.path.exists("/usr/bin/mic"):
+            self.micbase = [
+                        'mic', 'create'
+                      ]
+            self.ict = "newmic"
+        # could kiwi or debootstrap be supported ? ;)
+        else:
+            raise RuntimeError("Couldn't find a supported mic tool")
 
         self.kvm_comm = None
 
@@ -236,8 +248,13 @@ class Commands(object):
         :pram job_args: Arguments for MIC2
         """
         mic_comm = copy(self.micbase)
-        mic_comm.append('--config=%s' % job_args.ksfile_name)
-        mic_comm.append('--format=%s' % job_args.image_type)
+        if self.ict == "mic2":
+            mic_comm.append('--format=%s' % job_args.image_type)
+            mic_comm.append('--config=%s' % job_args.ksfile_name)
+        elif self.ict == "newmic":
+            mic_comm.append('%s' % job_args.image_type)
+            mic_comm.append('%s' % job_args.ksfile_name)
+
         mic_comm.append('--arch=%s' % job_args.arch)
         mic_comm.append('--outdir=%s' % job_args.outdir)
 
@@ -248,7 +265,8 @@ class Commands(object):
             mic_comm.append('--release=%s' % job_args.release)
         if job_args.extra_opts:
             for opt in job_args.extra_opts:
-                mic_comm.append(opt)
+                if opt:
+                    mic_comm.append(opt)
 
         if ssh:
             self.ssh(mic_comm)

@@ -1,8 +1,8 @@
 Ruote.process_definition 'notify_image' do
-  set 'debug_dump' => 'true'
 
   sequence do
-      notify :template => 'image_build', :subject => '[BOSS] Image build done'
+    set :f => 'debug_dump', :value => 'true'
+    notify :template => 'image_build', :subject => '[BOSS] Image build done'
   end
 
 end

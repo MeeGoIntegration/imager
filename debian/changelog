@@ -1,3 +1,10 @@
+img (0.61.2-2) unstable; urgency=low
+
+  * Fix unit test case failure due to new mic: ks repos will always get a
+    --ssl-verify=yes option if they don't specify it
+
+ -- Islam Amer <islam.amer@nokia.com>  Tue, 21 Feb 2012 13:56:12 +0200
+
 img (0.61.2-1) unstable; urgency=low
 
   * Add support for new mic tool.

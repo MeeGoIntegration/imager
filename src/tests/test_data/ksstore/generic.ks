@@ -15,8 +15,8 @@ logging --level=info
 timezone --isUtc America/Los_Angeles
 # Default Desktop Settings
 desktop  --autologinuser=meego
-repo --name="oss" --baseurl=http://repo.meego.com/MeeGo/releases/1.2.0/repos/oss/ia32/packages/ --gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-meego
-repo --name="_Chalk_Trunk_standard" --baseurl=http://172.21.21.228:83/Chalk:/Trunk/standard
+repo --name="oss" --baseurl=http://repo.meego.com/MeeGo/releases/1.2.0/repos/oss/ia32/packages/ --gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-meego --ssl_verify=no
+repo --name="_Chalk_Trunk_standard" --baseurl=http://172.21.21.228:83/Chalk:/Trunk/standard --ssl_verify=no
 # System bootloader configuration
 bootloader --location=mbr --timeout=5 --menus=
 # Disk partitioning information

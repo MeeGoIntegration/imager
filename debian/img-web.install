@@ -6,3 +6,4 @@ etc/skynet/request_image.conf
 usr/share/boss-skynet/update_image_status.py
 etc/supervisor/conf.d/request_image.conf
 etc/supervisor/conf.d/update_image_status.conf
+etc/supervisor/conf.d/img_web.conf

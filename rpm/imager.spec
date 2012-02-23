@@ -35,7 +35,6 @@ It builds images using mic2 optionally in a virtual machine.
 %package -n img-web
 Group: Applications/Engineering
 Requires: python >= 2.5.0
-Requires: lighttpd
 Requires: python-xml
 Requires: python-boss-skynet
 Requires(post): python-boss-skynet
@@ -76,7 +75,6 @@ make docs
 
 %install
 rm -rf %{buildroot}
-install -D -m 755 rpm/img-web.init %{buildroot}/etc/init.d/img-web
 make PREFIX=%{_prefix} DESTDIR=%{buildroot} install
 
 %clean
@@ -125,6 +123,7 @@ fi
 %config(noreplace) %{_sysconfdir}/skynet/request_image.conf
 %config(noreplace) %{svdir}/request_image.conf
 %config(noreplace) %{svdir}/update_image_status.conf
+%config(noreplace) %{svdir}/img_web.conf
 %dir /etc/supervisor
 %dir /etc/supervisor/conf.d
 %dir /usr/share/boss-skynet

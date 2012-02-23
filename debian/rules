@@ -5,5 +5,3 @@ export PREFIX=/usr
 
 %:
 	dh $@ --with=python2
-override_dh_installinit:
-	dh_installinit -pimg-web --no-start

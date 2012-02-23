@@ -24,7 +24,7 @@ case "$1" in
         adduser img --quiet --system --ingroup imgadm --home /home/img
 
         skynet apply || true
-        skynet reload update_image_status request_image || true
+        skynet reload update_image_status request_image img_web || true
 
 	;;
     abort-upgrade|abort-remove|abort-deconfigure)

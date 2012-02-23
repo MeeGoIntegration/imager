@@ -16,7 +16,7 @@ Worker ::
 Web UI ::
 
    service lighttpd start
-   service img-web start
+   skynet enable img-web
    skynet enable request_image
    skynet enable update_image_status
    skynet register request_image

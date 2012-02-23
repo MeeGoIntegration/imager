@@ -18,6 +18,7 @@ install:
 	install -D -m 644 conf/supervisor/build_ks.conf       $(DESTDIR)/etc/supervisor/conf.d/build_ks.conf
 	install -D -m 644 conf/supervisor/build_image.conf    $(DESTDIR)/etc/supervisor/conf.d/build_image.conf
 	install -D -m 644 conf/supervisor/update_image_status.conf $(DESTDIR)/etc/supervisor/conf.d/update_image_status.conf
+	install -D -m 644 conf/supervisor/img_web.conf    $(DESTDIR)/etc/supervisor/conf.d/img_web.conf
 
 clean:
 	python setup.py clean

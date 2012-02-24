@@ -117,7 +117,6 @@ fi
 %config(noreplace) %{_sysconfdir}/imager/img.conf
 %{python_sitelib}/img_web
 %{_datadir}/img_web
-%{_sysconfdir}/init.d/img-web
 %{_datadir}/boss-skynet/update_image_status.py
 %{_datadir}/boss-skynet/request_image.py
 %config(noreplace) %{_sysconfdir}/skynet/request_image.conf

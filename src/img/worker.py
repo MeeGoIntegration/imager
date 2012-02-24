@@ -281,6 +281,9 @@ class Commands(object):
         self.run(killkvm_comm)
 
     def removeoverlay(self, overlayimg):
+        """Remove a temporary KVM overlay; can either be an LV snapshot
+        or qcow2 overlay
+        """
         if self.is_lvm(overlayimg):
             lvrm_comm = copy(self.lvremove)
             lvrm_comm.append(overlayimg)

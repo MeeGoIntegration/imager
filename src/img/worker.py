@@ -394,10 +394,10 @@ class ImageWorker(object):
 
                 time.sleep(20)
 
-                if self.ict == "mic2":
+                if commands.ict == "mic2":
                     commands.scpto(source='/etc/mic2/mic2.conf',
                                    dest='/etc/mic2/')
-                elif self.ict == "newmic":
+                elif commands.ict == "newmic":
                     commands.scpto(source='/etc/mic/mic.conf',
                                    dest='/etc/mic/')
 

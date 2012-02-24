@@ -1,7 +1,7 @@
 %define svdir %{_sysconfdir}/supervisor/conf.d/
 
 Name: img
-Version: 0.61.2
+Version: 0.62.1
 Release: 1
 
 Group: Applications/Engineering
@@ -25,7 +25,7 @@ Image creation service for MeeGo related products
 
 %package -n img-core
 Group: Applications/Engineering
-Requires: python >= 2.5.0, mic2, sudo, pykickstart
+Requires: python >= 2.5.0, mic2, sudo, pykickstart, lvm2
 Requires(pre): pwdutils
 Summary: Image creation service for MeeGo related products, core package
 %description -n img-core

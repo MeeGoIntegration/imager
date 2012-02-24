@@ -100,6 +100,18 @@ class Commands(object):
                         '/usr/bin/qemu-img', 'create', '-f', 'qcow2', '-b'
                       ]
 
+        self.lvmsnapshot = [
+                        '/sbin/lvcreate', '-s', '-l', '100%ORIGIN', '-n'
+                      ]
+
+        self.lvdisplay = [
+                        '/sbin/lvdisplay', '-c'
+                      ]
+
+        self.lvremove = [
+                        '/sbin/lvremove', '-f'
+                      ]
+
         self.sopts = [ 
                   '-i%s' % ssh_key,
                   '-o', 'ConnectTimeout=60',
@@ -211,16 +223,43 @@ class Commands(object):
         ssh_comm.extend(command)
         self.run(ssh_comm)
 
-    def overlaycreate(self, baseimg, tmpoverlay):
-        """Create an overlay image based on a base image, usually a minimal OS
-        with a static ssh-key built-in, as long its capable of running MIC2.
-        
-        :param baseimg: path to base qcow2 file
-        :param tmpoverlay: path to qcow2 overlay going to be created
+    def is_lvm(self, img):
+        """Returns true if a file is recognized by lvdisplay as an LV
+
+        :param img: path to file to be checked
+        :returns: True if the file is an lvm logical volume, False otherwise
         """
-        overlay_comm = copy(self.overlaybase)
-        overlay_comm.extend([baseimg, tmpoverlay])
+        lvd_comm = copy(self.lvdisplay)
+        lvd_comm.append(img)
+        lvd_comm.extend(copy(self.sudobase))
+        try:
+            self.run(lvd_comm)
+        except sub.CalledProcessError:
+            return False
+        else:
+            return True
+
+    def overlaycreate(self, overlay_img_tmp, baseimg, overlay_suffix):
+        """Create an overlay image based on a base image, usually a minimal OS
+        with ssh-key access and capable of running MIC.
+        
+        :param overlay_img_tmp: directory for temporary overlay images
+        :param baseimg: path to base image (qcow2 file or LV device node)
+        :param overlay_suffix: suffix to make overlay name unique
+
+        :returns: path to the new created overlay image
+        """
+        if self.is_lvm(baseimg):
+            overlay_img = "%s-%s" % (os.path.basename(baseimg), overlay_suffix)
+            overlay_comm = copy(self.lvmsnapshot)
+            overlay_comm.extend([overlay_img, baseimg])
+            overlay_comm.extend(copy(self.sudobase))
+        else:
+            overlay_img = os.path.join(overlay_img_tmp, overlay_suffix)
+            overlay_comm = copy(self.overlaybase)
+            overlay_comm.extend([baseimg, overlay_img])
         self.run(overlay_comm)
+        return overlay_img
 
     def runkvm(self, overlayimg):
         """Run KVM using the created overlay image.
@@ -240,6 +279,15 @@ class Commands(object):
         killkvm_comm = copy(self.killkvmbase)
         killkvm_comm.append(" ".join(self.kvm_comm))
         self.run(killkvm_comm)
+
+    def removeoverlay(self, overlayimg):
+        if self.is_lvm(overlayimg):
+            lvrm_comm = copy(self.lvremove)
+            lvrm_comm.append(overlayimg)
+            lvrm_comm.extend(copy(self.sudobase))
+            self.run(lvrm_comm)
+        else:
+            os.remove(overlayimg)
 
     def runmic(self, ssh=False, job_args=None):
         """Run MIC2, using ssh or executing on the host, with arguments.
@@ -335,19 +383,23 @@ class ImageWorker(object):
         if self.config.use_kvm and os.path.exists('/dev/kvm'):
             try:
 
-                overlayimg = os.path.join(self.config.img_tmp, \
-                                         'overlay-%s-port-%s' % \
-                                         (self.job_args.image_id, \
-                                          commands.port))
+                overlay_suffix = 'overlay-%s-port-%s' % \
+                                 (self.job_args.image_id, commands.port)
 
-                commands.overlaycreate(self.config.vm_base_img, overlayimg)
+                overlayimg = commands.overlaycreate(self.config.img_tmp,
+                                                    self.config.vm_base_img,
+                                                    overlay_suffix)
 
                 commands.runkvm(overlayimg)
 
                 time.sleep(20)
 
-                commands.scpto(source='/etc/mic2/mic2.conf',
-                               dest='/etc/mic2/')
+                if self.ict == "mic2":
+                    commands.scpto(source='/etc/mic2/mic2.conf',
+                                   dest='/etc/mic2/')
+                elif self.ict == "newmic":
+                    commands.scpto(source='/etc/mic/mic.conf',
+                                   dest='/etc/mic/')
 
                 if os.path.exists('/etc/sysconfig/proxy'):
                     commands.scpto(source='/etc/sysconfig/proxy',
@@ -382,7 +434,7 @@ class ImageWorker(object):
                         print "error %s" % err
                 finally:
                     try:
-                        os.remove(overlayimg)
+                        commands.removeoverlay(overlayimg)
                     except (sub.CalledProcessError, TimeoutError), err:
                         print "error %s" % err
 

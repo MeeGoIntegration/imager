@@ -110,6 +110,17 @@ privileged commands ::
  EOF
  chmod 0440 /etc/sudoers.d/img
 
+For every job run IMG will create a 1:1 snapshot of the base LV and use it to build the requested image.
+Then the snapshot is discarded. Thus it requires the following resources :
+
+* base LV or image big enough to create the biggest image you anticipate ex: 20Gb
+* 1 processor for each worker
+* 256M RAM for each worker
+* 20Gb free space in the volume group that contains the base LV for each worker or in the partition 
+  that will hold the temporary overlays.
+
+If you run 4 workers the calculation becomes : 4 processors, 1Gb RAM, 100Gb disk space.
+
 Generating the KVM image
 ------------------------
 

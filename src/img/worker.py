@@ -229,9 +229,9 @@ class Commands(object):
         :param img: path to file to be checked
         :returns: True if the file is an lvm logical volume, False otherwise
         """
-        lvd_comm = copy(self.lvdisplay)
+        lvd_comm = copy(self.sudobase)
+        lvd_comm.extend(copy(self.lvdisplay))
         lvd_comm.append(img)
-        lvd_comm.extend(copy(self.sudobase))
         try:
             self.run(lvd_comm)
         except sub.CalledProcessError:
@@ -251,9 +251,10 @@ class Commands(object):
         """
         if self.is_lvm(baseimg):
             overlay_img = "%s-%s" % (os.path.basename(baseimg), overlay_suffix)
-            overlay_comm = copy(self.lvmsnapshot)
-            overlay_comm.extend([overlay_img, baseimg])
-            overlay_comm.extend(copy(self.sudobase))
+            overlay_comm = copy(self.sudobase)
+            overlay_comm.extend(copy(self.lvmsnapshot))
+            overlay_comm.extend([copy(overlay_img), baseimg])
+            overlay_img = os.path.join(os.path.dirname(baseimg), overlay_img)
         else:
             overlay_img = os.path.join(overlay_img_tmp, overlay_suffix)
             overlay_comm = copy(self.overlaybase)
@@ -285,9 +286,9 @@ class Commands(object):
         or qcow2 overlay
         """
         if self.is_lvm(overlayimg):
-            lvrm_comm = copy(self.lvremove)
+            lvrm_comm = copy(self.sudobase)
+            lvrm_comm.extend(copy(self.lvremove))
             lvrm_comm.append(overlayimg)
-            lvrm_comm.extend(copy(self.sudobase))
             self.run(lvrm_comm)
         else:
             os.remove(overlayimg)

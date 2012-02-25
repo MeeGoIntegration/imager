@@ -23,6 +23,7 @@ case "$1" in
         addgroup --quiet --system imgadm 2>/dev/null || true
         adduser img --quiet --system --ingroup imgadm --home /home/img || true
         usermod -a -G kvm img || true
+        usermod -a -G disk img || true
 
 	;;
     abort-upgrade|abort-remove|abort-deconfigure)

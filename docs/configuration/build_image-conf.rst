@@ -91,9 +91,15 @@ is copied from the guest using scp.
 
 .. attention ::
 
-   The img user is added to the kvm system group so it can launch virtual
+   The img user is added to the kvm system group (on Debian) so it can launch virtual
    machines without root privileges. This is more secure. The main requirement
    is /dev/kvm should be rw for the img user or a group it belongs to
+
+.. attention ::
+
+   The img user is added to the disk system group (on Debian) so that the KVM vm can use the 
+   created LV nodes without root privileges. This is more secure. The main requirement
+   is /dev/dm-* should be rw for the img user or a group it belongs to
 
 A suitable KVM image would have 20Gb of diskspace and boots in 20 seconds or
 less and can run mic. It can run any Linux distrobution but it is recommended

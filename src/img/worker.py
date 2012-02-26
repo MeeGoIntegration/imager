@@ -138,7 +138,7 @@ class Commands(object):
                     '-nographic', '-no-reboot',
                     '-daemonize', '-m', '256M',
                     '-kernel', vm_kernel,
-                    '-append', 'root=/dev/vda panic=1 quiet rw elevator=noop',
+                    '-append', 'root=/dev/vda panic=1 quiet rw elevator=noop ip=dhcp',
                     '-net', 'nic,model=virtio',
                     '-net', 'user,hostfwd=tcp:127.0.0.1:%s-:22' % self.port,
                     '-drive', 'index=0,if=virtio,media=disk,cache=writeback,' \

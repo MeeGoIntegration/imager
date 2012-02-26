@@ -24,11 +24,18 @@ repo --name=vm-kernel --baseurl=http://repo.pub.meego.com//home:/iamer:/Mer:/SDK
 openssh-server
 net-tools
 kernel-adaptation-vm
+qemu-usermode-static
 mic
 
 %end
 
 %post
+for  i in /lib/modules/???* ; do 
+    /sbin/depmod -a `basename $i`
+done
+
+ln -s /lib/systemd/system/getty@.service /etc/systemd/system/getty.target.wants/getty@tty1.service
+ln -s /lib/systemd/system/sshd.service /etc/systemd/system/multi-user.target.wants/sshd.service
 
 %end
 

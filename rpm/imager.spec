@@ -1,7 +1,7 @@
 %define svdir %{_sysconfdir}/supervisor/conf.d/
 
 Name: img
-Version: 0.62.1
+Version: 0.63.0
 Release: 1
 
 Group: Applications/Engineering

@@ -1,3 +1,11 @@
+img (0.63.0-1) unstable; urgency=low
+
+  * experimental 9p-virtio based shared kvm worker cache
+  * configurable wait time for kvm boot
+  * use kernel based dhcp in case a vm depends on it
+
+ -- Islam Amer <islam.amer@nokia.com>  Mon, 27 Feb 2012 10:05:40 +0200
+
 img (0.62.1-1) unstable; urgency=low
 
   * Use supervisor based fcgi spawning

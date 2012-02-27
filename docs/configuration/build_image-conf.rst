@@ -101,8 +101,8 @@ is copied from the guest using scp.
    created LV nodes without root privileges. This is more secure. The main requirement
    is /dev/dm-* should be rw for the img user or a group it belongs to
 
-A suitable KVM image would have 20Gb of diskspace and boots in 20 seconds or
-less and can run mic. It can run any Linux distrobution but it is recommended
+A suitable KVM image would have 20Gb of disk space and boots in 20 seconds or
+less and can run mic. It can run any Linux distribution but it is recommended
 to generate a minimal MeeGo VM otherwise mic2 will just create a bootstrap.
 
 IMG can also use an lvm LV as root disk for the KVM vm. For this to work vm_base_img should point to the
@@ -126,6 +126,13 @@ Then the snapshot is discarded. Thus it requires the following resources :
   that will hold the temporary overlays.
 
 If you run 4 workers the calculation becomes : 4 processors, 1Gb RAM, 100Gb disk space.
+
+.. attention ::
+
+   A new experimental feature has been introduced in 0.63.0 which allows sharing a cache directory among IMG KVM workers
+   on the same machine. This can greatly improve the speed and efficiency of image creation, but is not thoroughly tested
+   yet. The guest VM kernel needs to be at least 2.6.37 and include support for 9p virtio. More reading at :
+   http://wiki.qemu.org/Documentation/9psetup
 
 Generating the KVM image
 ------------------------

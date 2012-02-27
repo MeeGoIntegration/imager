@@ -69,7 +69,7 @@ class Commands(object):
     """Commands object for running various image building commands"""
 
     def __init__(self, vm_kernel, ssh_key=None, log_filename=None,
-                 timeout=3600):
+                 timeout=3600, mic_cachedir=None):
         """Constructor, creates the object with necessary parameters to run 
         commands
         
@@ -112,6 +112,12 @@ class Commands(object):
                         '/sbin/lvremove', '-f'
                       ]
 
+        self.mountcachebase = [
+                        'mount', '-t', '9p',
+                        '-otrans=virtio,version=9p2000.L',
+                        'mic_cache'
+                      ]
+
         self.sopts = [ 
                   '-i%s' % ssh_key,
                   '-o', 'ConnectTimeout=60',
@@ -140,10 +146,23 @@ class Commands(object):
                     '-kernel', vm_kernel,
                     '-append', 'root=/dev/vda panic=1 quiet rw elevator=noop ip=dhcp',
                     '-net', 'nic,model=virtio',
-                    '-net', 'user,hostfwd=tcp:127.0.0.1:%s-:22' % self.port,
+                    '-net', 'user,hostfwd=tcp:127.0.0.1:%s-:22' % self.port
+                ]
+
+        if mic_cachedir:
+            self.kvmbase.extend([
+            '-device',
+            'virtio-9p-pci,id=fs0,fsdev=fsdev0,mount_tag=mic_cache',
+            '-fsdev', 
+            'local,security_model=mapped,id=fsdev0,path=%s' %
+            mic_cachedir,
+            ])
+
+        self.kvmbase.extend([
                     '-drive', 'index=0,if=virtio,media=disk,cache=writeback,' \
                               'file=@KVMIMAGEFILE@'
-                  ]
+                  ])
+
 
         # use the existence if mic-image-creator as a sign mic2 is installed
         # even inside the kvm which could be incorrect, but good for now
@@ -293,6 +312,12 @@ class Commands(object):
         else:
             os.remove(overlayimg)
 
+    def mount_mic_cache(self, mic_cachedir):
+        self.ssh(['mkdir', '-p', mic_cachedir])
+        mount_comm = copy(self.mountcachebase)
+        mount_comm.append(mic_cachedir)
+        self.ssh(mount_comm)
+
     def runmic(self, ssh=False, job_args=None):
         """Run MIC2, using ssh or executing on the host, with arguments.
 
@@ -367,10 +392,16 @@ class ImageWorker(object):
         config and proxy settings to the guest. Then create the output 
         directory and then run MIC2. When its ready, copy the entire image 
         directory."""
+
+        mic_cachedir = None
+        if self.config.use_kvm and self.config.use_9p_cache:
+            mic_cachedir = self.config.mic_cachedir
+
         commands = Commands(self.config.vm_kernel,
                             ssh_key=self.config.vm_ssh_key,
                             log_filename=self.logfile_name,
-                            timeout=int(self.config.timeout))
+                            timeout=int(self.config.timeout),
+                            mic_cachedir=mic_cachedir)
 
         print self._image_dir
         os.makedirs(self._image_dir, 0775)
@@ -396,7 +427,7 @@ class ImageWorker(object):
 
                 commands.runkvm(overlayimg)
 
-                time.sleep(20)
+                time.sleep(int(self.config.vm_wait))
 
                 if commands.ict == "mic2":
                     commands.scpto(source='/etc/mic2/mic2.conf',
@@ -413,6 +444,9 @@ class ImageWorker(object):
 
                 commands.scpto(source=ksfile_name,
                                dest=self._image_dir)
+
+                if mic_cachedir:
+                    commands.mount_mic_cache(mic_cachedir)
 
                 commands.runmic(ssh=True, job_args=self.job_args)
 

@@ -74,10 +74,10 @@ def worker_config(config=None, conffile="/etc/imager/img.conf"):
     section = "worker"
     conf = {}
     for item in ["base_url", "base_dir", "mic_opts", "img_tmp", "vm_ssh_key",
-                 "vm_base_img", "vm_kernel", "timeout"]:
+                 "vm_base_img", "vm_kernel", "timeout", "mic_cachedir", "vm_wait"]:
         conf[item] = config.get(section, item)
 
-    for item in ["use_kvm"]:
+    for item in ["use_kvm", "use_9p_cache"]:
         conf[item] = config.getboolean(section, item)
 
     if config.has_option(section, "mic_opts"):

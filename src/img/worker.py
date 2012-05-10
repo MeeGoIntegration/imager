@@ -142,7 +142,7 @@ class Commands(object):
         self.kvmbase = [
                     '/usr/bin/qemu-kvm',
                     '-nographic', '-no-reboot',
-                    '-daemonize', '-m', '256M',
+                    '-daemonize', '-m', '512M',
                     '-kernel', vm_kernel,
                     '-append', 'root=/dev/vda panic=1 quiet rw elevator=noop ip=dhcp',
                     '-net', 'nic,model=virtio',
@@ -337,6 +337,8 @@ class Commands(object):
 
         if job_args.image_type == "fs":
             mic_comm.append('--compress-disk-image=tar.bz2')
+        elif job_args.image_type == "raw":
+            mic_comm.append('--compress-disk-image=gz')
 
         if job_args.release:
             mic_comm.append('--release=%s' % job_args.release)
@@ -440,6 +442,10 @@ class ImageWorker(object):
                     commands.scpto(source='/etc/sysconfig/proxy',
                                    dest='/etc/sysconfig/')
 
+                if os.path.exists('/etc/resolv.conf'):
+                    commands.scpto(source='/etc/resolv.conf',
+                                   dest='/etc/')
+
                 commands.ssh(['mkdir', '-p', self._image_dir])
 
                 commands.scpto(source=ksfile_name,
@@ -463,7 +469,9 @@ class ImageWorker(object):
             finally:
 
                 try:
-                    commands.ssh(['poweroff', '-f'])
+                    commands.ssh(['sync'])
+                    time.sleep(int(self.config.vm_wait))
+                    commands.ssh(['shutdown', 'now'])
                 except (sub.CalledProcessError, TimeoutError), err:
                     try:
                         print "error %s trying to kill kvm" % err

@@ -25,6 +25,7 @@ openssh-server
 net-tools
 kernel-adaptation-vm
 qemu-usermode-static
+openssh-clients
 mic
 
 %end

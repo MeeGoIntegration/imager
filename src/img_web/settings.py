@@ -59,6 +59,7 @@ notify_enabled = config.getboolean('notify', 'enabled')
 USE_LDAP = config.getboolean('ldap', 'use_ldap')
 if USE_LDAP:
   LDAP_SERVER = config.get('ldap', 'ldap_server')
+  ldap_verify_cert = config.getboolean('ldap', 'verify_certificate')
   LDAP_DN_TEMPLATE = config.get('ldap', 'ldap_dn_template', raw=True)
   
   mail_attr = config.get('ldap', 'ldap_mail_attr', raw=True)
@@ -196,6 +197,10 @@ if USE_LDAP:
 
   AUTH_LDAP_SERVER_URI = LDAP_SERVER
   AUTH_LDAP_USER_DN_TEMPLATE = LDAP_DN_TEMPLATE
+  if not ldap_verify_cert :
+      AUTH_LDAP_GLOBAL_OPTIONS = {
+      ldap.OPT_X_TLS_REQUIRE_CERT : ldap.OPT_X_TLS_NEVER
+      }
 
   AUTHENTICATION_BACKENDS = (
     'django_auth_ldap.backend.LDAPBackend',

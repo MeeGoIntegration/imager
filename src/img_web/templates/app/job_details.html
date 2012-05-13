@@ -1,10 +1,13 @@
 {% extends 'base.html' %}
 
-{% block pagetitle %}Log viewer{% endblock %}
+{% block pagetitle %}Detailed view{% endblock %}
 
-{% block title %}Log view{% endblock %}
+{% block title %}Detailed view{% endblock %}
 
 {% block content %}
+
+{% include "app/messages.html" %}
+
 {% if errors %}
 <div class="errors">
   {% for label, e in errors.items %}
@@ -12,11 +15,39 @@
   {% endfor %}
 </div>
 {% endif%}
-
+<div id="details" class="details">
+<table>
+<tr>
+<td>ID : {{ obj.image_id }}</td>
+<td>Created : {{ obj.created|date:"SHORT_DATETIME_FORMAT" }}</td>
+</tr>
+<tr>
+<td>Owner : {{obj.user.username}}</td>
+<td>Type : {{obj.image_type}}</td>
+</tr>
+<tr>
+<td>Arch : {{obj.arch}}</td>
+<td>Status : {{obj.status}}<td>
+</tr>
+<tr>
+<form id="tagform" action="{%url img-app-job msgid=obj.image_id %}" method="post" enctype="multipart/form-data">
+{% csrf_token %}
+<td>
+{{ tagform.tags.label_tag }} : {{ tagform.tags }}
+</td>
+<td>
+<input type="submit" value="Save tags" />
+</td>
+</form>
+</tr>
+</table>
+</div>
 <div id="logtext" class="logtext"> 
 {% autoescape off %}
-{{job}}
+{{obj.log}}
 {% endautoescape %}
+</div>
+<div>
 </div>
 <a name="bottom" href="#bottom" onclick="if (refTimeoutID) window.clearTimeout(refTimeoutID)">Stop auto-refresh</a>
 <script type="text/javascript">
@@ -25,7 +56,7 @@
 </script>
 {% endblock %}
 {% block sidebar_title %}
-Help
+Actions
 {% endblock %} 
 {% block sidebar_content %}
 <li>
@@ -33,5 +64,8 @@ This page will refresh automatically every 20 seconds.
 </li>
 <li>
 <a name="bottom" href="#bottom" onclick="if (refTimeoutID) window.clearTimeout(refTimeoutID)">Stop auto-refresh</a>
+</li>
+<li>
+{% include 'app/ops.html' %}
 </li>
 {% endblock %} 

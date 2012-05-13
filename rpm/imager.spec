@@ -37,6 +37,7 @@ Group: Applications/Engineering
 Requires: python >= 2.5.0
 Requires: python-xml
 Requires: python-boss-skynet
+Requires: python-django-taggit
 Requires(post): python-boss-skynet
 Requires: python-django, python-flup, python-mysql, mysql-client, mysql
 Summary: Image creation service for MeeGo related products, django web interface

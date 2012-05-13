@@ -21,6 +21,7 @@
 
 {%if queue %}
 <meta http-equiv="refresh" content="60">
+{% include "app/messages.html" %}
 <table id="queue">
     <thead>
         <tr>
@@ -31,7 +32,7 @@
             <th>Arch</th>
             <th>Type</th>
             <th>Status</th>
-            <th>Results</th>
+            <th>Results / Operations</th>
         </tr>
     </thead>
     <tbody>
@@ -55,16 +56,7 @@
                 {% endif %}
             </td> 
             <td>
-                {% if obj.logfile_url %}
-                <a href="{% url img-app-job obj.image_id %}">Log</a>
-                {% endif %}
-                <br/>
-                {% if obj.files_url %}
-                <a href="{{ obj.files_url }}/">Files</a>
-                {% endif %}
-                {% if obj.image_url %}
-                <a href="{{ obj.image_url }}">Image</a>
-                {% endif %}
+                {% include 'app/ops.html' %}
             </td>
         </tr>
         {% endfor %}

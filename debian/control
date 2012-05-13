@@ -31,7 +31,7 @@ Description: image creation service for MeeGo related products
 
 Package: img-web
 Architecture: all
-Depends: ${python:Depends}, ${misc:Depends}, python-django, python-flup, python-mysqldb, mysql-client, mysql-server, python-boss-skynet
+Depends: ${python:Depends}, ${misc:Depends}, python-django, python-flup, python-mysqldb, mysql-client, mysql-server, python-boss-skynet, python-django-taggit
 Recommends: httpd
 Description: image creation service for MeeGo related products
  This package provides a django based web interface for imager. 

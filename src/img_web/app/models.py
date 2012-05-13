@@ -13,6 +13,7 @@
 #~ You should have received a copy of the GNU General Public License
 #~ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
 import img_web.settings as settings
 from django.contrib.auth.models import User
@@ -20,6 +21,7 @@ from django.contrib import admin
 from django.db.models.signals import post_save, post_delete
 import django.dispatch
 from RuoteAMQP import Launcher
+from taggit.managers import TaggableManager
 
 GETLOG = django.dispatch.Signal(providing_args=["image_id"])
 
@@ -129,6 +131,20 @@ class Queue(models.Model):
 class ImageJob(models.Model):    
     """ An instance of this ImageJob model contains all the information needed
     to reproduce an image usin mic2 """
+
+    tags = TaggableManager()
+
+    def mytags(self):
+       return [ x.name for x in self.tags.all() ]
+
+    def has_tag(self, tagname):
+        if tagname in self.mytags():
+            return True
+        return False
+
+    @property
+    def pinned(self):
+        return self.has_tag("pinned")
 
     image_id = models.CharField(max_length=30)
     created = models.DateTimeField(auto_now_add=True)

@@ -19,7 +19,7 @@ import os
 from django import forms
 from django.forms.formsets import formset_factory
 from django.core.validators import validate_email
-
+from taggit.forms import TagField
 from img_web import settings
 
 class extraReposForm(forms.Form):
@@ -139,6 +139,15 @@ class UploadFileForm(forms.Form):
                               "chosen template. A packagename prefixed wtit "\
                               '"-" is excluded. Package groups are denoted by '\
                               '"@" prefix.')
+    pinned = forms.BooleanField(label="Pin image", required=False,
+                                initial=False,
+                            help_text="Pin image so it doesn't expire or get "\
+                                      "deleted by mistake. ")
+    tags = forms.CharField(label="Free Tags", required=False,
+                           widget=forms.Textarea(attrs={'rows':'2'}),
+                                                 help_text=\
+                              "Packages: comma separated list of tags "\
+                              "to  describe the image built.")
 
 
     def __init__(self, *args, **kwargs):
@@ -170,3 +179,11 @@ class UploadFileForm(forms.Form):
             raise forms.ValidationError("Please choose either a template or"\
                                             "upload a kickstart file.")
         return cleaned_data
+
+class TagForm(forms.Form):
+    tags = TagField()
+
+class SearchForm(forms.Form):
+    searchterm = forms.CharField(label="Search term", required=True,
+                                 help_text="partial or full tag name to search with")
+

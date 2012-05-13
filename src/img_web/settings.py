@@ -178,6 +178,7 @@ INSTALLED_APPS = (
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django.contrib.admin',
+    'taggit',
     'img_web.app',
 )
 

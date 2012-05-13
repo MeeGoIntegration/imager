@@ -10,7 +10,7 @@ body {
 	padding: 0;
 	background: #191919 url(images/img07.jpg) no-repeat right top;
 	font-family: Tahoma, Geneva, sans-serif;
-	font-size: 10px;
+	font-size: 12px;
 	color: #3C3C3C;
 }
 
@@ -93,12 +93,13 @@ hr {
 /* Header */
 
 #header {
-	width: 950px;
+	width: 90%;
 	height: 70px;
 	margin: 0px auto;
 }
 
 /* Menu */
+
 
 #menu {
 }
@@ -191,10 +192,11 @@ hr {
 /* Page */
 
 #page {
-	width: 930px;
+	width: 90%;
 	margin: 0px auto;
 	padding: 10px 10px 10px 10px;
-	background: #E1E1E1;
+	background: white;
+	/*background: #E1E1E1;*/
 }
 
 #page-bgtop {
@@ -252,13 +254,13 @@ hr {
 
 #content {
 	float: left;
-	width: 620px;
+	width: 68%;
 	padding: 0px 0px 0px 0px;
 }
 
 /* Post */
 
-.post {
+/*.post {
 	background: url(images/img05.jpg) repeat-y left top;
 }
 
@@ -269,13 +271,13 @@ hr {
 .post-bgbtm {
 	padding: 0px 30px 20px 30px;
 	background: url(images/img06.jpg) no-repeat left bottom;
-}
+}*/
 
 .post .title {
 	height: 44px;
 	margin: 0px;
-	padding: 36px 0px 0px 0px;
-	background: url(images/img11.jpg) repeat-x left bottom;
+	/*padding: 36px 0px 0px 0px;*/
+	/*background: url(images/img11.jpg) repeat-x left bottom;*/
 }
 
 .post .title a {
@@ -328,7 +330,7 @@ hr {
 
 #sidebar {
 	float: right;
-	width: 310px;
+	width: 30%;
 	font-family: Arial, Helvetica, sans-serif;
 }
 
@@ -341,13 +343,13 @@ hr {
 }
 
 #sidebar li {
-	background: url(images/img09.jpg) repeat-y left top;
+	/*background: url(images/img09.jpg) repeat-y left top;*/
 }
 
 #sidebar li ul {
 	margin: 0px 0px;
 	padding: 0px 0px 20px 0px;
-	background: url(images/img10.jpg) no-repeat left bottom;
+	/*background: url(images/img10.jpg) no-repeat left bottom;*/
 }
 
 #sidebar li li {
@@ -374,7 +376,7 @@ hr {
 	height: 50px;
 	margin: 0px;
 	padding: 30px 0px 13px 30px;
-	background: url(images/img08.jpg) no-repeat left top;
+	/*background: url(images/img08.jpg) no-repeat left top;*/
 	letter-spacing: -1px;
 	font-size: 24px;
 	font-weight: normal;
@@ -471,6 +473,28 @@ div.errors {
     background-color: #FFBABA;
     background-image: url('images/error.png');
 }
+div.warning {
+    border: 1px solid;
+    margin: 10px 0px;
+    padding: 15px 10px 15px 50px;
+    background-repeat: no-repeat;
+    background-position: 10px center;
+    line-height: 150%;
+    color: #D8000C;
+    background-color: #FFBABA;
+    background-image: url('images/warning.png');
+}
+div.info {
+    border: 1px solid;
+    margin: 10px 0px;
+    padding: 15px 10px 15px 50px;
+    background-repeat: no-repeat;
+    background-position: 10px center;
+    line-height: 150%;
+    color: black;
+    background-color: white;
+    background-image: url('images/info.png');
+}
 .add-row {
     padding-left:18px;
     background:url(images/formset/add.png) no-repeat left center;
@@ -490,4 +514,8 @@ tr.row3 td { background-color: #ededed; }
 
 img.remove_icon {
   width: 22px;
+}
+
+input#id_tags {
+    width : 300px;
 }

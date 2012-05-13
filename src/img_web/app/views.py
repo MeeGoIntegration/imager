@@ -17,15 +17,16 @@
 
 import os, time
 from urllib2 import urlopen, HTTPError
-from django.http import HttpResponseRedirect
+from django.http import HttpResponseRedirect, HttpResponseForbidden
 from django.template import RequestContext
 from django.core.urlresolvers import reverse
 from django.shortcuts import render_to_response
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator, InvalidPage, EmptyPage
+from django.contrib import messages
 
 import img_web.settings as settings
-from img_web.app.forms import UploadFileForm, extraReposFormset
+from img_web.app.forms import UploadFileForm, extraReposFormset, TagForm, SearchForm
 from img_web.app.models import ImageJob, Queue, GETLOG
 from django.db import transaction
 
@@ -105,8 +106,45 @@ def submit(request):
 
         imgjob.save()
         
+        if data["pinned"]:
+            imgjob.tags.add("pinned")
+        if data["tags"]:
+            imgjob.tags.add(*data["tags"].split(","))
+        
         return HttpResponseRedirect(reverse('img-app-queue'))
 
+
+@login_required
+def search(request, tag=None):
+    """
+    GET: returns an unbound SearchForm
+
+    POST: process a user submitted SearchForm
+    """
+    
+    if request.method == 'GET':
+        form = SearchForm()
+        alltags = [ x.name for x in ImageJob.tags.all() ]
+        return render_to_response('app/search.html',
+                                  {'searchform' : form,
+                                   'alltags' : alltags},
+                                  context_instance=RequestContext(request)
+                                  )
+
+    if request.method == 'POST':
+        form = SearchForm(request.POST)
+        if not form.is_valid():
+            return render_to_response('app/search.html',
+                                      {'searchform': form},
+                                       context_instance=RequestContext(request)
+                                       )
+        data = form.cleaned_data
+        results = ImageJob.objects.filter(tags__name__icontains = data["searchterm"])
+        return render_to_response('app/search.html',
+                                  {'searchform' : form,
+                                   'results' : results},
+                                  context_instance=RequestContext(request)
+                                  )
 
 @login_required
 def queue(request, queue_name=None, dofilter=False):
@@ -138,7 +176,78 @@ def queue(request, queue_name=None, dofilter=False):
                                'filtered' : dofilter,
                                },
                               context_instance=RequestContext(request))
+
+@login_required
+def toggle_pin_job(request, msgid):
+    """ Request deletion of an ImageJob
+
+    :param msgid: ImageJob ID
+    """
+    imgjob = ImageJob.objects.get(image_id__exact=msgid)
+    if imgjob.pinned:
+        imgjob.tags.remove("pinned")
+        messages.add_message(request, messages.INFO, "Image %s unpinned." % imgjob.image_id)
+    else:
+        imgjob.tags.add("pinned")
+        messages.add_message(request, messages.INFO, "Image %s pinned." % imgjob.image_id)
+        
+    return HttpResponseRedirect(request.META.get('HTTP_REFERER',
+                                reverse('img-app-queue')))
+@login_required
+def retry_job(request, msgid):
+    """ Request retry of an ImageJob
+
+    :param msgid: ImageJob ID
+    """
+    oldjob = ImageJob.objects.get(image_id__exact=msgid)
+
+    imgjob = ImageJob()
+    imgjob.image_id = "%s-%s" % ( request.user.id, 
+                                  time.strftime('%Y%m%d-%H%M%S') )
+    imgjob.user = request.user
+    imgjob.email = oldjob.email
+    imgjob.image_type = oldjob.image_type
+    imgjob.overlay = oldjob.overlay
+    imgjob.release = oldjob.release
+    imgjob.arch = oldjob.arch
+    imgjob.devicegroup = oldjob.devicegroup
+    imgjob.test_image = oldjob.test_image
+    imgjob.notify = oldjob.notify
+    imgjob.extra_repos = oldjob.extra_repos
+    imgjob.kickstart = oldjob.kickstart
+    imgjob.name = oldjob.name
+    imgjob.queue = oldjob.queue
+
+    imgjob.save()
+    messages.add_message(request, messages.INFO, "Image resubmitted with new id %s." % imgjob.image_id)
+        
+    return HttpResponseRedirect(reverse('img-app-queue'))
     
+@login_required
+def delete_job(request, msgid):
+    """ Request deletion of an ImageJob
+
+    :param msgid: ImageJob ID
+    """
+    imgjob = ImageJob.objects.get(image_id__exact=msgid)
+    url = request.META.get('HTTP_REFERER', reverse('img-app-queue'))
+
+    if request.user != imgjob.user and ( not request.user.is_staff \
+       or not request.user.is_superuser ):
+        messages.add_message(request, messages.ERROR, "Sorry, only admins are allowed to delete other people's images.")
+        return HttpResponseRedirect(url)
+    if imgjob.pinned:
+        messages.add_message(request, messages.ERROR, "Sorry, image is pinned and cannot be deleted.")
+        return HttpResponseRedirect(url)
+
+    else:
+        imgjob.delete()
+        messages.add_message(request, messages.INFO, "Image %s deleted." % imgjob.image_id)
+        if "queue" not in url:
+            url = reverse('img-app-queue')
+
+    return HttpResponseRedirect(url)
+
 @login_required
 def job(request, msgid):
     """ Show details about an ImageJob which are either errors or the creation
@@ -148,6 +257,17 @@ def job(request, msgid):
     """
     imgjob = ImageJob.objects.get(image_id__exact=msgid)
     error = "" 
+
+    if request.method == 'POST':
+        tagform = TagForm(request.POST)
+        if not tagform.is_valid():
+            return render_to_response('app/job_details.html',
+                                      {'errors': {'Error' : [error]},
+                                       'obj': imgjob,
+                                       'tagform': tagform},
+                                       context_instance=RequestContext(request))
+        imgjob.tags.set(*tagform.cleaned_data['tags'])
+
     if imgjob.status == "IN QUEUE":
         error = "Job still in queue"
     elif imgjob.error and imgjob.error != "":
@@ -158,10 +278,12 @@ def job(request, msgid):
 
         return render_to_response('app/job_details.html', {'job':imgjob.log},
                                   context_instance=RequestContext(request))
+    tagform = TagForm(initial = {'tags' : imgjob.tags.all()} )
 
     return render_to_response('app/job_details.html',
                               {'errors': {'Error' : [error]},
-                               'job':imgjob.log}, 
+                               'obj': imgjob,
+                               'tagform': tagform}, 
                                 context_instance=RequestContext(request)) 
 
 def index(request):

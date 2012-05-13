@@ -97,11 +97,53 @@ Then run::
  lighttpd-enable-mod dir-listing
  service lighttpd force-reload
 
-To start the img application server run:
- service img-web start
+Configure nginx
+---------------
+
+This is only an example, your installation may vary::
+
+ cat > /etc/nginx/vhosts.d/img.conf << 'EOF'
+ upstream imgweb {
+   server 127.0.0.1:9299;
+ }
+
+ server {
+    listen 80;
+    access_log  /var/log/nginx/imgweb.log;
+
+    server_name img;
+
+    location /images/ {
+        alias /srv/www/img/images/;
+    } 
+    location /img/site_media/ {
+        alias /srv/www/img/site_media/;
+    } 
+    location /img {
+
+        include /etc/nginx/fastcgi_params;
+        fastcgi_param  SCRIPT_NAME "";
+
+        fastcgi_pass       imgweb;
+    }
+
+    location / {
+        rewrite_log on;
+        rewrite  ^/$  /img/ permanent;
+    }
+  }
+  EOF
+
+
+All done
+--------
+
+To start the img application server run::
+
+ skynet reload img-web
 
 If you use the config described here you should be able to login at
 http://127.0.0.1/img/admin using the superuser. There you can add more
 users.
 
-The main IMG application can then be reached at : http://127.0.0.1/img/
+The IMG application can then be reached at : http://127.0.0.1/img/

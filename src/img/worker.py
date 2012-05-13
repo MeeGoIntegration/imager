@@ -69,7 +69,7 @@ class Commands(object):
     """Commands object for running various image building commands"""
 
     def __init__(self, vm_kernel, ssh_key=None, log_filename=None,
-                 timeout=3600, mic_cachedir=None):
+                 timeout=3600, mic_cachedir=None, mic_outputdir=None):
         """Constructor, creates the object with necessary parameters to run 
         commands
         
@@ -118,6 +118,12 @@ class Commands(object):
                         'mic_cache'
                       ]
 
+        self.mountoutputbase = [
+                        'mount', '-t', '9p',
+                        '-otrans=virtio,version=9p2000.L',
+                        'mic_output'
+                      ]
+
         self.sopts = [ 
                   '-i%s' % ssh_key,
                   '-o', 'ConnectTimeout=60',
@@ -144,7 +150,8 @@ class Commands(object):
                     '-nographic', '-no-reboot',
                     '-daemonize', '-m', '512M',
                     '-kernel', vm_kernel,
-                    '-append', 'root=/dev/vda panic=1 quiet rw elevator=noop ip=dhcp',
+                    '-append',
+                    'root=/dev/vda panic=1 quiet rw elevator=noop ip=dhcp',
                     '-net', 'nic,model=virtio',
                     '-net', 'user,hostfwd=tcp:127.0.0.1:%s-:22' % self.port
                 ]
@@ -156,6 +163,13 @@ class Commands(object):
             '-fsdev', 
             'local,security_model=mapped,id=fsdev0,path=%s' %
             mic_cachedir,
+            ])
+            self.kvmbase.extend([
+            '-device',
+            'virtio-9p-pci,id=fs1,fsdev=fsdev1,mount_tag=mic_output',
+            '-fsdev', 
+            'local,security_model=mapped,id=fsdev1,path=%s' %
+            mic_outputdir,
             ])
 
         self.kvmbase.extend([
@@ -318,6 +332,12 @@ class Commands(object):
         mount_comm.append(mic_cachedir)
         self.ssh(mount_comm)
 
+    def mount_mic_output(self, mic_9p_outputdir):
+        self.ssh(['mkdir', '-p', mic_9p_outputdir])
+        mount_comm = copy(self.mountoutputbase)
+        mount_comm.append(mic_9p_outputdir)
+        self.ssh(mount_comm)
+
     def runmic(self, ssh=False, job_args=None):
         """Run MIC2, using ssh or executing on the host, with arguments.
 
@@ -403,7 +423,8 @@ class ImageWorker(object):
                             ssh_key=self.config.vm_ssh_key,
                             log_filename=self.logfile_name,
                             timeout=int(self.config.timeout),
-                            mic_cachedir=mic_cachedir)
+                            mic_cachedir=mic_cachedir,
+                            mic_outputdir=self._image_dir)
 
         print self._image_dir
         os.makedirs(self._image_dir, 0775)
@@ -453,11 +474,15 @@ class ImageWorker(object):
 
                 if mic_cachedir:
                     commands.mount_mic_cache(mic_cachedir)
+                    commands.mount_mic_output(self._image_dir)
 
                 commands.runmic(ssh=True, job_args=self.job_args)
 
-                commands.scpfrom(source="%s*" % self._image_dir,
-                                 dest=self._image_dir)
+                if not mic_cachedir:
+                    commands.scpfrom(source="%s*" % self._image_dir,
+                                     dest=self._image_dir)
+
+                commands.run(['chmod', '-R', 'g+r,o+r', self._image_dir])
 
                 self.result = True
 

@@ -68,34 +68,34 @@ def imagejob_save_callback(sender, **kwargs):
     if not job.queue.handle_launch:
         return
 
+    fields = {"image" : { 
+                          "emails" :  [ i.strip() for i in \
+                                        job.email.split(',') ],
+                          "kickstart" : job.kickstart,
+                          "image_id" : job.image_id,
+                          "image_type" : job.image_type,
+                          "name" : job.name,
+                          "arch" : job.arch,
+                          "prefix" : "%s/%s" % (job.queue.name,
+                                                job.user.username)
+                          }
+                }
+    if job.release:
+        fields['image']['release'] = job.release
+    if job.overlay:
+        fields['image']['packages'] = job.overlay.split(",")
+    if job.extra_repos:
+        fields['image']['extra_repos'] = job.extra_repos.split(",")
+    if job.test_image:
+        fields['image']['test_image'] = job.test_image
+        fields['image']['devicegroup'] = job.devicegroup
+    if job.test_options:
+        fields['image']['test_options'] = job.test_options
+
     if kwargs['created']:
         try:
             with open(settings.create_image_process, mode='r') as process_file:
                 process = process_file.read()
-
-            fields = {"image" : { 
-                                  "emails" :  [ i.strip() for i in \
-                                                job.email.split(',') ],
-                                  "kickstart" : job.kickstart,
-                                  "image_id" : job.image_id,
-                                  "image_type" : job.image_type,
-                                  "name" : job.name,
-                                  "arch" : job.arch,
-                                  "prefix" : "%s/%s" % (job.queue.name,
-                                                        job.user.username)
-                                  }
-                        }
-            if job.release:
-                fields['image']['release'] = job.release
-            if job.overlay:
-                fields['image']['packages'] = job.overlay.split(",")
-            if job.extra_repos:
-                fields['image']['extra_repos'] = job.extra_repos.split(",")
-            if job.test_image:
-                fields['image']['test_image'] = job.test_image
-                fields['image']['devicegroup'] = job.devicegroup
-            if job.test_options:
-                fields['image']['test_options'] = job.test_options
     
             launch(process, fields)
 
@@ -110,6 +110,9 @@ def imagejob_save_callback(sender, **kwargs):
             if settings.notify_enabled and job.notify:
                 with open(settings.notify_process, mode='r') as process_file:
                     process = process_file.read()
+
+                fields['image']['result'] = job.status
+                fields['image']['files_url'] = job.files_url
 
                 launch(process, fields)
 

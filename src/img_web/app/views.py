@@ -75,8 +75,8 @@ def submit(request):
             imgjob.devicegroup = data['devicegroup']  
             imgjob.test_image = data['test_image']
 
-        if "notify" in data.keys():
-            imgjob.notify = data["notify"]
+        if "notify_image" in data.keys():
+            imgjob.notify = data["notify_image"]
 
         conf = []
         for prj in data2:

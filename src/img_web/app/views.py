@@ -256,32 +256,30 @@ def job(request, msgid):
     :param msgid: ImageJob ID
     """
     imgjob = ImageJob.objects.get(image_id__exact=msgid)
-    error = "" 
+    errors = None
 
     if request.method == 'POST':
         tagform = TagForm(request.POST)
         if not tagform.is_valid():
             return render_to_response('app/job_details.html',
-                                      {'errors': {'Error' : [error]},
+                                      {'errors': errors,
                                        'obj': imgjob,
                                        'tagform': tagform},
                                        context_instance=RequestContext(request))
         imgjob.tags.set(*tagform.cleaned_data['tags'])
 
     if imgjob.status == "IN QUEUE":
-        error = "Job still in queue"
+        errors = { 'Error' : ["Job still in queue"] }
     elif imgjob.error and imgjob.error != "":
-        error = imgjob.error
+        errors = { 'Error' : [imgjob.error] }
     else:
         # signal to launch getlog process
         GETLOG.send(sender=request, image_id = imgjob.image_id)
 
-        return render_to_response('app/job_details.html', {'job':imgjob.log},
-                                  context_instance=RequestContext(request))
     tagform = TagForm(initial = {'tags' : imgjob.tags.all()} )
 
     return render_to_response('app/job_details.html',
-                              {'errors': {'Error' : [error]},
+                              {'errors': errors,
                                'obj': imgjob,
                                'tagform': tagform}, 
                                 context_instance=RequestContext(request)) 

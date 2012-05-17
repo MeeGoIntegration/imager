@@ -30,7 +30,7 @@
 <td>Status : {{obj.status}}<td>
 </tr>
 <tr>
-<form id="tagform" action="{%url img-app-job msgid=obj.image_id %}" method="post" enctype="multipart/form-data">
+<form id="tagform" action="{%url img-app-job obj.image_id %}" method="post" enctype="multipart/form-data">
 {% csrf_token %}
 <td>
 {{ tagform.tags.label_tag }} : {{ tagform.tags }}

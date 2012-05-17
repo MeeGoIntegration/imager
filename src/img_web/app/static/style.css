@@ -454,14 +454,7 @@ hr {
 #footer a {
 }
 
-div.logtext {
-          font-family:    Monaco,
-                        "Bitstream Vera Sans Mono",
-                        "Lucida Console",
-                        Terminal,
-                        monospace;
-        font-size:      10;
-}
+
 div.errors {
     border: 1px solid;
     margin: 10px 0px;
@@ -518,4 +511,14 @@ img.remove_icon {
 
 input#id_tags {
     width : 300px;
+}
+
+div.logtext {
+          font-family:    Monaco,
+                        "Bitstream Vera Sans Mono",
+                        "Lucida Console",
+                        Terminal,
+                        monospace;
+        font-size:      10px;
+	background: #E1E1E1;
 }

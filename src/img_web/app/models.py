@@ -106,6 +106,14 @@ def imagejob_save_callback(sender, **kwargs):
     else:
         #launch notify and test if configured and asked for
         job = kwargs['instance']
+
+        if job.status == "DONE":
+            if settings.testing_enabled and job.test_image:
+                with open(settings.test_process, mode='r') as process_file:
+                    process = process_file.read()
+
+                launch(process, fields)
+                
         if job.status == "DONE" or job.status == "ERROR":
             if settings.notify_enabled and job.notify:
                 with open(settings.notify_process, mode='r') as process_file:
@@ -115,13 +123,10 @@ def imagejob_save_callback(sender, **kwargs):
                 fields['image']['files_url'] = job.files_url
 
                 launch(process, fields)
-
-        if job.status == "DONE":
-            if settings.testing_enabled and job.test_image:
-                with open(settings.test_process, mode='r') as process_file:
-                    process = process_file.read()
-
-                launch(process, fields)
+                
+            job.notify = False
+            job.test_image = False
+            job.save()
 
 
 class Queue(models.Model):    

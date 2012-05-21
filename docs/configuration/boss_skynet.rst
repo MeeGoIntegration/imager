@@ -53,4 +53,5 @@ or::
 
  zypper in boss-viewer
 
-After installation check that it is RUNNING in skynet status and browse to port 9292 of the server.
+After installation check that it is RUNNING in skynet status and browse to :
+http://127.0.0.1:9292/_ruote/

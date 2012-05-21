@@ -40,18 +40,17 @@ Create locations for the images and templates::
  install -d -m 0777 /var/www/img/images
  install -d -m 0777 /var/www/img/templates
 
-Setup django (add a superuser)::
+Setup django (add a superuser), Debian::
 
  export DJANGO_SETTINGS_MODULE=img_web.settings
  django-admin syncdb
- #then
- django-admin migrate
- #then
  django-admin collectstatic
 
-.. note::
+openSUSE::
 
-   Ignore any errors that are produced by the migrate command.
+ export DJANGO_SETTINGS_MODULE=img_web.settings
+ django-admin.py syncdb
+ django-admin.py collectstatic
 
 Configure Lighttpd
 ------------------

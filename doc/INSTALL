@@ -5,10 +5,8 @@ Imager can be deployed a single "appliance" or in a distributed, multi worker fa
 The UI part can be deployed to a small machine or VM, while each worker that
 does the actual image building needs at least 1Gb of RAM and 8GB of disk space.
 
-An already existing BOSS installation is expected to be accesible. For
-instructions on deploying BOSS refer to: http://wiki.meego.com/Release_Infrastructure/BOSS/Installation
-
-The installation of the UI includes a web server and a mysql server for django.
+The installation of the UI requires a web server and a mysql server. Any webserver that
+can talk to fastcgi script can be used. Apache, lighttpd and nginx all work fine.
 
 Debian Squeeze
 --------------
@@ -34,17 +32,24 @@ Worker only ::
 
 UI + Worker ::
 
- apt-get install img-web img-boss
+ apt-get install img-web img-ks img-worker
+
+Everything ( aka appliance )::
+
+ apt-get install boss img-web img-ks img-worker 
+
+Don't forget to install an HTTP server
 
 OpenSUSE
 --------
 
-Add the correct repository ::
+Add the correct repository. For openSUSE 11.4 ::
 
  zypper ar http://repo.pub.meego.com/Project:/MINT:/Testing/openSUSE_11.4/Project:MINT:Testing.repo
- zypper ar http://download.meego.com/live/devel:/tools:/building/openSUSE_11.4/
- zypper ar http://download.opensuse.org/repositories/devel:/languages:/python/openSUSE_11.4/
- zypper --no-gpg-checks --gpg-auto-import-keys ref
+
+For openSUSE 12.1 ::
+
+ zypper ar http://repo.pub.meego.com/Project:/MINT:/Testing/openSUSE_12.1/Project:MINT:Testing.repo
 
 UI only ::
 
@@ -62,3 +67,8 @@ UI + Worker ::
 
  zypper --non-interactive in img-web img-ks img-worker
 
+Everything ( aka appliance )::
+
+ zypper --non-interactive in --no-recommends boss img-web img-ks img-worker
+
+Don't forget to install an HTTP server

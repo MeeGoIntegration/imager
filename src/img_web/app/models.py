@@ -126,7 +126,13 @@ def imagejob_save_callback(sender, **kwargs):
                 
             job.notify = False
             job.test_image = False
+            post_save.disconnect(imagejob_save_callback, sender=ImageJob,
+                                 weak=False,
+                                 dispatch_uid="imagejob_save_callback")
             job.save()
+            post_save.connect(imagejob_save_callback, sender=ImageJob,
+                              weak=False,
+                              dispatch_uid="imagejob_save_callback")
 
 
 class Queue(models.Model):    

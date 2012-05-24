@@ -12,9 +12,9 @@ rootpw rootme
 
 user --name mer  --groups audio,video --password rootme 
 
-repo --name=mer-core --baseurl=http://releases.merproject.org/releases/latest/builds/i586/packages/
-repo --name=mer-tools --baseurl=http://repo.pub.meego.com//Mer:/Tools:/Testing/Mer_Core_i586/ 
-repo --name=vm-kernel --baseurl=http://repo.pub.meego.com//home:/iamer:/Mer:/SDK/Mer_Core_i586/
+repo --name=mer-core --baseurl=http://releases.merproject.org/releases/latest/builds/i586/packages/ --save --ssl_verify=no
+repo --name=mer-tools --baseurl=http://repo.pub.meego.com//Mer:/Tools:/Testing/Mer_Core_i586/ --save --ssl_verify=no
+repo --name=vm-kernel --baseurl=http://repo.pub.meego.com//home:/iamer:/Mer:/SDK/Mer_Core_i586/ --save --ssl_verify=no
 
 
 %packages --excludedocs

@@ -94,7 +94,8 @@ class ParticipantHandler(object):
                 if wid.params.status == "ERROR" and wid.fields.__error__:
                     job.done = datetime.now()
                     job.error = wid.fields.__error__
-                    job.files_url = wid.fields.image.files_url
+                    if wid.fields.image.files_url:
+                        job.files_url = wid.fields.image.files_url
                 if wid.params.status == "DONE":
                     job.done = datetime.now()
                     job.files_url = wid.fields.image.files_url

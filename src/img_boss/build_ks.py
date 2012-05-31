@@ -98,6 +98,9 @@ import os
 import tempfile
 from urllib2 import HTTPError
 
+from pykickstart.errors import KickstartError
+from optparse import OptionValueError
+
 from img.common import build_kickstart
 from buildservice import BuildService
 
@@ -206,12 +209,16 @@ class ParticipantHandler(object):
             ks = build_kickstart(ksfile, packages=packages, groups=groups,
                                  projects=projects)
             f.image.kickstart = ks
+        except (KickstartError, OptionValueError), error:
+            f.msg.append("Error while handling  Kickstart: %s" % error)
+            f.__error__ = str(error)
+        else:
+            if not f.image.name:
+                f.image.name = os.path.basename(ksfile)[0:-3]
+
+            f.msg.append("Kickstart handled successfully.")
+            wid.result = True
         finally:
             if remove:
                 os.remove(remove)
 
-        if not f.image.name:
-            f.image.name = os.path.basename(ksfile)[0:-3]
-
-        f.msg.append("Kickstart handled successfully.")
-        wid.result = True

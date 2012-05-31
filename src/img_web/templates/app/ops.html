@@ -1,6 +1,4 @@
-{% if obj.logfile_url %}
 <a href="{% url img-app-job obj.image_id %}"><img src="{{ MEDIA_URL }}/images/details.png" width="24" height="24" alt="Log" title="View image details and build log"></img></a>
-{% endif %}
 {% if obj.files_url %}
 <a href="{{ obj.files_url }}/"><img src="{{ MEDIA_URL }}/images/folder.png" width="24" height="24" alt="Files" title="View image build directory"></img></a>
 {% endif %}

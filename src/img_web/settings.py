@@ -57,10 +57,22 @@ DEVICEGROUP = config.get('test', 'devicegroup')
 notify_enabled = config.getboolean('notify', 'enabled')
 
 USE_LDAP = config.getboolean('ldap', 'use_ldap')
+USE_SEARCH = config.getboolean('ldap', 'use_search')
 if USE_LDAP:
+
+  import ldap
+  from django_auth_ldap.config import LDAPSearch
+  import logging
+  
   LDAP_SERVER = config.get('ldap', 'ldap_server')
   ldap_verify_cert = config.getboolean('ldap', 'verify_certificate')
-  LDAP_DN_TEMPLATE = config.get('ldap', 'ldap_dn_template', raw=True)
+
+  if USE_SEARCH:
+    AUTH_LDAP_USER_SEARCH = LDAPSearch( config.get('ldap', 'ldap_base_dn', raw=True),
+                                        ldap.SCOPE_SUBTREE,
+                                        config.get('ldap', 'ldap_filter', raw=True))
+  else:
+    AUTH_LDAP_USER_DN_TEMPLATE = config.get('ldap', 'ldap_dn_template', raw=True)
   
   mail_attr = config.get('ldap', 'ldap_mail_attr', raw=True)
   fname_attr = config.get('ldap', 'ldap_fname_attr', raw=True)
@@ -188,16 +200,12 @@ LOGIN_URL='/' + url_prefix + "/login/"
 LOGIN_REDIRECT_URL='/' + url_prefix + "/"
 
 if USE_LDAP:
-  import ldap
-  from django_auth_ldap.config import LDAPSearch
-  import logging
-  
+
   logger = logging.getLogger('django_auth_ldap')
   logger.addHandler(logging.StreamHandler())
   logger.setLevel(logging.DEBUG)
 
   AUTH_LDAP_SERVER_URI = LDAP_SERVER
-  AUTH_LDAP_USER_DN_TEMPLATE = LDAP_DN_TEMPLATE
   if not ldap_verify_cert :
       AUTH_LDAP_GLOBAL_OPTIONS = {
       ldap.OPT_X_TLS_REQUIRE_CERT : ldap.OPT_X_TLS_NEVER

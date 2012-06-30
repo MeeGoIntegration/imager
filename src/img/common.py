@@ -2,6 +2,10 @@
 Common Imager functions
 """
 
+import subprocess as sub
+
+import random
+
 from urlparse import urlparse
 
 import pykickstart.parser as ksparser
@@ -69,7 +73,7 @@ def worker_config(config=None, conffile="/etc/imager/img.conf"):
     """
     if not config:
         config = ConfigParser.ConfigParser()
-        config.read(conffile)
+    config.read(conffile)
 
     section = "worker"
     conf = {}
@@ -86,4 +90,41 @@ def worker_config(config=None, conffile="/etc/imager/img.conf"):
         conf["extra_opts"] = extra_opts
 
     return conf
+
+def tester_config(config=None, conffile="/etc/imager/img.conf"):
+    """Utility function which parses the either given or  imager configuration
+        file and passes a dictionary proxy containing the configuration keys
+        and values in return.
+
+    :param config: initialized ConfigParser object
+    :param conffile: Full path to ini style config file
+
+    :returns: configuration dict
+    """
+    if not config:
+        config = ConfigParser.ConfigParser()
+    config.read(conffile)
+
+    section = "tester"
+    conf = {}
+    for item in ["base_dir", "vm_base_img", "vm_kernel", "timeout", "vm_priv_ssh_key", "vm_pub_ssh_key", "vg_name", "vm_wait"]:
+        conf[item] = config.get(section, item)
+
+    for item in ["use_base_img"]:
+        conf[item] = config.getboolean(section, item)
+
+    return conf
+
+def getport():
+    """Gets a random port for the KVM virtual machine communtication, target 
+    always being the SSH port.
+
+    :returns: random port number between 49152 and 65535
+    """
+    return random.randint(49152, 65535)
+
+def fork(logfile, command):
+    with open(logfile, 'a+b') as logf:
+        sub.check_call(command, shell=False, stdout=logf, 
+                       stderr=logf, stdin=sub.PIPE)
 

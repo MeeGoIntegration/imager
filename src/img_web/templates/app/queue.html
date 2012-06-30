@@ -47,11 +47,11 @@
             <td>
                 {{obj.status}}
                 <br/>
-                {% if obj.test_image and obj.status == "DONE, TESTED" %}
+                {% if obj.status == "DONE, TESTED" %}
                     {% if obj.test_result %}
-                    <div><font color="green">PASS</font></div>
+                    <font color="green">PASS</font>
                     {% else%}
-                    <div><font color="red">FAIL</font></div>
+                    <font color="red">FAIL</font>
                     {% endif %}
                 {% endif %}
             </td> 

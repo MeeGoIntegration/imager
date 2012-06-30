@@ -107,23 +107,24 @@ def imagejob_save_callback(sender, **kwargs):
         #launch notify and test if configured and asked for
         job = kwargs['instance']
 
-        if job.status == "DONE":
-            if settings.testing_enabled and job.test_image:
-                with open(settings.test_process, mode='r') as process_file:
-                    process = process_file.read()
-
-                launch(process, fields)
-                
         if job.status == "DONE" or job.status == "ERROR":
+            fields['image']['result'] = job.status
+            fields['image']['files_url'] = job.files_url
+            fields['image']['image_url'] = job.image_url
+
             if settings.notify_enabled and job.notify:
                 with open(settings.notify_process, mode='r') as process_file:
                     process = process_file.read()
 
-                fields['image']['result'] = job.status
-                fields['image']['files_url'] = job.files_url
-
                 launch(process, fields)
                 
+            if job.status == "DONE":
+                if settings.testing_enabled and job.test_image:
+                    with open(settings.test_process, mode='r') as process_file:
+                        process = process_file.read()
+
+                    launch(process, fields)
+
             job.notify = False
             job.test_image = False
             post_save.disconnect(imagejob_save_callback, sender=ImageJob,

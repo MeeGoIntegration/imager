@@ -15,8 +15,7 @@
 #~ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """builds images from kickstart files using MIC2 image creation tools. 
 Supports either KVM or normal MIC2 operation. KVM operations offer more 
-flexibility and cleaner building but is much slower as each time a new clean
-root filesystem is built using qemu from a base image.
+flexibility and cleaner building.
 
 .. warning ::
 

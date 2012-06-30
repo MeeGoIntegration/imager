@@ -19,16 +19,8 @@ import os
 import subprocess as sub
 from multiprocessing import Process, TimeoutError
 import time, datetime
-import random
 from copy import copy
-
-def getport():
-    """Gets a random port for the KVM virtual machine communtication, target 
-    always being the SSH port.
-
-    :returns: random port number between 49152 and 65535
-    """
-    return random.randint(49152, 65535)
+from img.common import getport, fork
 
 def find_largest_file(indir):
     """Find the largest file in a given directory string.
@@ -58,12 +50,6 @@ def find_largest_file(indir):
     largest_file = sizesortedlist[-1]
 
     return largest_file
-
-def fork(logfile, command):
-    with open(logfile, 'a+b') as logf:
-        sub.check_call(command, shell=False, stdout=logf, 
-                       stderr=logf, stdin=sub.PIPE)
-
 
 class Commands(object):
     """Commands object for running various image building commands"""

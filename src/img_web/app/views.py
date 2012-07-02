@@ -276,7 +276,7 @@ def job(request, msgid):
         # signal to launch getlog process
         GETLOG.send(sender=request, image_id = imgjob.image_id)
 
-    tagform = TagForm(initial = {'tags' : imgjob.tags.all()} )
+    tagform = TagForm(initial = {'tags' : ",".join([tag.name for tag in imgjob.tags.all()])} )
 
     return render_to_response('app/job_details.html',
                               {'errors': errors,

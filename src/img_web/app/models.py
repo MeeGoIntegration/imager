@@ -112,28 +112,40 @@ def imagejob_save_callback(sender, **kwargs):
             fields['image']['files_url'] = job.files_url
             fields['image']['image_url'] = job.image_url
 
+            notify = False
+            test = False
             if settings.notify_enabled and job.notify:
-                with open(settings.notify_process, mode='r') as process_file:
-                    process = process_file.read()
-
-                launch(process, fields)
-                
+                job.notify = False
+                notify = True
             if job.status == "DONE":
                 if settings.testing_enabled and job.test_image:
-                    with open(settings.test_process, mode='r') as process_file:
-                        process = process_file.read()
+                    job.test_image = False
+                    job.status = "DONE, TESTING"
+                    test = True
 
-                    launch(process, fields)
-
-            job.notify = False
-            job.test_image = False
             post_save.disconnect(imagejob_save_callback, sender=ImageJob,
                                  weak=False,
                                  dispatch_uid="imagejob_save_callback")
             job.save()
+
+            if notify:
+                with open(settings.notify_process, mode='r') as process_file:
+                    process = process_file.read()
+
+                launch(process, fields)
+ 
+            if test:
+                with open(settings.test_process, mode='r') as process_file:
+                    process = process_file.read()
+
+                launch(process, fields)
+
             post_save.connect(imagejob_save_callback, sender=ImageJob,
                               weak=False,
                               dispatch_uid="imagejob_save_callback")
+
+
+
 
 
 class Queue(models.Model):    

@@ -305,6 +305,8 @@ class Commands(object):
             c.setopt(pycurl.CONNECTTIMEOUT, 30)
             c.setopt(pycurl.TIMEOUT, 300)
             c.setopt(pycurl.NOSIGNAL, 1)
+            c.setopt(pycurl.SSL_VERIFYPEER, 0)
+            c.setopt(pycurl.SSL_VERIFYHOST, 0)
             c.fp = tarpipe.stdin
             c.setopt(pycurl.URL, url)
             c.setopt(pycurl.WRITEDATA, c.fp)
@@ -395,13 +397,14 @@ class ImageTester(object):
                     print lvname
                     print "format partition"
                     self.commands.mkfs(lvname, "ext4")
+                    print "formatting done"
                     try:
                         target = "/var/tmp/%s" % os.path.basename(lvname)
                         print target
                         os.mkdir(target)
                         print "mount"
                         self.commands.mount(target, lvname)
-                        print"download image and extract it"
+                        print "download image and extract it"
                         count = 1
                         result = False
                         while count < 3 and not result:

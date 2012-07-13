@@ -338,7 +338,7 @@ class Commands(object):
 class ImageTester(object):
     """Tester class that does vm based testing"""
 
-    def __init__(self, config=None, job_args=None):
+    def __init__(self, config=None, job_args=None, test_packages={}):
         """Initialize the tester using a config and job args.
 
         :param config: Worker config in a hash proxy object
@@ -347,6 +347,7 @@ class ImageTester(object):
         """
 
         self.result = False
+        self.test_packages = test_packages
         self.vm_pub_ssh_key = config["vm_pub_ssh_key"]
         self.vm_wait =  config["vm_wait"]
 
@@ -379,72 +380,112 @@ class ImageTester(object):
                                  ssh_key=config["vm_priv_ssh_key"],
                                  vm_kernel=config["vm_kernel"]
                                  )
+    def create_vm(self):
+        #snapshot base_img if any
+        if self.base_img:
+            #create snapshot
+            raise RuntimeError("upgrade based testing not yet supported")
+        else:
+            if self.img_type == "fs":
+                print "create empty lvm"
+                lvname = self.commands.mklv(hashlib.md5(self.img_url).hexdigest())
+                self.vmdisk = lvname
+                print lvname
+                print "format partition"
+                self.commands.mkfs(lvname, "ext4")
+                print "formatting done"
+                try:
+                    target = "/var/tmp/%s" % os.path.basename(lvname)
+                    print target
+                    os.mkdir(target)
+                    print "mount"
+                    self.commands.mount(target, lvname)
+                    print "download image and extract it"
+                    count = 1
+                    result = False
+                    while count < 3 and not result:
+                        print self.img_url
+                        print target
+                        result = self.commands.download_extract(str(self.img_url), str(target))
+                        count = count + 1
+                    #copy auth ssh key
+                    fork(self.logfile_name, ['sudo', '-n', 'mkdir', "%s/root/.ssh/" % target])
+                    fork(self.logfile_name, ['sudo', '-n', 'cp', self.vm_pub_ssh_key, "%s/root/.ssh/authorized_keys" % target])
+                    fork(self.logfile_name, ['sudo', '-n', 'chown', '-R', 'root:root', "%s/root/.ssh/" % target])
+                    fork(self.logfile_name, ['sudo', '-n', 'chmod', '-R', 'o+rwx,g-rwx,o-rwx', "%s/root/.ssh/" % target])
+                    
+                finally:
+                    try:
+                        print "umount"
+                        self.commands.umount(lvname)
+                    finally:
+                        print "rmdir"
+                        os.rmdir(target)
+            else:
+                raise RuntimeError("unspported image type %s" % self.img_type)
+
+        if not self.vmdisk:
+            raise RuntimeError("something went wrong while setting up vm disk")
     
+    def boot_vm(self):
+
+        print "runkvm"
+        self.commands.runkvm(self.vmdisk)
+        self.kvm_run = True
+
+        print "vm_wait"
+        time.sleep(int(self.vm_wait))
+
+    def upgrade_vm(self):
+
+        if self.base_img:
+            #add repos from workitem
+            #upgrade
+            raise RuntimeError("upgrade based testing not yet supported")
+
+    def install_tests(self):
+        self.commands.ssh(['zypper', 'in', '--non-interactive'].extend(self.test_packages.keys())
+
+    def run_tests(self):
+
+        self.commands.ssh([])
+
+
+    def cleanup(self):
+
+        try:
+            if self.kvm_run:
+                self.commands.ssh(['sync'])
+                time.sleep(int(self.vm_wait))
+                self.commands.ssh(['shutdown', 'now'])
+        except (sub.CalledProcessError, TimeoutError), err:
+            try:
+                if self.kvm_run:
+                    print "error %s trying to kill kvm" % err
+                    self.commands.killkvm()
+            except (sub.CalledProcessError, TimeoutError), err:
+                print "error %s" % err
+        finally:
+            try:
+                self.commands.removeoverlay(self.vmdisk)
+            except (sub.CalledProcessError, TimeoutError), err:
+                print "error %s" % err
+
     def test(self):
         """Test the image"""
-        vmdisk = None
-        kvm_run = False
+        self.vmdisk = None
+        self.kvm_run = False
         try:
-            #snapshot base_img if any
-            if self.base_img:
-                #create snapshot
-                raise RuntimeError("upgrade based testing not yet supported")
-            else:
-                if self.img_type == "fs":
-                    print "create empty lvm"
-                    lvname = self.commands.mklv(hashlib.md5(self.img_url).hexdigest())
-                    vmdisk = lvname
-                    print lvname
-                    print "format partition"
-                    self.commands.mkfs(lvname, "ext4")
-                    print "formatting done"
-                    try:
-                        target = "/var/tmp/%s" % os.path.basename(lvname)
-                        print target
-                        os.mkdir(target)
-                        print "mount"
-                        self.commands.mount(target, lvname)
-                        print "download image and extract it"
-                        count = 1
-                        result = False
-                        while count < 3 and not result:
-                            print self.img_url
-                            print target
-                            result = self.commands.download_extract(str(self.img_url), str(target))
-                            count = count + 1
-                        #copy auth ssh key
-                        fork(self.logfile_name, ['sudo', '-n', 'mkdir', "%s/root/.ssh/" % target])
-                        fork(self.logfile_name, ['sudo', '-n', 'cp', self.vm_pub_ssh_key, "%s/root/.ssh/authorized_keys" % target])
-                        fork(self.logfile_name, ['sudo', '-n', 'chown', '-R', 'root:root', "%s/root/.ssh/" % target])
-                        fork(self.logfile_name, ['sudo', '-n', 'chmod', '-R', 'o+rwx,g-rwx,o-rwx', "%s/root/.ssh/" % target])
-                        
-                    finally:
-                        try:
-                            print "umount"
-                            self.commands.umount(lvname)
-                        finally:
-                            print "rmdir"
-                            os.rmdir(target)
-                else:
-                    raise RuntimeError("unspported image type %s" % self.img_type)
-                
-            #boot vm / snapshot
-            if not vmdisk:
-                raise RuntimeError("something went wrong while setting up vm disk")
-            print "runkvm"
-            self.commands.runkvm(vmdisk)
-            kvm_run = True
 
-            print "vm_wait"
-            time.sleep(int(self.vm_wait))
+            self.create_vm()
 
-            if self.base_img:
-                #add repos from workitem
-                #upgrade
-                raise RuntimeError("upgrade based testing not yet supported")
+            self.boot_vm()
 
-            #run tests
-            self.commands.ssh(['mkdir', '-p', '/tmp/foo'])
+            self.upgrade_vm()
+
+            self.install_tests()
+
+            self.run_tests()
 
             self.result = True
 
@@ -454,24 +495,7 @@ class ImageTester(object):
             self.result = False
         
         finally:
-
-            try:
-                if kvm_run:
-                    self.commands.ssh(['sync'])
-                    time.sleep(int(self.vm_wait))
-                    self.commands.ssh(['shutdown', 'now'])
-            except (sub.CalledProcessError, TimeoutError), err:
-                try:
-                    if kvm_run:
-                        print "error %s trying to kill kvm" % err
-                        self.commands.killkvm()
-                except (sub.CalledProcessError, TimeoutError), err:
-                    print "error %s" % err
-            finally:
-                try:
-                    self.commands.removeoverlay(vmdisk)
-                except (sub.CalledProcessError, TimeoutError), err:
-                    print "error %s" % err
+            cleanup()
 
     def get_results(self):
         """Returns the results in a dictionary.

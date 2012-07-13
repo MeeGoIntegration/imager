@@ -47,7 +47,8 @@ class ParticipantHandler(object):
 
         try:
             tester = ImageTester(config=self.config,
-                                 job_args=jargs)
+                                 job_args=jargs,
+                                 test_packages=f.qa.selected_test_packages)
 
             tester.test()
 

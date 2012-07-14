@@ -324,7 +324,7 @@ class Commands(object):
                 print "Success:", c.filename, c.url, c.getinfo(pycurl.EFFECTIVE_URL)
                 result = True
             else:
-                print "Failed: ", c.filename, c.url, errno, errmsg
+                print "Failed: ", c.filename, c.url
                 result = False
         finally:
             c.fp.close()
@@ -445,8 +445,8 @@ class ImageTester(object):
             raise RuntimeError("upgrade based testing not yet supported")
 
     def install_tests(self):
-        self.commands.ssh(['zypper', '-n', 'ar', '-f', '-G'].extend(self.testtools_repourl)
-        self.commands.ssh(['zypper', '-n', 'in'].extend(self.test_packages.keys())
+        self.commands.ssh(['zypper', '-n', 'ar', '-f', '-G'].extend(self.testtools_repourl))
+        self.commands.ssh(['zypper', '-n', 'in'].extend(self.test_packages.keys()))
 
     def run_tests(self):
 
@@ -497,7 +497,7 @@ class ImageTester(object):
             self.result = False
         
         finally:
-            cleanup()
+            self.cleanup()
 
     def get_results(self):
         """Returns the results in a dictionary.

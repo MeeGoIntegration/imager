@@ -347,6 +347,7 @@ class ImageTester(object):
         """
 
         self.result = False
+        self.testtools_repourl = config["testtools_repourl"]
         self.test_packages = test_packages
         self.vm_pub_ssh_key = config["vm_pub_ssh_key"]
         self.vm_wait =  config["vm_wait"]
@@ -409,10 +410,10 @@ class ImageTester(object):
                         result = self.commands.download_extract(str(self.img_url), str(target))
                         count = count + 1
                     #copy auth ssh key
-                    fork(self.logfile_name, ['sudo', '-n', 'mkdir', "%s/root/.ssh/" % target])
-                    fork(self.logfile_name, ['sudo', '-n', 'cp', self.vm_pub_ssh_key, "%s/root/.ssh/authorized_keys" % target])
-                    fork(self.logfile_name, ['sudo', '-n', 'chown', '-R', 'root:root', "%s/root/.ssh/" % target])
-                    fork(self.logfile_name, ['sudo', '-n', 'chmod', '-R', 'o+rwx,g-rwx,o-rwx', "%s/root/.ssh/" % target])
+                    self.commands.run(['sudo', '-n', 'mkdir', "%s/root/.ssh/" % target])
+                    self.commands.run(['sudo', '-n', 'cp', self.vm_pub_ssh_key, "%s/root/.ssh/authorized_keys" % target])
+                    self.commands.run(['sudo', '-n', 'chown', '-R', 'root:root', "%s/root/.ssh/" % target])
+                    self.commands.run(['sudo', '-n', 'chmod', '-R', 'o+rwx,g-rwx,o-rwx', "%s/root/.ssh/" % target])
                     
                 finally:
                     try:
@@ -444,11 +445,12 @@ class ImageTester(object):
             raise RuntimeError("upgrade based testing not yet supported")
 
     def install_tests(self):
-        self.commands.ssh(['zypper', 'in', '--non-interactive'].extend(self.test_packages.keys())
+        self.commands.ssh(['zypper', '-n', 'ar', '-f', '-G'].extend(self.testtools_repourl)
+        self.commands.ssh(['zypper', '-n', 'in'].extend(self.test_packages.keys())
 
     def run_tests(self):
 
-        self.commands.ssh([])
+        self.commands.ssh(['testrunner-lite', '-a'])
 
 
     def cleanup(self):

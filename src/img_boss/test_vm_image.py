@@ -45,16 +45,22 @@ class ParticipantHandler(object):
 
         jargs = f.image.as_dict()
 
+        if f.qa.selected_test_packages:
+            test_packages = f.qa.selected_test_packages.as_dict()
+
         try:
             tester = ImageTester(config=self.config,
                                  job_args=jargs,
-                                 test_packages=f.qa.selected_test_packages)
+                                 test_packages=test_packages)
 
             tester.test()
 
             f.image.test_result = tester.get_results()["result"]
+            f.qa.results = tester.get_results()
 
         except Exception, error:
             f.__error__ = 'Image test FAILED: %s' % error
             f.msg.append(f.__error__)
             raise
+        else:
+            wid.result = True

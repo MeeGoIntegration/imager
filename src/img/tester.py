@@ -445,8 +445,9 @@ class ImageTester(object):
             raise RuntimeError("upgrade based testing not yet supported")
 
     def install_tests(self):
-        self.commands.ssh(['zypper', '-n', 'ar', '-f', '-G'].extend(self.testtools_repourl))
-        self.commands.ssh(['zypper', '-n', 'in'].extend(self.test_packages.keys()))
+        if self.test_packages:
+            self.commands.ssh(['zypper', '-n', 'ar', '-f', '-G'].extend(self.testtools_repourl))
+            self.commands.ssh(['zypper', '-n', 'in'].extend(self.test_packages.keys()))
 
     def run_tests(self):
 

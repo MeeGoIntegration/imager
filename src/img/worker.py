@@ -233,7 +233,7 @@ class Commands(object):
         scp_comm.append(dest)
         self.run(scp_comm)
 
-    def ssh(self, command=""):
+    def ssh(self, command):
         """Execute an arbitrary command in the KVM guest.
         
         :param command: Arbitary command to run over ssh inside kvm

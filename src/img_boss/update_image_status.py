@@ -41,9 +41,8 @@ from urllib2 import urlopen, HTTPError
 
 os.environ['DJANGO_SETTINGS_MODULE'] = 'img_web.settings'
 
-from img_web.app.models import ImageJob, imagejob_save_callback
+from img_web.app.models import ImageJob
 from img_web.utils.a2html import plaintext2html
-from django.db.models.signals import post_save, post_delete
 
 def get_or_none(model, **kwargs):
     try:
@@ -117,13 +116,7 @@ class ParticipantHandler(object):
                 except HTTPError as error:
                     print error
                     print error.code
-            post_save.disconnect(imagejob_save_callback, sender=ImageJob,
-                              weak=False,
-                              dispatch_uid="imagejob_save_callback")
             job.save()
-            post_save.connect(imagejob_save_callback, sender=ImageJob,
-                              weak=False,
-                              dispatch_uid="imagejob_save_callback")
             wid.result = True
         else:
             wid.fields.__error__ = "No %s job found" % wid.fields.image.image_id

@@ -174,7 +174,7 @@ class Commands(object):
         scp_comm.append(dest)
         self.run(scp_comm)
 
-    def ssh(self, command=""):
+    def ssh(self, command):
         """Execute an arbitrary command in the KVM guest.
         
         :param command: Arbitary command to run over ssh inside kvm
@@ -448,19 +448,33 @@ class ImageTester(object):
 
     def install_tests(self):
         if self.test_packages:
-            self.commands.ssh(['zypper', '-n', 'ar', '-f', '-G'].extend(self.testtools_repourl))
-            self.commands.ssh(['zypper', '-n', 'in'].extend(self.test_packages.keys()))
+            print "adding test repo"
+            addrepo_comm = ['zypper', '-n', 'ar', '-f', '-G']
+            addrepo_comm.extend(self.testtools_repourl)
+            self.commands.ssh(addrepo_comm)
+            print "installing test packages"
+            install_comm = ['zypper', '-n', 'in']
+            install_comm.extend(self.test_packages.keys())
+            self.commands.ssh(install_comm)
 
     def run_tests(self):
 
         self.commands.run(['mkdir', '-p', "%s/results/" % self._image_dir])
+
+        print "inserting test script"
         self.commands.scpto(self.test_script, '/var/tmp/test_script.sh') 
+        
+        self.commands.ssh(['chmod', '+x', '/var/tmp/test_script.sh'])
         try:
-            self.commands.ssh(['/var/tmp/test_script.sh'].extend(self.test_packages.keys()))
+            print "running test script"
+            test_comm = ['/var/tmp/test_script.sh']
+            test_comm.extend(self.test_packages.keys())
+            self.commands.ssh(test_comm)
         except:
             raise
         finally:
             try:
+                print "trying to get any test results"
                 self.commands.scpfrom("/tmp/results/*.xml", "%s/results/" % self._image_dir)
             except:
                 pass

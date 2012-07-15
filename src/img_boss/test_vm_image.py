@@ -45,7 +45,8 @@ class ParticipantHandler(object):
 
         jargs = f.image.as_dict()
 
-        if f.qa.selected_test_packages:
+        test_packages = {} 
+        if f.qa and f.qa.selected_test_packages:
             test_packages = f.qa.selected_test_packages.as_dict()
 
         try:

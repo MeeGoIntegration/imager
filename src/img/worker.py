@@ -115,7 +115,8 @@ class Commands(object):
                   '-o', 'ConnectTimeout=60',
                   '-o', 'ConnectionAttempts=4',
                   '-o', 'UserKnownHostsFile=/dev/null',
-                  '-o', 'StrictHostKeyChecking=no'
+                  '-o', 'StrictHostKeyChecking=no',
+                  '-o', 'PasswordAuthentication=no'
                 ]
 
         self.sshbase = [ 

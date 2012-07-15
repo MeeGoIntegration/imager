@@ -167,6 +167,7 @@ fi
 
 %files -n img-test-vm
 %defattr(-,root,root,-)
+%{_bindir}/img_test_vm.sh
 %{_datadir}/boss-skynet/test_vm_image.py
 %config(noreplace) %{_sysconfdir}/skynet/test_vm_image.conf
 %config(noreplace) %{svdir}/test_vm_image.conf

@@ -348,6 +348,7 @@ class ImageTester(object):
 
         self.result = False
         self.testtools_repourl = config["testtools_repourl"]
+        self.test_script = config["test_script"]
         self.test_packages = test_packages
         self.vm_pub_ssh_key = config["vm_pub_ssh_key"]
         self.vm_wait =  config["vm_wait"]
@@ -451,8 +452,10 @@ class ImageTester(object):
 
     def run_tests(self):
 
-        self.commands.ssh(['testrunner-lite', '-a'])
-
+        self.commands.scpto(self.test_script, '/var/tmp/test_script.sh') 
+        self.commands.ssh(['/var/tmp/test_script.sh'].extend(self.test_packages.keys()))
+        self.commands.run(['mkdir', '-p', "%s/results/" % self._image_dir])
+        self.commands.scpfrom("/tmp/results/*.xml", "%s/results/" % self._image_dir])
 
     def cleanup(self):
 

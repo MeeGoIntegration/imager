@@ -461,7 +461,7 @@ class ImageTester(object):
             raise
         finally:
             try:
-                self.commands.scpfrom("/tmp/results/*.xml", "%s/results/" % self._image_dir])
+                self.commands.scpfrom("/tmp/results/*.xml", "%s/results/" % self._image_dir)
             except:
                 pass
 

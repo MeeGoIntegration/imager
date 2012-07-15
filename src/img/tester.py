@@ -450,7 +450,7 @@ class ImageTester(object):
         if self.test_packages:
             print "adding test repo"
             addrepo_comm = ['zypper', '-n', 'ar', '-f', '-G']
-            addrepo_comm.extend(self.testtools_repourl)
+            addrepo_comm.extend([self.testtools_repourl])
             self.commands.ssh(addrepo_comm)
             print "installing test packages"
             install_comm = ['zypper', '-n', 'in']

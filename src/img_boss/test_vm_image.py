@@ -57,6 +57,8 @@ class ParticipantHandler(object):
             tester.test()
 
             f.image.test_result = tester.get_results()["result"]
+            if not f.qa:
+                f.qa = {}
             f.qa.results = tester.get_results()
 
         except Exception, error:
@@ -64,4 +66,4 @@ class ParticipantHandler(object):
             f.msg.append(f.__error__)
             raise
         else:
-            wid.result = True
+            wid.result = f.image.test_result

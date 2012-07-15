@@ -452,10 +452,17 @@ class ImageTester(object):
 
     def run_tests(self):
 
-        self.commands.scpto(self.test_script, '/var/tmp/test_script.sh') 
-        self.commands.ssh(['/var/tmp/test_script.sh'].extend(self.test_packages.keys()))
         self.commands.run(['mkdir', '-p', "%s/results/" % self._image_dir])
-        self.commands.scpfrom("/tmp/results/*.xml", "%s/results/" % self._image_dir])
+        self.commands.scpto(self.test_script, '/var/tmp/test_script.sh') 
+        try:
+            self.commands.ssh(['/var/tmp/test_script.sh'].extend(self.test_packages.keys()))
+        except:
+            raise
+        finally:
+            try:
+                self.commands.scpfrom("/tmp/results/*.xml", "%s/results/" % self._image_dir])
+            except:
+                pass
 
     def cleanup(self):
 

@@ -443,13 +443,13 @@ class ImageTester(object):
 
         print "copying /etc/sysconfig/proxy"
         if os.path.exists('/etc/sysconfig/proxy'):
-            commands.scpto(source='/etc/sysconfig/proxy',
-                           dest='/etc/sysconfig/')
+            self.commands.scpto(source='/etc/sysconfig/proxy',
+                                dest='/etc/sysconfig/')
 
         print "copying /etc/resolv.conf"
         if os.path.exists('/etc/resolv.conf'):
-            commands.scpto(source='/etc/resolv.conf',
-                           dest='/etc/')
+            self.commands.scpto(source='/etc/resolv.conf',
+                                dest='/etc/')
 
     def upgrade_vm(self):
 

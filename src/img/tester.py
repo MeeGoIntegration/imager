@@ -416,7 +416,7 @@ class ImageTester(object):
                     self.commands.run(['sudo', '-n', 'cp', self.vm_pub_ssh_key, "%s/root/.ssh/authorized_keys" % target])
                     self.commands.run(['sudo', '-n', 'chown', '-R', 'root:root', "%s/root/.ssh/" % target])
                     self.commands.run(['sudo', '-n', 'chmod', '-R', 'o+rwx,g-rwx,o-rwx', "%s/root/.ssh/" % target])
-                    
+
                 finally:
                     try:
                         print "umount"
@@ -436,8 +436,20 @@ class ImageTester(object):
         self.commands.runkvm(self.vmdisk)
         self.kvm_run = True
 
+    def wait_for_vm(self):
+
         print "vm_wait"
         time.sleep(int(self.vm_wait))
+
+        print "copying /etc/sysconfig/proxy"
+        if os.path.exists('/etc/sysconfig/proxy'):
+            commands.scpto(source='/etc/sysconfig/proxy',
+                           dest='/etc/sysconfig/')
+
+        print "copying /etc/resolv.conf"
+        if os.path.exists('/etc/resolv.conf'):
+            commands.scpto(source='/etc/resolv.conf',
+                           dest='/etc/')
 
     def upgrade_vm(self):
 
@@ -508,6 +520,8 @@ class ImageTester(object):
             self.create_vm()
 
             self.boot_vm()
+
+            self.wait_for_vm()
 
             self.upgrade_vm()
 

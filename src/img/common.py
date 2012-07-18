@@ -56,7 +56,7 @@ def build_kickstart(base_ks, packages=[], groups=[], projects=[]):
         name = urlparse(prj).path
         name = name.replace(":/","_")
         name = name.replace("/","_")
-        repo = moblinrepo.Moblin_RepoData(baseurl=prj, name=name)
+        repo = moblinrepo.Moblin_RepoData(baseurl=prj, name=name, save=True)
         ks.handler.repo.repoList.append(repo)
     ks_txt = str(ks.handler)
     return ks_txt

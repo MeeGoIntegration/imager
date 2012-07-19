@@ -87,7 +87,7 @@ class Commands(object):
         self.sopts = [ 
                   '-i%s' % ssh_key,
                   '-o', 'ConnectTimeout=60',
-                  '-o', 'ConnectionAttempts=4',
+                  '-o', 'ConnectionAttempts=60',
                   '-o', 'UserKnownHostsFile=/dev/null',
                   '-o', 'StrictHostKeyChecking=no',
                   '-o', 'PasswordAuthentication=no'
@@ -96,7 +96,6 @@ class Commands(object):
         self.sshbase = [ 
                     '/usr/bin/ssh', 
                     '-p%s' % self.port,
-                    '-lroot',
                     '127.0.0.1'
                   ]
 
@@ -109,7 +108,7 @@ class Commands(object):
         self.kvmbase = [
                     '/usr/bin/qemu-kvm',
                     '-nographic', '-no-reboot',
-                    '-daemonize', '-m', '512M',
+                    '-daemonize', '-m', '1G',
                     '-kernel', vm_kernel,
                     '-append',
                     'root=/dev/vda panic=1 quiet rw elevator=noop ip=dhcp',
@@ -174,15 +173,22 @@ class Commands(object):
         scp_comm.append(dest)
         self.run(scp_comm)
 
-    def ssh(self, command):
+    def ssh(self, command, user="root", ignore_error=False):
         """Execute an arbitrary command in the KVM guest.
         
         :param command: Arbitary command to run over ssh inside kvm
         """
         ssh_comm = copy(self.sshbase)
+        ssh_comm.extend(["-l%s" % user])
         ssh_comm.extend(self.sopts)
         ssh_comm.extend(command)
-        self.run(ssh_comm)
+        try:
+            self.run(ssh_comm)
+        except sub.CalledProcessError:
+            if ignore_error:
+                pass
+            else:
+                raise
 
     def is_lvm(self, img):
         """Returns true if a file is recognized by lvdisplay as an LV
@@ -350,6 +356,7 @@ class ImageTester(object):
         self.result = False
         self.testtools_repourl = config["testtools_repourl"]
         self.test_script = config["test_script"]
+        self.test_user = config["test_user"]
         self.test_packages = test_packages
         self.vm_pub_ssh_key = config["vm_pub_ssh_key"]
         self.vm_wait =  config["vm_wait"]
@@ -395,7 +402,7 @@ class ImageTester(object):
                 self.vmdisk = lvname
                 print lvname
                 print "format partition"
-                self.commands.mkfs(lvname, "ext4")
+                self.commands.mkfs(lvname, "ext3")
                 print "formatting done"
                 try:
                     target = "/var/tmp/%s" % os.path.basename(lvname)
@@ -412,7 +419,7 @@ class ImageTester(object):
                         result = self.commands.download_extract(str(self.img_url), str(target))
                         count = count + 1
                     #copy auth ssh key
-                    self.commands.run(['sudo', '-n', 'mkdir', "%s/root/.ssh/" % target])
+                    self.commands.run(['sudo', '-n', 'mkdir', '-p', "%s/root/.ssh/" % target])
                     self.commands.run(['sudo', '-n', 'cp', self.vm_pub_ssh_key, "%s/root/.ssh/authorized_keys" % target])
                     self.commands.run(['sudo', '-n', 'chown', '-R', 'root:root', "%s/root/.ssh/" % target])
                     self.commands.run(['sudo', '-n', 'chmod', '-R', 'o+rwx,g-rwx,o-rwx', "%s/root/.ssh/" % target])
@@ -444,12 +451,12 @@ class ImageTester(object):
         print "copying /etc/sysconfig/proxy"
         if os.path.exists('/etc/sysconfig/proxy'):
             self.commands.scpto(source='/etc/sysconfig/proxy',
-                                dest='/etc/sysconfig/')
+                           dest='/etc/sysconfig/')
 
         print "copying /etc/resolv.conf"
         if os.path.exists('/etc/resolv.conf'):
             self.commands.scpto(source='/etc/resolv.conf',
-                                dest='/etc/')
+                           dest='/etc/')
 
     def upgrade_vm(self):
 
@@ -465,7 +472,7 @@ class ImageTester(object):
             addrepo_comm.extend([self.testtools_repourl])
             self.commands.ssh(addrepo_comm)
             print "installing test packages"
-            install_comm = ['zypper', '-n', 'in']
+            install_comm = ['zypper', '-n', 'in', '-f', '--force-resolution']
             install_comm.extend(self.test_packages.keys())
             self.commands.ssh(install_comm)
 
@@ -481,7 +488,7 @@ class ImageTester(object):
             print "running test script"
             test_comm = ['/var/tmp/test_script.sh']
             test_comm.extend(self.test_packages.keys())
-            self.commands.ssh(test_comm)
+            self.commands.ssh(test_comm, user=self.test_user)
         except:
             raise
         finally:
@@ -497,7 +504,7 @@ class ImageTester(object):
             if self.kvm_run:
                 self.commands.ssh(['sync'])
                 time.sleep(int(self.vm_wait))
-                self.commands.ssh(['shutdown', 'now'])
+                self.commands.ssh(['shutdown', 'now'], ignore_error=True)
         except (sub.CalledProcessError, TimeoutError), err:
             try:
                 if self.kvm_run:

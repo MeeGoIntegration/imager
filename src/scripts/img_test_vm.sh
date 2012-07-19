@@ -10,7 +10,7 @@ if [ x"$TEST_PACKAGES" = x ]; then
 
 fi
 
-mkdir /tmp/results
+mkdir -p /tmp/results
 
 FAIL=0
 
@@ -18,10 +18,11 @@ for PACKAGE in $TEST_PACKAGES; do
 
   TESTSFILE=$(rpm -ql $PACKAGE | grep "/tests.xml")
 
-  testrunner-lite -v -a -f $TESTSFILE -o /tmp/results/$PACKAGE.xml
+  if test -f "$TESTSFILE" ; then
+    testrunner-lite -v -a -f $TESTSFILE -o /tmp/results/$PACKAGE.xml
+    [ $? -eq 0 ] || FAIL=1 
+  fi
   
-  [ $? -eq 0 ] || FAIL=1
-
 done
 
 exit $FAIL

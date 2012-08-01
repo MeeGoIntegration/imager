@@ -20,7 +20,7 @@ import subprocess as sub
 from multiprocessing import Process, TimeoutError
 import time, datetime
 from copy import copy
-from img.common import getport, fork
+from img.common import getport, fork, wait_for_vm
 
 def find_largest_file(indir):
     """Find the largest file in a given directory string.
@@ -437,7 +437,7 @@ class ImageWorker(object):
 
                 commands.runkvm(overlayimg)
 
-                time.sleep(int(self.config.vm_wait))
+                wait_for_vm('127.0.0.1', commands.port, self.config.vm_wait)
 
                 if commands.ict == "mic2":
                     commands.scpto(source='/etc/mic2/mic2.conf',

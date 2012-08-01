@@ -361,10 +361,10 @@ class ImageTester(object):
         self.vm_pub_ssh_key = config["vm_pub_ssh_key"]
         self.vm_wait =  config["vm_wait"]
 
-        self._image_dir = os.path.join(config["base_dir"], job_args["prefix"],
-                                       job_args["image_id"])
+        self.results_dir = os.path.join(job_args["outdir"], "results")
+        self.results_url = "%s/%s" % (job_args["file_url"], "results")
 
-        self.logfile_name = os.path.join(self._image_dir,
+        self.logfile_name = os.path.join(job_args["outdir"],
                                          "%s.log" % job_args["name"])
 
         # If a base image is provided we will create a snapshot of it
@@ -380,6 +380,7 @@ class ImageTester(object):
         # Otherwise a new image will be downloaded and used everytime
         else:
             self.img_url = job_args["image_url"]
+            self.img_file = os.path.join(job_args["outdir"], os.path.basename(job_args["image_url"]))
             self.img_type = job_args["image_type"] 
 
         print self.logfile_name
@@ -478,7 +479,7 @@ class ImageTester(object):
 
     def run_tests(self):
 
-        self.commands.run(['mkdir', '-p', "%s/results/" % self._image_dir])
+        self.commands.run(['mkdir', '-p', self.results_dir])
 
         print "inserting test script"
         self.commands.scpto(self.test_script, '/var/tmp/test_script.sh') 
@@ -494,7 +495,7 @@ class ImageTester(object):
         finally:
             try:
                 print "trying to get any test results"
-                self.commands.scpfrom("/tmp/results/*.xml", "%s/results/" % self._image_dir)
+                self.commands.scpfrom("/tmp/results/*.xml", self.results_dir)
             except:
                 pass
 
@@ -553,6 +554,8 @@ class ImageTester(object):
         """
         results = {
                     "result"     : self.result,
+                    "results_dir": self.results_dir,
+                    "results_url": self.results_url
                   }
 
         return results

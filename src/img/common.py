@@ -4,7 +4,7 @@ Common Imager functions
 
 import subprocess as sub
 
-import random
+import random, socket, time
 
 from urlparse import urlparse
 
@@ -127,4 +127,19 @@ def fork(logfile, command):
     with open(logfile, 'a+b') as logf:
         sub.check_call(command, shell=False, stdout=logf, 
                        stderr=logf, stdin=sub.PIPE)
+
+def wait_for_vm(host, port, timeout):
+
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s.settimeout(float(timeout))
+    retries = 0
+    while retries < timeout:
+        try:
+            retries = retries + 1
+            s.connect((host, port))
+        except:
+            time.sleep(1)
+        else:
+            return True
+    return False
 

@@ -117,10 +117,6 @@ class ParticipantHandler(object):
         workitem, an unique id for image, image type as defined by MIC2, name
         for the image and architecture that the image root filesystem will use.
         """
-        # We may want to examine the fields structure
-        if wid.fields.debug_dump or wid.params.debug_dump:
-            print wid.dump()
-
         wid.result = False
         f = wid.fields
         if not f.msg:

@@ -85,10 +85,6 @@ class ParticipantHandler(object):
                 self.user = User.objects.get(id=1)
  
     def handle_wi(self, wid):
-        # We may want to examine the fields structure
-        if wid.fields.debug_dump or wid.params.debug_dump:
-            print wid.dump()
-
         wid.result = False
         f = wid.fields
         if not f.msg:
@@ -106,8 +102,10 @@ class ParticipantHandler(object):
 
         job.image_id = "%s-%s" % ( str(f.ev.id),
                                    time.strftime('%Y%m%d-%H%M%S') )
-
-        job.queue = Queue.objects.get(name="requests")
+        qname = "requests"
+        if f.image.queue and not f.image.queue == "web":
+            qname = f.image.queue
+        job.queue = Queue.objects.get(name=qname)
         job.user = self.user
         job.image_type = f.image.image_type
         job.arch = f.image.arch
@@ -129,5 +127,5 @@ class ParticipantHandler(object):
                                     job.user.username)
         f.image.image_id = job.image_id 
 
-        print "Requested image %s" % f.image.image_id
+        self.log.info("Requested image %s" % f.image.image_id)
         wid.result = True 

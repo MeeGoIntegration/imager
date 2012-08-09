@@ -8,11 +8,16 @@ import random, socket, time
 
 from urlparse import urlparse
 
-import pykickstart.parser as ksparser
-import pykickstart.version as ksversion
-from pykickstart.handlers.control import commandMap
-from pykickstart.handlers.control import dataMap
-
+try:
+    import pykickstart.parser as ksparser
+    import pykickstart.version as ksversion
+    from pykickstart.handlers.control import commandMap
+    from pykickstart.handlers.control import dataMap
+except:
+    import mic.3rdparty.pykickstart.parser as ksparser
+    import mic.3rdpary.pykickstart.version as ksversion
+    from mic.3rdparty.pykickstart.handlers.control import commandMap
+    from mic.3rdparty.pykickstart.handlers.control import dataMap
 try:
     from mic.imgcreate.kscommands import desktop
     from mic.imgcreate.kscommands import moblinrepo

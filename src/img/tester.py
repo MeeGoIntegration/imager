@@ -362,7 +362,7 @@ class ImageTester(object):
         self.vm_wait =  config["vm_wait"]
 
         self.results_dir = os.path.join(job_args["outdir"], "results")
-        self.results_url = "%s/%s" % (job_args["file_url"], "results")
+        self.results_url = "%s/%s" % (job_args["files_url"], "results")
 
         self.logfile_name = os.path.join(job_args["outdir"],
                                          "%s.log" % job_args["name"])

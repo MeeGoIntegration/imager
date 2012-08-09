@@ -71,10 +71,6 @@ class ParticipantHandler(object):
 
         """ actual job thread """
 
-        # We may want to examine the fields structure
-        if wid.fields.debug_dump or wid.params.debug_dump:
-            print wid.dump()
-
         wid.result = False
         if not wid.fields.msg:
             wid.fields.msg = []
@@ -87,7 +83,7 @@ class ParticipantHandler(object):
 
         job = get_or_none(ImageJob, image_id__exact=wid.fields.image.image_id)
         if job:
-            print "Matched %s job with %s" % (job.image_id, \
+            self.log.info("Matched %s job with %s" % (job.image_id, \)
                                               wid.fields.image.image_id)
             if wid.params.status:
                 job.status = wid.params.status
@@ -107,19 +103,9 @@ class ParticipantHandler(object):
                 if wid.fields.image.logfile_url:
                     job.logfile_url = wid.fields.image.logfile_url
 
-            if job.logfile_url.startswith('http'):
-                try:
-                    print "Getting logfile %s" % job.logfile_url
-                    res = urlopen(job.logfile_url).read()
-                    res = plaintext2html(res)
-                    job.log = res
-                except HTTPError as error:
-                    print error
-                    print error.code
             job.save()
             wid.result = True
         else:
             wid.fields.__error__ = "No %s job found" % wid.fields.image.image_id
             wid.fields.msg.append(wid.fields.__error__)
-
 

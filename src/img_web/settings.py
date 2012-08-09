@@ -46,7 +46,6 @@ db_user = config.get('db', 'db_user')
 db_pass = config.get('db', 'db_pass')
 
 create_image_process = config.get('processes', 'create_image_process')
-getlog_process = config.get('processes', 'getlog_process')
 notify_process = config.get('processes', 'notify_process')
 test_process = config.get('processes', 'test_process')
 delete_process = config.get('processes', 'delete_process')

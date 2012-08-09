@@ -1,11 +1,10 @@
 #version=DEVEL
 user --groups=audio,video --name=meego --password=meego
-# Root password
+# Keyboard layouts
+keyboard us# Root password
 rootpw --plaintext meego
 # System authorization information
 auth --useshadow --enablemd5
-# System keyboard
-keyboard us
 # System language
 lang en_US.UTF-8
 # Installation logging level

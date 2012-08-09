@@ -1,0 +1,150 @@
+* Thu Aug 09 2012 Islam Amer <iamer2@solitude> - 0.63.4-1
+
+- Minor build fix to use new pykickstart needed by new mic
+- [img_web] configurable LDAP search support
+- [build_ks] catch kickstart validation errors and report them
+- Minor bugfixes
+
+* Fri May 25 2012 Islam Amer <pharon@gmail.com> - 0.63.3-1
+
+- Screenshots in docs.
+- Minor bug fix.
+
+* Mon May 21 2012 Islam Amer <pharon@gmail.com> - 0.63.2-1
+
+- 9p for output extraction instead of heavy scp
+- Images can be retried, deleted, pinned, tagged
+- Search by tag  (work in progress)
+- Various fixes and tweaks
+- Documentation fixup
+
+* Mon Feb 27 2012 Islam Amer <islam.amer@nokia.com> - 0.63.0-1
+
+- experimental 9p-virtio based shared kvm worker cache
+- configurable wait time for kvm boot
+- use kernel based dhcp in case a vm depends on it
+
+* Fri Feb 24 2012 Islam Amer <islam.amer@nokia.com> - 0.62.1-1
+
+- Use supervisor based fcgi spawning
+- Support lvm LV for KVM root disk
+
+* Tue Feb 21 2012 Islam Amer <islam.amer@nokia.com> - 0.61.2-2
+
+- Fix unit test case failure due to new mic: ks repos will always get a
+  --ssl-verify=yes option if they don't specify it
+
+* Sun Feb 19 2012 Islam Amer <islam.amer@nokia.com> - 0.61.2-1
+
+- Add support for new mic tool.
+
+* Tue Jan 10 2012 Islam Amer <islam.amer@nokia.com> - 0.61.1-1
+
+- Fix for new python-boss-skynet
+
+* Fri Nov 11 2011 Richard Braakman <ext-richard.braakman@nokia.com> - 0.61.0-1
+
+- Modified build_ks to take :repository as an optional parameter, and
+  by default to add all repositories from the project.
+- Changed build_ks to run as bossmaintainer user instead of as img user.
+  Since we don't have skynet upgrades working smoothly yet, you have to do
+  skynet uninstall build_ks
+  then reinstall the img-ks package.
+
+* Mon Oct 24 2011 Islam Amer <islam.amer@nokia.com> - 0.60.5-2
+
+- Various documentation fixes
+
+* Thu Oct 06 2011 Islam Amer <islam.amer@nokia.com> - 0.60.5-1
+
+- Fix request_image validation
+
+* Tue Oct 04 2011 Islam Amer <islam.amer@nokia.com> - 0.60.4-1
+
+- Reimplement timeout using multiprocessing to work with the new threaded
+  python-boss-skynet
+
+* Thu Sep 29 2011 Islam Amer <islam.amer@nokia.com> - 0.60.3-3
+
+- fix init script for first start
+
+* Thu Sep 29 2011 Islam Amer <islam.amer@nokia.com> - 0.60.3-2
+
+- fixed typo in postinst
+
+* Tue Sep 27 2011 Islam Amer <islam.amer@nokia.com> - 0.60.3-1
+
+- Worker kvm mode reworked
+- any command will run upto a max timeout seconds
+- img-boss split to img-ks and img-worker
+- worker participants run as img user
+
+* Tue Sep 13 2011 Islam Amer <islam.amer@nokia.com> - 0.60.2-1
+
+- Sphinx docs
+
+* Sun Sep 04 2011 David Greaves <david@dgreaves.com> - 0.60.1-1
+
+- Many bug fixes in packaging (remove python-xml dependency)
+- More verbose message on missing mandatory field
+- Fixes BMC#22635
+- Avoid key errors on missing values
+- Move to non-native packaging
+
+* Mon Jun 13 2011 Islam Amer <islam.amer@nokia.com> - 0.60.0
+
+- Request images can be tracked by the webui now
+
+* Sat May 28 2011 Islam Amer <islam.amer@nokia.com> - 0.6.0
+
+- Complete redesign and rewrite.
+
+* Mon Mar 28 2011 Islam Amer <islam.amer@nokia.com> - 0.45
+
+- New arm architectures
+- rootfs.tar.gz support
+- start of code cleanup
+
+* Mon Mar 14 2011 Aleksi Suomalainen <aleksi.suomalainen@nomovok.com> - 0.44
+
+- Fixes to settings.py
+
+* Thu Dec 09 2010 Islam Amer <islam.amer@nokia.com> - 0.43
+
+- Additions to the web ui.
+- Changed uuid to be human readable.
+
+* Tue Dec 07 2010 Islam Amer <islam.amer@nokia.com> - 0.42
+
+- Allow deleting own images.
+
+* Tue Oct 26 2010 Islam Amer <islam.amer@nokia.com> - 0.41
+
+- More boss and OTS adjustments.
+
+* Sun Oct 17 2010 Islam Amer <islam.amer@nokia.com> - 0.4
+
+- img-web : boss integration for email notification, and ots testing. Better log view.
+  Better upload validation with clear errors.
+  Can add extra packages and repos to uploaded ks.
+- img-amqp : refactoring and multiple workers, using vm workers. Command line client.
+- img-core : refactoring and cleanup.
+- img-boss : multiple workers, command line client.
+
+* Tue Sep 28 2010 Islam Amer <islam.amer@nokia.com> - 0.3
+
+- Updated version.
+- Major restructure and makeover
+
+* Fri Jul 09 2010 Ramez Hanna <ramez.hanna@nokia.com> - 0.0.2
+
+- KVM integration added
+
+* Thu Jul 08 2010 Ramez Hanna <ramez.hanna@nokia.com> - 0.0.1-2
+
+- W25 release
+
+* Fri Jun 11 2010 Ramez Hanna <ramez.hanna@nokia.com> - 0.0.1-1
+
+- Initial release.
+

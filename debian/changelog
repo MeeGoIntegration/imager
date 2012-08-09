@@ -1,3 +1,12 @@
+img (0.63.4-1) unstable; urgency=low
+
+  * Minor build fix to use new pykickstart needed by new mic
+  * [img_web] configurable LDAP search support
+  * [build_ks] catch kickstart validation errors and report them
+  * Minor bugfixes
+
+ -- Islam Amer <iamer2@solitude>  Thu, 09 Aug 2012 19:11:02 +0300
+
 img (0.63.3-1) unstable; urgency=low
 
   * Screenshots in docs.

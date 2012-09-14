@@ -209,7 +209,7 @@ class ParticipantHandler(object):
             ks = build_kickstart(ksfile, packages=packages, groups=groups,
                                  projects=projects)
             f.image.kickstart = ks
-        except (KickstartError, OptionValueError), error:
+        except (KickstartError, OptionValueError, ValueError), error:
             f.msg.append("Error while handling  Kickstart: %s" % error)
             f.__error__ = str(error)
         else:

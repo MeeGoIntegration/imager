@@ -123,11 +123,14 @@ def search(request, tag=None):
     """
     
     if request.method == 'GET':
-        form = SearchForm()
+        form = SearchForm(initial={"searchterm":tag})
         alltags = [ x.name for x in ImageJob.tags.all() ]
+        results = []
+        if tag:
+            results = ImageJob.objects.filter(tags__name__icontains = tag)
         return render_to_response('app/search.html',
                                   {'searchform' : form,
-                                   'alltags' : alltags},
+                                   'alltags' : alltags, 'results' : results },
                                   context_instance=RequestContext(request)
                                   )
 

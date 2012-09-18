@@ -361,7 +361,12 @@ class ImageTester(object):
         self.vm_pub_ssh_key = config["vm_pub_ssh_key"]
         self.vm_wait =  config["vm_wait"]
 
+        if not "outdir" in job_args:
+            job_args["outdir"] = os.path.join(config["base_dir"], job_args["prefix"],
+                                              job_args["image_id"])
+
         self.results_dir = os.path.join(job_args["outdir"], "results")
+
         self.results_url = "%s/%s" % (job_args["files_url"], "results")
 
         self.logfile_name = os.path.join(job_args["outdir"],
@@ -472,10 +477,23 @@ class ImageTester(object):
             addrepo_comm = ['zypper', '-n', 'ar', '-f', '-G']
             addrepo_comm.extend([self.testtools_repourl])
             self.commands.ssh(addrepo_comm)
-            print "installing test packages"
-            install_comm = ['zypper', '-n', 'in', '-f', '--force-resolution']
-            install_comm.extend(self.test_packages.keys())
-            self.commands.ssh(install_comm)
+            packages = []
+            patterns = []
+            for name in self.test_packages.keys():
+                if name.startswith('@'):
+                    patterns.append(name[1:])
+                else:
+                    packages.append(name)
+            if packages:
+                print "installing test packages"
+                install_comm = ['zypper', 'in', '-y', '-f', '--force-resolution']
+                install_comm.extend(packages)
+                self.commands.ssh(install_comm)
+            if patterns:
+                print "installing test patterns"
+                install_comm = ['zypper', 'in', '-y', '-f', '--force-resolution', '-t', 'pattern']
+                install_comm.extend(patterns)
+                self.commands.ssh(install_comm)
 
     def run_tests(self):
 

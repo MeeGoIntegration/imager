@@ -343,11 +343,6 @@ class Commands(object):
         mic_comm.append('--arch=%s' % job_args.arch)
         mic_comm.append('--outdir=%s' % job_args.outdir)
 
-        if job_args.image_type == "fs":
-            mic_comm.append('--compress-disk-image=tar.bz2')
-        elif job_args.image_type == "raw":
-            mic_comm.append('--compress-disk-image=gz')
-
         if job_args.release:
             mic_comm.append('--release=%s' % job_args.release)
         if job_args.extra_opts:

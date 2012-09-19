@@ -27,6 +27,7 @@ Image creation service for MeeGo related products
 Group: Applications/Engineering
 Requires: python >= 2.5.0, mic2, sudo, pykickstart, lvm2
 Requires(pre): pwdutils
+Requires: eat-host
 Summary: Image creation service for MeeGo related products, core package
 %description -n img-core
 This package provides the core worker logic of imager.
@@ -99,6 +100,7 @@ getent group imgadm >/dev/null || groupadd -r imgadm
 getent passwd img >/dev/null || \
     useradd -m -r -g imgadm -d /home/img -s /sbin/nologin \
     -c "IMG user" img
+sudo -u img eat-install-host-key
 exit 0
 
 %post -n img-worker

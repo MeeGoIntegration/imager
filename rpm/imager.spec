@@ -97,7 +97,7 @@ rm -rf %{buildroot}
 %pre -n img-core
 getent group imgadm >/dev/null || groupadd -r imgadm
 getent passwd img >/dev/null || \
-    useradd -r -g imgadm -d /home/img -s /sbin/nologin \
+    useradd -m -r -g imgadm -d /home/img -s /sbin/nologin \
     -c "IMG user" img
 exit 0
 

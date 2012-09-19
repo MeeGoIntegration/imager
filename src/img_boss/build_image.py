@@ -15,8 +15,7 @@
 #~ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """builds images from kickstart files using MIC2 image creation tools. 
 Supports either KVM or normal MIC2 operation. KVM operations offer more 
-flexibility and cleaner building but is much slower as each time a new clean
-root filesystem is built using qemu from a base image.
+flexibility and cleaner building.
 
 .. warning ::
 
@@ -118,10 +117,6 @@ class ParticipantHandler(object):
         workitem, an unique id for image, image type as defined by MIC2, name
         for the image and architecture that the image root filesystem will use.
         """
-        # We may want to examine the fields structure
-        if wid.fields.debug_dump or wid.params.debug_dump:
-            print wid.dump()
-
         wid.result = False
         f = wid.fields
         if not f.msg:

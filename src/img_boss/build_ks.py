@@ -54,11 +54,7 @@
       OPTIONAL Group names to be added to the kickstart file
    :image.packages (list):
       OPTIONAL Package names to be added to the kickstart file
-   :project (string):
-      OPTIONAL Name of an OBS project which publishes packages to the
-      "reposerver" set in the configuration. URLs to all repositories in
-      this project will be added to the kickstart file.
-   
+
    
 :term:`Workitem` params IN
 
@@ -76,8 +72,12 @@
    :groups_from (string):
       Arbitary field name from which to get a list of group names, typicall used
       when a participant provides group names in a new namespace
+   :project (string):
+      OPTIONAL Name of an OBS project which publishes packages to the
+      "reposerver" set in the configuration. URLs to all repositories in
+      this project will be added to the kickstart file.
    :repository (string):
-      OPTIONAL Only used if the "project" field is set. Add only this repository
+      OPTIONAL Only used if the "project" parameter is set. Add only this repository
       to the kickstart file.
 
 :term:`Workitem` fields OUT:
@@ -164,14 +164,14 @@ class ParticipantHandler(object):
                                " or image.ksfile")
 
         projects = []
-        if f.project:
+        if wid.params.project:
             if wid.params.repository:
                 repositories = [ wid.params.repository ]
             else:
-                repositories = self.get_repositories(wid, f.project)
+                repositories = self.get_repositories(wid, wid.params.project)
             for repo in repositories:
                 projects.append("%s/%s/%s" % (self.reposerver,
-                                              f.project.replace(":", ":/"),
+                                              wid.params.project.replace(":", ":/"),
                                               repo.replace(":", ":/")))
 
         if f.image.extra_repos:
@@ -209,7 +209,7 @@ class ParticipantHandler(object):
             ks = build_kickstart(ksfile, packages=packages, groups=groups,
                                  projects=projects)
             f.image.kickstart = ks
-        except (KickstartError, OptionValueError), error:
+        except (KickstartError, OptionValueError, ValueError), error:
             f.msg.append("Error while handling  Kickstart: %s" % error)
             f.__error__ = str(error)
         else:

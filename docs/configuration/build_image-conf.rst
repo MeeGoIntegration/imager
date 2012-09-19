@@ -113,6 +113,7 @@ privileged commands ::
  img ALL=(ALL)NOPASSWD:/sbin/lvdisplay
  img ALL=(ALL)NOPASSWD:/sbin/lvcreate
  img ALL=(ALL)NOPASSWD:/sbin/lvremove
+
  EOF
  chmod 0440 /etc/sudoers.d/img
 
@@ -133,6 +134,19 @@ If you run 4 workers the calculation becomes : 4 processors, 1Gb RAM, 100Gb disk
    on the same machine. This can greatly improve the speed and efficiency of image creation, but is not thoroughly tested
    yet. The guest VM kernel needs to be at least 2.6.37 and include support for 9p virtio. More reading at :
    http://wiki.qemu.org/Documentation/9psetup
+
+.. info ::
+
+   It might be useful to use "nested kvm". This is not really supported, you're on your own.
+   nested kvm needs (on physical host and vmhost) ::
+
+    zypper ar -f http://download.opensuse.org/repositories/Kernel:/stable/standard/ kernel
+    zypper ref
+    zypper dup -r kernel
+
+   And on physical host /etc/modprobe.d/99-local.conf ::
+
+    options kvm_intel nested=1
 
 Generating the KVM image
 ------------------------
@@ -198,7 +212,7 @@ The following commands were tested on a Debian testing host that has recent mic 
 
 * Creat filesystem on the LV (replace vg with your volume group name) ::
 
-   mkfs.ext4 /dev/vg/img_base
+   mkfs.ext3 /dev/vg/img_base
    tune2fs -c 0 -i 0 /dev/vg/img_base
 
 * Mount it and untar the rootfs on the LV and copy the needed files 
@@ -210,7 +224,7 @@ The following commands were tested on a Debian testing host that has recent mic 
    cp -L /tmp/img_base/boot/vmlinuz /home/img/vmlinuz
 
    mkdir -p -m 0700 /tmp/img_base/root/.ssh
-   ssh-keygen -q -C "img vm" -t rsa -f /root/.ssh/id_rsa -N ''
+   ssh-keygen -q -C "img vm" -t rsa -f /tmp/img_base/root/.ssh/id_rsa -N ''
    cp /tmp/img_base/root/.ssh/id_rsa.pub /tmp/img_base/root/.ssh/authorized_keys
    cp /tmp/img_base/root/.ssh/id_rsa /home/img/id_rsa
 

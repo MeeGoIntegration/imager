@@ -1,12 +1,19 @@
 Requirements
 ------------
 
-Imager can be deployed a single "appliance" or in a distributed, multi worker fashion.
-The UI part can be deployed to a small machine or VM, while each worker that
-does the actual image building needs at least 1Gb of RAM and 8GB of disk space.
+Imager can be deployed as a single combined "appliance" or in a
+distributed, multi worker fashion.  The UI part can be deployed to a
+small machine or VM, while each worker that does the actual image
+building needs at least 1Gb of RAM and 8GB of disk space.
 
 The installation of the UI requires a web server and a mysql server. Any webserver that
 can talk to fastcgi script can be used. Apache, lighttpd and nginx all work fine.
+
+Workers will leave images in a pre-configured directory. To provide
+access to these images this directory must *either* be shared via
+NFS/CIFS between each worker and an NFS/webserver (the webui machine
+is usually a convenient place for this) *or* each worker must have a
+webserver installed.
 
 Debian Squeeze
 --------------
@@ -22,13 +29,17 @@ UI only ::
   
  apt-get install img-web
 
-Worker only ::
+Worker only machines ::
 
- apt-get install img-ks img-worker
+ apt-get install img-worker
 
 .. note::
    If you are going to serve the built images directly from the workers install
    an HTTP server as well. Refer to worker configuration for more details
+
+Kickstart process machine ::
+
+  apt-get install img-ks
 
 UI + Worker ::
 
@@ -39,6 +50,8 @@ Everything ( aka appliance )::
  apt-get install boss img-web img-ks img-worker 
 
 Don't forget to install an HTTP server
+
+ apt-get install img-web img-worker img-ks
 
 OpenSUSE
 --------
@@ -72,3 +85,46 @@ Everything ( aka appliance )::
  zypper --non-interactive in --no-recommends boss img-web img-ks img-worker
 
 Don't forget to install an HTTP server
+
+General
+-------
+
+IMG uses BOSS and SkyNET to control the building process; this lets
+manual (ie webui triggered) and automated builds (ie BOSS process
+driven) co-exist if needed.
+
+There are 3 different participants used by both processes:
+
+* build_ks : This participant modifies the baseline ks that must be
+  provided (part of img-ks package). This should be installed on the
+  kickstart process machine. Since mic2 is needed this is usually one
+  of the worker machines.
+
+* request_image : This should really be called 'register_build_in_webui'
+  (part of the img-web package).
+
+* update_image_status is 'private' to the web ui and is provided in
+  the img-web package.
+
+* build_image : Runs mic2 to creates the actual image - this can take
+  a few minutes to finish. (part of img-worker package)
+
+Each of these participants should be registered and enabled.
+
+UI machine ::
+
+  skynet enable request_image
+  skynet enable update_image_status
+  skynet register request_image
+  skynet register update_image_status
+
+Kickstart machine ::
+
+  skynet enable build_ks
+  skynet register build_ks
+
+Each worker machine ::
+
+  skynet enable build_image
+  # Only really needs to be done once
+  skynet register build_image

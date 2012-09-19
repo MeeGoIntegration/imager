@@ -23,8 +23,6 @@ import django.dispatch
 from RuoteAMQP import Launcher
 from taggit.managers import TaggableManager
 
-GETLOG = django.dispatch.Signal(providing_args=["image_id"])
-
 def launch(process, fields):
     """ BOSS process launcher
 
@@ -38,17 +36,6 @@ def launch(process, fields):
                         amqp_vhost = settings.boss_vhost)
 
     launcher.launch(process, fields)
-
-def imagejob_getlog(sender, **kwargs):
-    """ utility function to launch the getlog process in response to the GETLOG
-    signal """
-
-    with open(settings.getlog_process, mode='r') as process_file:
-        process = process_file.read()
-
-    fields = {"image" : {"image_id" : kwargs['image_id']}}
-
-    launch(process, fields)
 
 def imagejob_delete_callback(sender, **kwargs):
     """ utility function to launch the delete process as a callback to the
@@ -107,32 +94,45 @@ def imagejob_save_callback(sender, **kwargs):
         #launch notify and test if configured and asked for
         job = kwargs['instance']
 
-        if job.status == "DONE":
-            if settings.testing_enabled and job.test_image:
-                with open(settings.test_process, mode='r') as process_file:
-                    process = process_file.read()
-
-                launch(process, fields)
-                
         if job.status == "DONE" or job.status == "ERROR":
+            fields['image']['result'] = job.status
+            fields['image']['files_url'] = job.files_url
+            fields['image']['image_url'] = job.image_url
+
+            notify = False
+            test = False
             if settings.notify_enabled and job.notify:
-                with open(settings.notify_process, mode='r') as process_file:
-                    process = process_file.read()
+                job.notify = False
+                notify = True
+            if job.status == "DONE":
+                if settings.testing_enabled and job.test_image:
+                    job.test_image = False
+                    job.status = "DONE, TESTING"
+                    test = True
 
-                fields['image']['result'] = job.status
-                fields['image']['files_url'] = job.files_url
-
-                launch(process, fields)
-                
-            job.notify = False
-            job.test_image = False
             post_save.disconnect(imagejob_save_callback, sender=ImageJob,
                                  weak=False,
                                  dispatch_uid="imagejob_save_callback")
             job.save()
+
+            if notify:
+                with open(settings.notify_process, mode='r') as process_file:
+                    process = process_file.read()
+
+                launch(process, fields)
+ 
+            if test:
+                with open(settings.test_process, mode='r') as process_file:
+                    process = process_file.read()
+
+                launch(process, fields)
+
             post_save.connect(imagejob_save_callback, sender=ImageJob,
                               weak=False,
                               dispatch_uid="imagejob_save_callback")
+
+
+
 
 
 class Queue(models.Model):    
@@ -206,6 +206,3 @@ post_save.connect(imagejob_save_callback, sender=ImageJob, weak=False,
 
 post_delete.connect(imagejob_delete_callback, sender=ImageJob, weak=False,
                     dispatch_uid="imagejob_delete_callback")
-
-GETLOG.connect(imagejob_getlog, weak=False,
-               dispatch_uid="imagejob_getlog")

@@ -2,6 +2,10 @@
 Common Imager functions
 """
 
+import subprocess as sub
+
+import random, socket, time
+
 from urlparse import urlparse
 
 try:
@@ -10,10 +14,7 @@ try:
     from pykickstart.handlers.control import commandMap
     from pykickstart.handlers.control import dataMap
 except:
-    import mic.3rdparty.pykickstart.parser as ksparser
-    import mic.3rdpary.pykickstart.version as ksversion
-    from mic.3rdparty.pykickstart.handlers.control import commandMap
-    from mic.3rdparty.pykickstart.handlers.control import dataMap
+    raise RuntimeError("Couldn't import pykickstart")
 
 try:
     from mic.imgcreate.kscommands import desktop
@@ -58,7 +59,7 @@ def build_kickstart(base_ks, packages=[], groups=[], projects=[]):
         name = urlparse(prj).path
         name = name.replace(":/","_")
         name = name.replace("/","_")
-        repo = moblinrepo.Moblin_RepoData(baseurl=prj, name=name)
+        repo = moblinrepo.Moblin_RepoData(baseurl=prj, name=name, save=True)
         ks.handler.repo.repoList.append(repo)
     ks_txt = str(ks.handler)
     return ks_txt
@@ -75,7 +76,7 @@ def worker_config(config=None, conffile="/etc/imager/img.conf"):
     """
     if not config:
         config = ConfigParser.ConfigParser()
-        config.read(conffile)
+    config.read(conffile)
 
     section = "worker"
     conf = {}
@@ -92,4 +93,56 @@ def worker_config(config=None, conffile="/etc/imager/img.conf"):
         conf["extra_opts"] = extra_opts
 
     return conf
+
+def tester_config(config=None, conffile="/etc/imager/img.conf"):
+    """Utility function which parses the either given or  imager configuration
+        file and passes a dictionary proxy containing the configuration keys
+        and values in return.
+
+    :param config: initialized ConfigParser object
+    :param conffile: Full path to ini style config file
+
+    :returns: configuration dict
+    """
+    if not config:
+        config = ConfigParser.ConfigParser()
+    config.read(conffile)
+
+    section = "tester"
+    conf = {}
+    for item in ["base_dir", "vm_base_img", "vm_kernel", "timeout", "vm_priv_ssh_key", "vm_pub_ssh_key", "vg_name", "vm_wait", "testtools_repourl", "test_script", "test_user"]:
+        conf[item] = config.get(section, item)
+
+    for item in ["use_base_img"]:
+        conf[item] = config.getboolean(section, item)
+
+    return conf
+
+def getport():
+    """Gets a random port for the KVM virtual machine communtication, target 
+    always being the SSH port.
+
+    :returns: random port number between 49152 and 65535
+    """
+    return random.randint(49152, 65535)
+
+def fork(logfile, command):
+    with open(logfile, 'a+b') as logf:
+        sub.check_call(command, shell=False, stdout=logf, 
+                       stderr=logf, stdin=sub.PIPE)
+
+def wait_for_vm(host, port, timeout):
+
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s.settimeout(float(timeout))
+    retries = 0
+    while retries < timeout:
+        try:
+            retries = retries + 1
+            s.connect((host, port))
+        except:
+            time.sleep(1)
+        else:
+            return True
+    return False
 

@@ -1,13 +1,13 @@
 %define svdir %{_sysconfdir}/supervisor/conf.d/
 
 Name: img
-Version: 0.63.4
+Version: 0.64.0
 Release: 1
 
 Group: Applications/Engineering
 License: GPLv2+
 URL: http://www.meego.com
-Source0: %{name}_%{version}.orig.tar.gz
+Source0: %{name}-%{version}.tar.gz
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-buildroot
 BuildRequires: python, python-distribute, python-sphinx, python-boss-skynet, python-ruote-amqp, python-django, python-mysql, mic >= 0.4
 BuildArch: noarch
@@ -27,6 +27,7 @@ Image creation service for MeeGo related products
 Group: Applications/Engineering
 Requires: python >= 2.5.0, mic2, sudo, pykickstart, lvm2
 Requires(pre): pwdutils
+Requires: eat-host
 Summary: Image creation service for MeeGo related products, core package
 %description -n img-core
 This package provides the core worker logic of imager.
@@ -68,6 +69,18 @@ Summary: Image creation service for MeeGo related products, BOSS participants
 This package provides imager participants that plugin into a BOSS system to
 handle kickstarts
 
+%package -n img-test-vm
+Group: Applications/Engineering
+Requires: img-core
+Requires: python-xml
+Requires: python-buildservice
+Requires: boss-standard-workflow-common
+Requires: python-boss-skynet
+Requires(post): python-boss-skynet
+Summary: Image creation service for MeeGo related products, BOSS participants
+%description -n img-test-vm
+This package provides imager participant that can test images using VMs
+
 %prep
 %setup -q %{name}-%{version}
 
@@ -85,8 +98,9 @@ rm -rf %{buildroot}
 %pre -n img-core
 getent group imgadm >/dev/null || groupadd -r imgadm
 getent passwd img >/dev/null || \
-    useradd -r -g imgadm -d /home/img -s /sbin/nologin \
+    useradd -m -r -g imgadm -d /home/img -s /sbin/nologin \
     -c "IMG user" img
+sudo -u img eat-install-host-key
 exit 0
 
 %post -n img-worker
@@ -100,6 +114,12 @@ fi
 if [ $1 -ge 1 ] ; then
     skynet apply || true
     skynet reload build_ks || true
+fi
+
+%post -n img-test-vm
+if [ $1 -ge 1 ] ; then
+    skynet apply || true
+    skynet reload test_vm_image || true
 fi
 
 %post -n img-web
@@ -143,6 +163,16 @@ fi
 %{_datadir}/boss-skynet/build_ks.py
 %config(noreplace) %{_sysconfdir}/skynet/build_ks.conf
 %config(noreplace) %{svdir}/build_ks.conf
+%dir /etc/supervisor
+%dir /etc/supervisor/conf.d
+%dir /usr/share/boss-skynet
+
+%files -n img-test-vm
+%defattr(-,root,root,-)
+%{_bindir}/img_test_vm.sh
+%{_datadir}/boss-skynet/test_vm_image.py
+%config(noreplace) %{_sysconfdir}/skynet/test_vm_image.conf
+%config(noreplace) %{svdir}/test_vm_image.conf
 %dir /etc/supervisor
 %dir /etc/supervisor/conf.d
 %dir /usr/share/boss-skynet

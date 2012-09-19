@@ -123,11 +123,14 @@ def search(request, tag=None):
     """
     
     if request.method == 'GET':
-        form = SearchForm()
+        form = SearchForm(initial={"searchterm":tag})
         alltags = [ x.name for x in ImageJob.tags.all() ]
+        results = []
+        if tag:
+            results = ImageJob.objects.filter(tags__name__icontains = tag)
         return render_to_response('app/search.html',
                                   {'searchform' : form,
-                                   'alltags' : alltags},
+                                   'alltags' : alltags, 'results' : results },
                                   context_instance=RequestContext(request)
                                   )
 
@@ -276,7 +279,7 @@ def job(request, msgid):
         # signal to launch getlog process
         GETLOG.send(sender=request, image_id = imgjob.image_id)
 
-    tagform = TagForm(initial = {'tags' : imgjob.tags.all()} )
+    tagform = TagForm(initial = {'tags' : ",".join([tag.name for tag in imgjob.tags.all()])} )
 
     return render_to_response('app/job_details.html',
                               {'errors': errors,

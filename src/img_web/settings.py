@@ -44,9 +44,9 @@ db_engine = config.get('db', 'db_engine')
 db_name = config.get('db', 'db_name')
 db_user = config.get('db', 'db_user')
 db_pass = config.get('db', 'db_pass')
+db_host = config.get('db', 'db_host')
 
 create_image_process = config.get('processes', 'create_image_process')
-getlog_process = config.get('processes', 'getlog_process')
 notify_process = config.get('processes', 'notify_process')
 test_process = config.get('processes', 'test_process')
 delete_process = config.get('processes', 'delete_process')
@@ -93,7 +93,7 @@ DATABASES = {
                 'NAME' : db_name,
                 'USER' : db_user,
                 'PASSWORD' : db_pass,
-                'HOST' : '',
+                'HOST' : db_host,
                 'PORT' : '',
                 }
             }

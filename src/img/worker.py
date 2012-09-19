@@ -19,16 +19,8 @@ import os
 import subprocess as sub
 from multiprocessing import Process, TimeoutError
 import time, datetime
-import random
 from copy import copy
-
-def getport():
-    """Gets a random port for the KVM virtual machine communtication, target 
-    always being the SSH port.
-
-    :returns: random port number between 49152 and 65535
-    """
-    return random.randint(49152, 65535)
+from img.common import getport, fork, wait_for_vm
 
 def find_largest_file(indir):
     """Find the largest file in a given directory string.
@@ -58,12 +50,6 @@ def find_largest_file(indir):
     largest_file = sizesortedlist[-1]
 
     return largest_file
-
-def fork(logfile, command):
-    with open(logfile, 'a+b') as logf:
-        sub.check_call(command, shell=False, stdout=logf, 
-                       stderr=logf, stdin=sub.PIPE)
-
 
 class Commands(object):
     """Commands object for running various image building commands"""
@@ -129,7 +115,8 @@ class Commands(object):
                   '-o', 'ConnectTimeout=60',
                   '-o', 'ConnectionAttempts=4',
                   '-o', 'UserKnownHostsFile=/dev/null',
-                  '-o', 'StrictHostKeyChecking=no'
+                  '-o', 'StrictHostKeyChecking=no',
+                  '-o', 'PasswordAuthentication=no'
                 ]
 
         self.sshbase = [ 
@@ -246,7 +233,7 @@ class Commands(object):
         scp_comm.append(dest)
         self.run(scp_comm)
 
-    def ssh(self, command=""):
+    def ssh(self, command):
         """Execute an arbitrary command in the KVM guest.
         
         :param command: Arbitary command to run over ssh inside kvm
@@ -282,6 +269,7 @@ class Commands(object):
 
         :returns: path to the new created overlay image
         """
+        overlay_img = None
         if self.is_lvm(baseimg):
             overlay_img = "%s-%s" % (os.path.basename(baseimg), overlay_suffix)
             overlay_comm = copy(self.sudobase)
@@ -354,11 +342,6 @@ class Commands(object):
 
         mic_comm.append('--arch=%s' % job_args.arch)
         mic_comm.append('--outdir=%s' % job_args.outdir)
-
-        if job_args.image_type == "fs":
-            mic_comm.append('--compress-disk-image=tar.bz2')
-        elif job_args.image_type == "raw":
-            mic_comm.append('--compress-disk-image=gz')
 
         if job_args.release:
             mic_comm.append('--release=%s' % job_args.release)
@@ -438,76 +421,91 @@ class ImageWorker(object):
 
         self.job_args.ksfile_name = ksfile_name
 
-        if self.config.use_kvm and os.path.exists('/dev/kvm'):
-            try:
+        if self.config.use_kvm:
 
-                overlay_suffix = 'overlay-%s-port-%s' % \
-                                 (self.job_args.image_id, commands.port)
-
-                overlayimg = commands.overlaycreate(self.config.img_tmp,
-                                                    self.config.vm_base_img,
-                                                    overlay_suffix)
-
-                commands.runkvm(overlayimg)
-
-                time.sleep(int(self.config.vm_wait))
-
-                if commands.ict == "mic2":
-                    commands.scpto(source='/etc/mic2/mic2.conf',
-                                   dest='/etc/mic2/')
-                elif commands.ict == "newmic":
-                    commands.scpto(source='/etc/mic/mic.conf',
-                                   dest='/etc/mic/')
-
-                if os.path.exists('/etc/sysconfig/proxy'):
-                    commands.scpto(source='/etc/sysconfig/proxy',
-                                   dest='/etc/sysconfig/')
-
-                if os.path.exists('/etc/resolv.conf'):
-                    commands.scpto(source='/etc/resolv.conf',
-                                   dest='/etc/')
-
-                commands.ssh(['mkdir', '-p', self._image_dir])
-
-                commands.scpto(source=ksfile_name,
-                               dest=self._image_dir)
-
-                if mic_cachedir:
-                    commands.mount_mic_cache(mic_cachedir)
-                    commands.mount_mic_output(self._image_dir)
-
-                commands.runmic(ssh=True, job_args=self.job_args)
-
-                if not mic_cachedir:
-                    commands.scpfrom(source="%s*" % self._image_dir,
-                                     dest=self._image_dir)
-
-                commands.run(['chmod', '-R', 'g+r,o+r', self._image_dir])
-
-                self.result = True
-
-            except (sub.CalledProcessError, TimeoutError), err:
-                print "error %s" % err
-                self.error = str(err)
+            if not os.path.exists('/dev/kvm'):
+                self.error = """/dev/kvm does not exist or I am not allowed to access it.
+                                Is the appropriate kvm module loaded? Is img user in kvm group?"""
                 self.result = False
-
-            finally:
+            elif not os.path.exists(self.config.vm_base_img):
+                self.error = """%s does not exist or I am not allowed to access it.
+                                Is img user in the disk group?""" % self.config.vm_base_img
+                self.result = False
+            else:
 
                 try:
-                    commands.ssh(['sync'])
-                    time.sleep(int(self.config.vm_wait))
-                    commands.ssh(['shutdown', 'now'])
+
+                    overlay_suffix = 'overlay-%s-port-%s' % \
+                                     (self.job_args.image_id, commands.port)
+
+                    overlayimg = commands.overlaycreate(self.config.img_tmp,
+                                                        self.config.vm_base_img,
+                                                        overlay_suffix)
+                    if not overlayimg:
+                        self.error = "Setting up the overlay image failed. Is img in the disk group? Is qemu-img working?"
+                        self.result = False
+                    else:
+
+                        commands.runkvm(overlayimg)
+
+                        wait_for_vm('127.0.0.1', commands.port, self.config.vm_wait)
+
+                        if commands.ict == "mic2":
+                            commands.scpto(source='/etc/mic2/mic2.conf',
+                                           dest='/etc/mic2/')
+                        elif commands.ict == "newmic":
+                            commands.scpto(source='/etc/mic/mic.conf',
+                                           dest='/etc/mic/')
+
+                        if os.path.exists('/etc/sysconfig/proxy'):
+                            commands.scpto(source='/etc/sysconfig/proxy',
+                                           dest='/etc/sysconfig/')
+
+                        if os.path.exists('/etc/resolv.conf'):
+                            commands.scpto(source='/etc/resolv.conf',
+                                           dest='/etc/')
+
+                        commands.ssh(['mkdir', '-p', self._image_dir])
+
+                        commands.scpto(source=ksfile_name,
+                                       dest=self._image_dir)
+
+                        if mic_cachedir:
+                            commands.mount_mic_cache(mic_cachedir)
+                            commands.mount_mic_output(self._image_dir)
+
+                        commands.runmic(ssh=True, job_args=self.job_args)
+
+                        if not mic_cachedir:
+                            commands.scpfrom(source="%s*" % self._image_dir,
+                                             dest=self._image_dir)
+
+                        commands.run(['chmod', '-R', 'g+r,o+r', self._image_dir])
+
+                        self.result = True
+
                 except (sub.CalledProcessError, TimeoutError), err:
-                    try:
-                        print "error %s trying to kill kvm" % err
-                        commands.killkvm()
-                    except (sub.CalledProcessError, TimeoutError), err:
-                        print "error %s" % err
+                    print "error %s" % err
+                    self.error = str(err)
+                    self.result = False
+
                 finally:
+
                     try:
-                        commands.removeoverlay(overlayimg)
+                        commands.ssh(['sync'])
+                        time.sleep(int(self.config.vm_wait))
+                        commands.ssh(['shutdown', 'now'])
                     except (sub.CalledProcessError, TimeoutError), err:
-                        print "error %s" % err
+                        try:
+                            print "error %s trying to kill kvm" % err
+                            commands.killkvm()
+                        except (sub.CalledProcessError, TimeoutError), err:
+                            print "error %s" % err
+                    finally:
+                        try:
+                            commands.removeoverlay(overlayimg)
+                        except (sub.CalledProcessError, TimeoutError), err:
+                            print "error %s" % err
 
         elif not self.config.use_kvm:
             try:
@@ -519,8 +517,6 @@ class ImageWorker(object):
                 print "error %s" % err
                 self.error = str(err)
                 self.result = False
-        else:
-            self.result = False
 
         self.image_file = find_largest_file(self._image_dir)
     

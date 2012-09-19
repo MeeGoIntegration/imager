@@ -269,6 +269,7 @@ class Commands(object):
 
         :returns: path to the new created overlay image
         """
+        overlay_img = None
         if self.is_lvm(baseimg):
             overlay_img = "%s-%s" % (os.path.basename(baseimg), overlay_suffix)
             overlay_comm = copy(self.sudobase)
@@ -431,6 +432,10 @@ class ImageWorker(object):
                 self.error = """/dev/kvm does not exist or I am not allowed to access it.
                                 Is the appropriate kvm module loaded? Is img user in kvm group?"""
                 self.result = False
+            elif not os.path.exists(self.config.vm_base_img):
+                self.error = """%s does not exist or I am not allowed to access it.
+                                Is img user in the disk group?""" % self.config.vm_base_img
+                self.result = False
             else:
 
                 try:
@@ -441,44 +446,48 @@ class ImageWorker(object):
                     overlayimg = commands.overlaycreate(self.config.img_tmp,
                                                         self.config.vm_base_img,
                                                         overlay_suffix)
+                    if not overlayimg:
+                        self.error = "Setting up the overlay image failed. Is img in the disk group? Is qemu-img working?"
+                        self.result = False
+                    else:
 
-                    commands.runkvm(overlayimg)
+                        commands.runkvm(overlayimg)
 
-                    wait_for_vm('127.0.0.1', commands.port, self.config.vm_wait)
+                        wait_for_vm('127.0.0.1', commands.port, self.config.vm_wait)
 
-                    if commands.ict == "mic2":
-                        commands.scpto(source='/etc/mic2/mic2.conf',
-                                       dest='/etc/mic2/')
-                    elif commands.ict == "newmic":
-                        commands.scpto(source='/etc/mic/mic.conf',
-                                       dest='/etc/mic/')
+                        if commands.ict == "mic2":
+                            commands.scpto(source='/etc/mic2/mic2.conf',
+                                           dest='/etc/mic2/')
+                        elif commands.ict == "newmic":
+                            commands.scpto(source='/etc/mic/mic.conf',
+                                           dest='/etc/mic/')
 
-                    if os.path.exists('/etc/sysconfig/proxy'):
-                        commands.scpto(source='/etc/sysconfig/proxy',
-                                       dest='/etc/sysconfig/')
+                        if os.path.exists('/etc/sysconfig/proxy'):
+                            commands.scpto(source='/etc/sysconfig/proxy',
+                                           dest='/etc/sysconfig/')
 
-                    if os.path.exists('/etc/resolv.conf'):
-                        commands.scpto(source='/etc/resolv.conf',
-                                       dest='/etc/')
+                        if os.path.exists('/etc/resolv.conf'):
+                            commands.scpto(source='/etc/resolv.conf',
+                                           dest='/etc/')
 
-                    commands.ssh(['mkdir', '-p', self._image_dir])
+                        commands.ssh(['mkdir', '-p', self._image_dir])
 
-                    commands.scpto(source=ksfile_name,
-                                   dest=self._image_dir)
+                        commands.scpto(source=ksfile_name,
+                                       dest=self._image_dir)
 
-                    if mic_cachedir:
-                        commands.mount_mic_cache(mic_cachedir)
-                        commands.mount_mic_output(self._image_dir)
+                        if mic_cachedir:
+                            commands.mount_mic_cache(mic_cachedir)
+                            commands.mount_mic_output(self._image_dir)
 
-                    commands.runmic(ssh=True, job_args=self.job_args)
+                        commands.runmic(ssh=True, job_args=self.job_args)
 
-                    if not mic_cachedir:
-                        commands.scpfrom(source="%s*" % self._image_dir,
-                                         dest=self._image_dir)
+                        if not mic_cachedir:
+                            commands.scpfrom(source="%s*" % self._image_dir,
+                                             dest=self._image_dir)
 
-                    commands.run(['chmod', '-R', 'g+r,o+r', self._image_dir])
+                        commands.run(['chmod', '-R', 'g+r,o+r', self._image_dir])
 
-                    self.result = True
+                        self.result = True
 
                 except (sub.CalledProcessError, TimeoutError), err:
                     print "error %s" % err

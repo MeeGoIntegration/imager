@@ -14,10 +14,8 @@ try:
     from pykickstart.handlers.control import commandMap
     from pykickstart.handlers.control import dataMap
 except:
-    import mic.3rdparty.pykickstart.parser as ksparser
-    import mic.3rdpary.pykickstart.version as ksversion
-    from mic.3rdparty.pykickstart.handlers.control import commandMap
-    from mic.3rdparty.pykickstart.handlers.control import dataMap
+    raise RuntimeError("Couldn't import pykickstart")
+
 try:
     from mic.imgcreate.kscommands import desktop
     from mic.imgcreate.kscommands import moblinrepo

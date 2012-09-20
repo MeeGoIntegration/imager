@@ -25,7 +25,7 @@ Image creation service for MeeGo related products
 
 %package -n img-core
 Group: Applications/Engineering
-Requires: python >= 2.5.0, mic2, sudo, pykickstart, lvm2, eat-host
+Requires: python >= 2.5.0, mic2, sudo, pykickstart, lvm2, eat-host, testrunner-lite-hwinfo-meego
 Requires(pre): pwdutils
 Requires(post): sudo
 Requires(post): eat-host

@@ -9,7 +9,7 @@ License: GPLv2+
 URL: http://www.meego.com
 Source0: %{name}-%{version}.tar.gz
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-buildroot
-BuildRequires: python, python-distribute, python-sphinx, python-boss-skynet, python-ruote-amqp, python-django, python-mysql, mic >= 0.4, pykickstart, python-django-taggit
+BuildRequires: python, python-distribute, python-sphinx, python-boss-skynet, python-ruote-amqp, python-django, python-mysql, mic >= 0.4, pykickstart, python-django-taggit, python-buildservice
 BuildArch: noarch
 Summary: Image creation service for MeeGo related products
 
@@ -25,10 +25,10 @@ Image creation service for MeeGo related products
 
 %package -n img-core
 Group: Applications/Engineering
-Requires: python >= 2.5.0, mic2, sudo, pykickstart, lvm2
+Requires: python >= 2.5.0, mic2, sudo, pykickstart, lvm2, eat-host
 Requires(pre): pwdutils
 Requires(post): sudo
-Requires: eat-host
+Requires(post): eat-host
 Summary: Image creation service for MeeGo related products, core package
 %description -n img-core
 This package provides the core worker logic of imager.

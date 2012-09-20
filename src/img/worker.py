@@ -1,4 +1,4 @@
-#!/usr/bin/python2.6
+#!/usr/bin/python
 #~ Copyright (C) 2010 Nokia Corporation and/or its subsidiary(-ies).
 #~ Contact: Ramez Hanna <ramez.hanna@nokia.com>
 #~ This program is free software: you can redistribute it and/or modify

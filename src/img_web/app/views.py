@@ -27,7 +27,7 @@ from django.contrib import messages
 
 import img_web.settings as settings
 from img_web.app.forms import UploadFileForm, extraReposFormset, TagForm, SearchForm
-from img_web.app.models import ImageJob, Queue, GETLOG
+from img_web.app.models import ImageJob, Queue
 from django.db import transaction
 
 @login_required

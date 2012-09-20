@@ -84,7 +84,7 @@ class ParticipantHandler(object):
         job = get_or_none(ImageJob, image_id__exact=wid.fields.image.image_id)
         if job:
             self.log.info("Matched %s job with %s" % (job.image_id,
-                                              wid.fields.image.image_id)
+                                              wid.fields.image.image_id))
             if wid.params.status:
                 job.status = wid.params.status
                 if wid.params.status == "ERROR" and wid.fields.__error__:

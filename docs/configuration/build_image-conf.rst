@@ -135,18 +135,19 @@ If you run 4 workers the calculation becomes : 4 processors, 1Gb RAM, 100Gb disk
    yet. The guest VM kernel needs to be at least 2.6.37 and include support for 9p virtio. More reading at :
    http://wiki.qemu.org/Documentation/9psetup
 
-.. info ::
 
-   It might be useful to use "nested kvm". This is not really supported, you're on your own.
-   nested kvm needs (on physical host and vmhost) ::
+It might be useful to use "nested kvm" to run kvm worker inside a virtual machine.
+This is not really supported, you're on your own.
 
-    zypper ar -f http://download.opensuse.org/repositories/Kernel:/stable/standard/ kernel
-    zypper ref
-    zypper dup -r kernel
+Nested kvm needs (on physical host and vmhost) ::
 
-   And on physical host /etc/modprobe.d/99-local.conf ::
+ zypper ar -f http://download.opensuse.org/repositories/Kernel:/stable/standard/ kernel
+ zypper ref
+ zypper dup -r kernel
 
-    options kvm_intel nested=1
+And on physical host /etc/modprobe.d/99-local.conf ::
+
+ options kvm_intel nested=1
 
 Generating the KVM image
 ------------------------

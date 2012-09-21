@@ -25,12 +25,10 @@
 <table id="queue">
     <thead>
         <tr>
-            <th>ID {%if not queue_name %}/ queue{% endif %}</th>
-            <th>Submitted</th>
-            <th>Length</th>
-            <th>User</th>
-            <th>Arch</th>
-            <th>Type</th>
+            <th>ID {%if not queue_name %}/ queue{% endif %} / User</th>
+            <th>Name</th>
+            <th>Arch / Type</th>
+            <th>Submitted / Length</th>
             <th>Status</th>
             <th>Results / Operations</th>
         </tr>
@@ -38,12 +36,15 @@
     <tbody>
         {% for obj in queue.object_list %}
         <tr>
-            <td>{{ obj.image_id }} {%if not queue_name %}/ {{ obj.queue.name }}{% endif %}</td>
-            <td>{{ obj.created|date:"SHORT_DATETIME_FORMAT" }}</td>
-            <td>{{obj.created|timesince:obj.done}}</td>
-            <td>{{obj.user.username}}</td> 
-            <td>{{obj.arch}} </td>
-            <td>{{obj.image_type}} </td>
+            <td>{{ obj.image_id }}<br/>{%if not queue_name %}/ {{ obj.queue.name }}{% endif %} / {{obj.user.username}}</td>
+            <td>{{ obj.name }}</td>
+
+            <td>{{obj.arch}}
+                <br/>
+            {{obj.image_type}} </td>
+            <td>{{ obj.created|date:"m/d/Y G:i" }}
+             <br/>
+            {{obj.created|timesince:obj.done}}</td>
             <td>
                 {{obj.status}}
                 <br/>
@@ -68,7 +69,7 @@
                 <a href="?page={{ queue.previous_page_number }}">previous</a>
             {% endif %}
             </td>
-            <td colspan="6">
+            <td colspan="4">
                 Page {{ queue.number }} of {{ queue.paginator.num_pages }}.
             </td>
             <td>

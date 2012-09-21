@@ -37,7 +37,7 @@ class Commands(object):
 
     def __init__(self, logfn=None,
                  vgname=None, ssh_key=None,
-                 timeout=3600, vm_kernel=None):
+                 timeout=3600, vm_kernel=None, device_ip="127.0.0.1"):
         """Constructor, creates the object with necessary parameters to run 
         commands
         
@@ -53,6 +53,8 @@ class Commands(object):
         self.timeout = timeout
 
         self.vgname = vgname
+
+        self.device_ip = device_ip
 
         self.sudobase = [
                      'sudo', '-n'
@@ -96,7 +98,7 @@ class Commands(object):
         self.sshbase = [ 
                     '/usr/bin/ssh', 
                     '-p%s' % self.port,
-                    '127.0.0.1'
+                    self.device_ip
                   ]
 
         self.scpbase = [ 
@@ -113,7 +115,7 @@ class Commands(object):
                     '-append',
                     'root=/dev/vda panic=1 quiet rw elevator=noop ip=dhcp',
                     '-net', 'nic,model=virtio',
-                    '-net', 'user,hostfwd=tcp:127.0.0.1:%s-:22' % self.port
+                    '-net', 'user,hostfwd=tcp:%s:%s-:22' % (self.device_ip, self.port)
                 ]
 
         self.kvmbase.extend([
@@ -158,7 +160,7 @@ class Commands(object):
         scp_comm = copy(self.scpbase)
         scp_comm.extend(self.sopts)
         scp_comm.append(source)
-        scp_comm.append("root@127.0.0.1:%s" % dest)
+        scp_comm.append("root@%s:%s" % (self.device_ip, dest))
         self.run(scp_comm)
 
     def scpfrom(self, source="", dest=""):
@@ -169,7 +171,7 @@ class Commands(object):
         """
         scp_comm = copy(self.scpbase)
         scp_comm.extend(self.sopts)
-        scp_comm.append("root@127.0.0.1:%s" % source)
+        scp_comm.append("root@%s:%s" % (self.device_ip, source))
         scp_comm.append(dest)
         self.run(scp_comm)
 
@@ -394,7 +396,8 @@ class ImageTester(object):
                                  vgname=config["vg_name"],
                                  timeout=int(config["timeout"]),
                                  ssh_key=config["vm_priv_ssh_key"],
-                                 vm_kernel=config["vm_kernel"]
+                                 vm_kernel=config["vm_kernel"],
+                                 device_ip=config["device_ip"]
                                  )
     def create_vm(self):
         #snapshot base_img if any

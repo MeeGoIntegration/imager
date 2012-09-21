@@ -25,14 +25,14 @@ Image creation service for MeeGo related products
 
 %package -n img-core
 Group: Applications/Engineering
-Requires: python >= 2.5.0, mic2, sudo, pykickstart, lvm2, eat-host, testrunner-lite-hwinfo-meego
+Requires: python >= 2.5.0, mic, sudo, pykickstart, lvm2, eat-host, testrunner-lite-hwinfo-meego
 Requires(pre): pwdutils
 Requires(post): sudo
 Requires(post): eat-host
 Summary: Image creation service for MeeGo related products, core package
 %description -n img-core
 This package provides the core worker logic of imager.
-It builds images using mic2 optionally in a virtual machine.
+It builds images using mic optionally in a virtual machine.
 
 %package -n img-web
 Group: Applications/Engineering

@@ -43,9 +43,8 @@
 </table>
 </div>
 <div id="logtext" class="logtext"> 
-{% autoescape off %}
-{{obj.log}}
-{% endautoescape %}
+<iframe src="{{ obj.log_url }}">
+</iframe>
 </div>
 <div>
 </div>

@@ -197,8 +197,8 @@ def toggle_pin_job(request, msgid):
     return HttpResponseRedirect(request.META.get('HTTP_REFERER',
                                 reverse('img-app-queue')))
 @login_required
-def retry_job(request, msgid):
-    """ Request retry of an ImageJob
+def retest_job(request, msgid):
+    """ Request retest of an ImageJob
 
     :param msgid: ImageJob ID
     """
@@ -288,9 +288,6 @@ def job(request, msgid):
         errors = { 'Error' : ["Job still in queue"] }
     elif imgjob.error and imgjob.error != "":
         errors = { 'Error' : [imgjob.error] }
-    else:
-        # signal to launch getlog process
-        GETLOG.send(sender=request, image_id = imgjob.image_id)
 
     tagform = TagForm(initial = {'tags' : ",".join([tag.name for tag in imgjob.tags.all()])} )
 

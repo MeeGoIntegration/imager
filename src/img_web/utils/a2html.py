@@ -80,7 +80,11 @@ def plaintext2html(text, tabstop=4):
 
 if __name__ == '__main__':
     import sys
-    with open(sys.argv[-1]) as f:
-        text = f.read()
+    if len(sys.argv) > 1:
+        f=open(sys.argv[1])
+    else:
+        f=sys.stdin
+    text=f.read()
+    f.close()
     print plaintext2html(text)
 

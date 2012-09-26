@@ -203,8 +203,11 @@ def retest_job(request, msgid):
     :param msgid: ImageJob ID
     """
     job = ImageJob.objects.get(image_id__exact=msgid)
+    job.status = "DONE"
+    job.test_image = True
+    job.test_result = None
     job.save()
-    messages.add_message(request, messages.INFO, "Image %s was set for testing." % imgjob.image_id)
+    messages.add_message(request, messages.INFO, "Image %s was set for testing." % job.image_id)
         
     return HttpResponseRedirect(reverse('img-app-queue'))
 
@@ -215,7 +218,6 @@ def retry_job(request, msgid):
     :param msgid: ImageJob ID
     """
     oldjob = ImageJob.objects.get(image_id__exact=msgid)
-    imgjob.test_image = True
 
     imgjob = ImageJob()
     imgjob.image_id = "%s-%s" % ( request.user.id, 

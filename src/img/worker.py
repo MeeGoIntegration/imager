@@ -343,8 +343,8 @@ class Commands(object):
         mic_comm.append('--arch=%s' % job_args.arch)
         mic_comm.append('--outdir=%s' % job_args.outdir)
 
-        if job_args.release:
-            mic_comm.append('--release=%s' % job_args.release)
+        if job_args.tokenmap:
+            mic_comm.append('--tokenmap=%s' % job_args.tokenmap)
         if job_args.extra_opts:
             for opt in job_args.extra_opts:
                 if opt:

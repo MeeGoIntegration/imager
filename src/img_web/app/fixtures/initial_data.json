@@ -22,5 +22,107 @@
       "name": "requests",
       "handle_launch": false
     }
+  },
+  {
+    "model": "app.Arch",
+    "pk": 1,
+    "fields": {
+      "name": "armv7hl"
+    }
+  },
+  {
+    "model": "app.Arch",
+    "pk": 2,
+    "fields": {
+      "name": "armv7tnhl"
+    }
+  },
+  {
+    "model": "app.Arch",
+    "pk": 3,
+    "fields": {
+      "name": "armv7l"
+    }
+  },
+  {
+    "model": "app.Arch",
+    "pk": 4,
+    "fields": {
+      "name": "i486"
+    }
+  },
+  {
+    "model": "app.Arch",
+    "pk": 5,
+    "fields": {
+      "name": "i686"
+    }
+  },
+  {
+    "model": "app.ImageType",
+    "pk": 1,
+    "fields": {
+      "name": "fs"
+    }
+  },
+  {
+    "model": "app.ImageType",
+    "pk": 2,
+    "fields": {
+      "name": "raw"
+    }
+  },
+  {
+    "model": "app.ImageType",
+    "pk": 3,
+    "fields": {
+      "name": "loop"
+    }
+  },
+  {
+    "model": "app.ImageType",
+    "pk": 4,
+    "fields": {
+      "name": "livecd"
+    }
+  },
+  {
+    "model": "app.ImageType",
+    "pk": 5,
+    "fields": {
+      "name": "liveusb"
+    }
+  },
+  {
+    "model": "app.BuildService",
+    "pk": 1,
+    "fields": {
+      "name": "Community MeeGo",
+      "apiurl" : "http://repo.pub.meego.com/"
+    }
+  },
+  {
+    "model": "app.BuildService",
+    "pk": 2,
+    "fields": {
+      "name": "MeeGo",
+      "apiurl" : "http://download.meego.com/live/"
+    }
+  },
+  {
+    "model": "app.BuildService",
+    "pk": 3,
+    "fields": {
+      "name": "openSUSE",
+      "apiurl" : "http://download.opensuse.org/repositories/"
+    }
+  },
+  {
+    "model": "app.Token",
+    "pk": 1,
+    "fields": {
+      "name": "RELEASE",
+      "default": ""
+    }
   }
 ]

@@ -67,8 +67,8 @@ def imagejob_save_callback(sender, **kwargs):
                                                 job.user.username)
                           }
                 }
-    if job.release:
-        fields['image']['release'] = job.release
+    if job.tokenmap:
+        fields['image']['tokenmap'] = job.tokenmap
     if job.overlay:
         fields['image']['packages'] = job.overlay.split(",")
     if job.extra_repos:
@@ -132,9 +132,6 @@ def imagejob_save_callback(sender, **kwargs):
                               dispatch_uid="imagejob_save_callback")
 
 
-
-
-
 class Queue(models.Model):    
     name = models.CharField(max_length=30)
     handle_launch = models.BooleanField(default=True)
@@ -160,7 +157,7 @@ class ImageJob(models.Model):
     def pinned(self):
         return self.has_tag("pinned")
 
-    image_id = models.CharField(max_length=30)
+    image_id = models.CharField(max_length=60)
     created = models.DateTimeField(auto_now_add=True)
     done = models.DateTimeField(blank=True, null=True)
     queue = models.ForeignKey(Queue)
@@ -173,9 +170,10 @@ class ImageJob(models.Model):
     devicegroup = models.CharField(blank=True, max_length=100)
     test_options = models.TextField(blank=True)
     test_result = models.BooleanField(blank=True, default=False)
+    test_results_url = models.TextField(blank=True)
 
     image_type = models.CharField(max_length=10)
-    release = models.CharField(max_length=50, blank=True)
+    tokenmap = models.CharField(max_length=1000, blank=True)
     arch = models.CharField(max_length=10)
 
     overlay = models.CharField(max_length=500, blank=True)
@@ -191,6 +189,36 @@ class ImageJob(models.Model):
     log = models.TextField(blank=True)
     error = models.CharField(max_length=1000, blank=True)
 
+class BuildService(models.Model):
+
+    name = models.CharField(max_length=50, unique=True)
+    apiurl = models.CharField(max_length=250, unique=True)
+
+    def __unicode__(self):
+        return self.name
+
+class Arch(models.Model):
+
+    def __unicode__(self):
+        return self.name
+
+    name = models.CharField(max_length=50, unique=True)
+
+class ImageType(models.Model):
+
+    def __unicode__(self):
+        return self.name
+
+    name = models.CharField(max_length=20, unique=True)
+
+class Token(models.Model):
+
+    def __unicode__(self):
+        return self.name
+
+    name = models.CharField(max_length=40, unique=True)
+    default = models.CharField(max_length=500)
+
 class ImageJobAdmin(admin.ModelAdmin):
     list_display = ('image_id', 'user', 'arch', 'image_type', 'status', 'queue')
     list_filter = ('user', 'arch', 'image_type', 'status', 'queue')
@@ -198,8 +226,24 @@ class ImageJobAdmin(admin.ModelAdmin):
 class QueueAdmin(admin.ModelAdmin):
     list_display = ('id', 'name')
 
+class BuildServiceAdmin(admin.ModelAdmin):
+    list_display = ('name', 'apiurl')
+
+class ArchAdmin(admin.ModelAdmin):
+    list_display = ('name',)
+
+class ImageTypeAdmin(admin.ModelAdmin):
+    list_display = ('name',)
+
+class TokenAdmin(admin.ModelAdmin):
+    list_display = ('name',)
+
 admin.site.register(ImageJob, ImageJobAdmin)
 admin.site.register(Queue, QueueAdmin)
+admin.site.register(BuildService, BuildServiceAdmin)
+admin.site.register(Arch, ArchAdmin)
+admin.site.register(ImageType, ImageTypeAdmin)
+admin.site.register(Token, TokenAdmin)
 
 post_save.connect(imagejob_save_callback, sender=ImageJob, weak=False,
                   dispatch_uid="imagejob_save_callback")

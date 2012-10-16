@@ -42,10 +42,9 @@ flexibility and cleaner building.
       Check the available formats in mic2 --help
    :image.name (string):
       Name of the image, usually the name of the kickstart in the format
-      `$VERTICAL-$ARCH-$VARIANT` , required by mic2 when using the --release
-      option ex: meego-core-ia32-minimal
-   :image.release (string):
-      Turns on release creation in mic2
+      `$VERTICAL-$ARCH-$VARIANT` ex: meego-core-ia32-minimal
+   :image.tokenmap (string):
+      tokenmap for replacing tokens in kickstart
    :image.arch (string):
       Architecture of image. ex: i586, armv7l, etc ..,
    :image.extra_opts (list):
@@ -132,7 +131,6 @@ class ParticipantHandler(object):
                           "image_id" : f.image_id,
                           "image_type" : f.image_type,
                           "name" : f.name,
-                          "release" : f.release,
                           "arch" : f.arch,
                           "prefix" : f.prefix,
                           "extra_opts" : f.extra_opts

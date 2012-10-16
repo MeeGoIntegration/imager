@@ -26,7 +26,7 @@ from django.core.paginator import Paginator, InvalidPage, EmptyPage
 from django.contrib import messages
 
 import img_web.settings as settings
-from img_web.app.forms import UploadFileForm, extraReposFormset, TagForm, SearchForm
+from img_web.app.forms import UploadFileForm, extraReposFormset, extraTokensFormset, TagForm, SearchForm
 from img_web.app.models import ImageJob, Queue
 from django.db import transaction
 
@@ -44,21 +44,25 @@ def submit(request):
                                'email':request.user.email}
                                )
         formset = extraReposFormset()
+        formset2 = extraTokensFormset()
         return render_to_response('app/upload.html',
-                                  {'form' : form, 'formset' : formset},
+                                  {'form' : form, 'formset' : formset, 'formset2' : formset2},
                                   context_instance=RequestContext(request)
                                   )
 
     if request.method == 'POST':
         form = UploadFileForm(request.POST, request.FILES)
         formset = extraReposFormset(request.POST)
+        formset2 = extraTokensFormset(request.POST)
+
         if not form.is_valid() or not formset.is_valid():
             return render_to_response('app/upload.html',
-                                      {'form': form, 'formset' : formset},
+                                      {'form': form, 'formset' : formset, 'formset2' : formset2},
                                        context_instance=RequestContext(request)
                                        )
         data = form.cleaned_data 
         data2 = formset.cleaned_data
+        tokenmap = formset2.cleaned_data
         imgjob = ImageJob()
 
         imgjob.image_id = "%s-%s" % ( request.user.id, 
@@ -70,6 +74,7 @@ def submit(request):
         imgjob.overlay = data['overlay']
         imgjob.release = data['release']
         imgjob.arch = data['architecture']
+        imgjob.tokenmap = tokenmap
 
         if "test_image" in data.keys():
             imgjob.devicegroup = data['devicegroup']  

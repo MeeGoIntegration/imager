@@ -84,17 +84,29 @@
             {{ form.template }}
             </td>
         </tr>
-        <tr>
-            <td>
-            {{ form.release.label_tag }} 
-            </td>
-            <td>
-            {{ form.release }}
-            </td>
-        </tr>
         </table>
     </fieldset>
 </table>
+<fieldset> 
+    <legend>Kickstart token mappings</legend>
+    <table id="id_kickstart_token_mappings_table" border="0" cellpadding="0" cellspacing="5">
+         <thead>
+             <tr>
+                 <th scope="col">Token</th>
+                 <th scope="col">Value</th>
+             </tr>
+         </thead>
+         <tbody>
+             {% for f in formset2.forms %}
+             <tr id="{{ f.label_tag }}-row">
+                 <td>{{ f.label_tag }}</td>
+                 <td>{{ f }}</td>
+             </tr>
+             {% endfor %}
+         </tbody>
+     </table>
+    {{ formset2.management_form }}
+</fieldset>
 <fieldset>
     <legend>Notification options</legend>
     <table width="100%">

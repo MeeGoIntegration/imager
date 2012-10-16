@@ -15,30 +15,26 @@
 
 """ Image job creation forms """
 
-import os
+import os,re
 from django import forms
 from django.forms.formsets import formset_factory
 from django.core.validators import validate_email
 from taggit.forms import TagField
 from img_web import settings
+from img_web.app.models import ImageType, Arch, BuildService, Token
 
 class extraReposForm(forms.Form):
     """ Django form that can be used multiple times in the UploadFileForm """
-
-    #FIXME: extend from config file in settings.py
-    extra_obses = (
-        ('None', "None"),
-        ('http://download.meego.com/live/', 'Meego'),
-        ('http://repo.pub.meego.com/', 'Community Meego'),
-        ('http://download.opensuse.org/repositories/', 'Suse'),
-    )
-
-    obs = forms.ChoiceField(label="OBS", choices=extra_obses,
+    obs = forms.ChoiceField(label="OBS", choices=[("None", "None")],
                             help_text="Extra OBS instances from which packages"\
                                       " may be downloaded from.")
     repo = forms.CharField(label = "Repository", required=False, max_length=500,
                            help_text = "Repositories in which the packages "\
                            "live. For example: Core:Devel:Kernel/standard")
+
+    def __init__(self, *args, **kwargs):
+        super(extraReposForm, self).__init__(*args, **kwargs)
+        self.fields['obs'].choices = [(obs.apiurl , obs.name) for obs in BuildService.objects.all()]
 
     def clean(self):
         cleaned_data = self.cleaned_data
@@ -55,31 +51,33 @@ class extraReposForm(forms.Form):
 
 extraReposFormset = formset_factory(extraReposForm)
 
+class extraTokensForm(forms.Form):
+    """ Django form that can be used multiple times in the UploadFileForm """
+
+    def __init__(self, *args, **kwargs):
+        super(extraTokensForm, self).__init__(*args, **kwargs)
+        for token in Token.objects.all():
+            self.fields[token.name] = forms.CharField(label=token.name, initial=token.default)
+
+    def clean(self):
+        data = []
+        for token in Token.objects.all():
+            if token.name in self.cleaned_data:
+                data.append("%s:%s" % ( token.name, cleaned_data[token.name] ))
+
+        return ",".join(data)
+
+extraTokensFormset = formset_factory(extraTokensForm)
+
 class UploadFileForm(forms.Form):
     """ Django form that allows users to create image jobs """
     imagetype = forms.ChoiceField(label='Image type',
-                                  choices=[
-                                              ('fs', 'RootFS'),
-                                              ('livecd',"Live CD"),
-                                              ('liveusb', "Live USB"),
-                                              ('loop', "Loop file"),
-                                              ('raw',"Raw disk image"),
-                                              ('nand',"NAND"),
-                                              ('mrstnand',"MRST NAND"),
-                                              ('vdi',"VDI file"),
-                                              ('vmdk',"VMDK file"),
-                                          ],
+                                  choices=[],
                                   help_text="Type: format of image you want to"\
                                             " produce.")
 
     architecture = forms.ChoiceField(label='Architecture',
-                                     choices=[
-                                                ('i686', "i686"),
-                                                ('i486', "i486"),
-                                                ('armv7l',"armv7l"),
-                                                ('armv7hl','armv7hl'),
-                                                ('armv7nhl','armv7nhl'),
-                                             ],
+                                     choices=[],
                                      help_text="Target architecture of the "\
                                                "image you want to build from "\
                                                "your customized kickstart.")
@@ -88,9 +86,7 @@ class UploadFileForm(forms.Form):
                                        "if the templates don't fit your needs.")
 
     template = forms.ChoiceField(label='Template',
-                                 choices=[
-                                            ("None", "None")
-                                         ],
+                                 choices=[("None", "None")],
                                 help_text="Template: Choose a base template "\
                                           "ontop of which your packages will "\
                                           "be added. Each template is targeted"\
@@ -98,12 +94,6 @@ class UploadFileForm(forms.Form):
                                           "architecture so the architecture "\
                                           "and kickstart fields will be "\
                                           "ignored.")
-
-    release = forms.CharField(label="Release", required=False,
-                              help_text="Release: Optional, if used your "\
-                              "kickstart file has to follow the naming "\
-                              "convention $VERTICAL-$ARCH-$VARIANT, "\
-                              "otherwise mic2 will reject it.")
 
     if settings.notify_enabled:
         notify_image = forms.BooleanField(label="Notify", required=False,
@@ -121,9 +111,9 @@ class UploadFileForm(forms.Form):
                                         initial=False,
                             help_text="Test image: Send image for testing. ")
         devicegroup = forms.CharField(label="Device group", required=False,
-                                help_text="Device group: OTS device group to "\
+                                help_text="Device group: device group to "\
                                 "use for test run.",
-                                initial='devicegroup:mygroup')
+                                initial='')
 
         test_options = forms.CharField(label="Test options", required=False,
                               widget=forms.Textarea(attrs={'rows':'2'}),
@@ -147,16 +137,22 @@ class UploadFileForm(forms.Form):
                            widget=forms.Textarea(attrs={'rows':'2'}),
                                                  help_text=\
                               "Packages: comma separated list of tags "\
-                              "to  describe the image built.")
+                              "to describe the image built.")
 
 
     def __init__(self, *args, **kwargs):
         super(UploadFileForm, self).__init__(*args, **kwargs)
-        self.fields['template'].choices = [('None', None)]
-        templates_dir = settings.TEMPLATESDIR
-        templates = os.listdir(templates_dir)
-        for template in templates:
-            self.fields['template'].choices.append((template , template))
+        self.fields['template'].choices=[("None", "None")]
+        for template in os.listdir(settings.TEMPLATESDIR):
+            name = template
+            with open("%s/%s" % (settings.TEMPLATESDIR, template)) as tf:
+                for line in tf:
+                    if re.match(r'^#DisplayName:.+$', line):
+                        name = line.split(":")[1].strip()
+                        break
+            self.fields['template'].choices.append((template , name))
+        self.fields['architecture'].choices = [(arch.name, arch.name) for arch in Arch.objects.all()]
+        self.fields['imagetype'].choices = [(itype.name, itype.name) for itype in ImageType.objects.all()]
 
     def clean(self):
         cleaned_data = self.cleaned_data

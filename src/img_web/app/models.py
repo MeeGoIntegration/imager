@@ -170,7 +170,7 @@ class ImageJob(models.Model):
     devicegroup = models.CharField(blank=True, max_length=100)
     test_options = models.TextField(blank=True)
     test_result = models.BooleanField(blank=True, default=False)
-    test_results_url = models.TextField(blank=True)
+    test_results_url = models.TextField(blank=True, null=True)
 
     image_type = models.CharField(max_length=10)
     tokenmap = models.CharField(max_length=1000, blank=True)
@@ -218,6 +218,7 @@ class Token(models.Model):
 
     name = models.CharField(max_length=40, unique=True)
     default = models.CharField(max_length=500)
+    description = models.TextField(blank=True)
 
 class ImageJobAdmin(admin.ModelAdmin):
     list_display = ('image_id', 'user', 'arch', 'image_type', 'status', 'queue')

@@ -27,7 +27,7 @@ from django.contrib import messages
 
 import img_web.settings as settings
 from img_web.app.forms import UploadFileForm, extraReposFormset, extraTokensFormset, TagForm, SearchForm
-from img_web.app.models import ImageJob, Queue
+from img_web.app.models import ImageJob, Queue, Token
 from django.db import transaction
 
 @login_required
@@ -62,7 +62,20 @@ def submit(request):
                                        )
         data = form.cleaned_data 
         data2 = formset.cleaned_data
-        tokenmap = formset2.cleaned_data
+        data3 = formset2.cleaned_data[0]
+        print data3
+        tokenmap = []
+        for token in Token.objects.all():
+            if token.name in data3:
+                print token.name
+                print  data3[token.name]
+                tokenmap.append("%s:%s" % ( token.name, data3[token.name] ))
+            else:
+                tokenmap.append("%s:%s" % ( token.name, token.default ))
+
+        print tokenmap
+        print ",".join(tokenmap)
+         
         imgjob = ImageJob()
 
         imgjob.image_id = "%s-%s" % ( request.user.id, 
@@ -72,9 +85,8 @@ def submit(request):
         imgjob.user = request.user
 
         imgjob.overlay = data['overlay']
-        imgjob.release = data['release']
         imgjob.arch = data['architecture']
-        imgjob.tokenmap = tokenmap
+        imgjob.tokenmap = ",".join(tokenmap)
 
         if "test_image" in data.keys():
             imgjob.devicegroup = data['devicegroup']  
@@ -231,7 +243,7 @@ def retry_job(request, msgid):
     imgjob.email = oldjob.email
     imgjob.image_type = oldjob.image_type
     imgjob.overlay = oldjob.overlay
-    imgjob.release = oldjob.release
+    imgjob.tokenmap = oldjob.tokenmap
     imgjob.arch = oldjob.arch
     imgjob.devicegroup = oldjob.devicegroup
     imgjob.test_image = oldjob.test_image

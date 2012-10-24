@@ -34,7 +34,7 @@ class extraReposForm(forms.Form):
 
     def __init__(self, *args, **kwargs):
         super(extraReposForm, self).__init__(*args, **kwargs)
-        self.fields['obs'].choices = [(obs.apiurl , obs.name) for obs in BuildService.objects.all()]
+        self.fields['obs'].choices.extend( [(obs.apiurl , obs.name) for obs in BuildService.objects.all()] )
 
     def clean(self):
         cleaned_data = self.cleaned_data
@@ -57,15 +57,7 @@ class extraTokensForm(forms.Form):
     def __init__(self, *args, **kwargs):
         super(extraTokensForm, self).__init__(*args, **kwargs)
         for token in Token.objects.all():
-            self.fields[token.name] = forms.CharField(label=token.name, initial=token.default)
-
-    def clean(self):
-        data = []
-        for token in Token.objects.all():
-            if token.name in self.cleaned_data:
-                data.append("%s:%s" % ( token.name, cleaned_data[token.name] ))
-
-        return ",".join(data)
+            self.fields[token.name] = forms.CharField(label=token.name, initial=token.default, required=False, help_text=token.description)
 
 extraTokensFormset = formset_factory(extraTokensForm)
 

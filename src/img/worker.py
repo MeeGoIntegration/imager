@@ -135,7 +135,7 @@ class Commands(object):
         self.kvmbase = [
                     '/usr/bin/qemu-kvm',
                     '-nographic', '-no-reboot',
-                    '-daemonize', '-m', '512M',
+                    '-daemonize', '-m', '1G',
                     '-kernel', vm_kernel,
                     '-append',
                     'root=/dev/vda panic=1 quiet rw elevator=noop ip=dhcp',
@@ -174,7 +174,7 @@ class Commands(object):
             self.ict = "mic2"
         elif os.path.exists("/usr/bin/mic"):
             self.micbase = [
-                        'mic', 'create'
+                        '/usr/bin/mic', 'create'
                       ]
             self.ict = "newmic"
         # could kiwi or debootstrap be supported ? ;)
@@ -332,7 +332,10 @@ class Commands(object):
         :param ssh: wether to use ssh
         :pram job_args: Arguments for MIC2
         """
-        mic_comm = copy(self.micbase)
+        mic_comm = []
+        #mic_comm = ['strace', '-o', '%s/strace_dbuglog' % job_args.outdir, '-ff', 'python', '-O', ]
+        mic_comm.extend(copy(self.micbase))
+        
         if self.ict == "mic2":
             mic_comm.append('--format=%s' % job_args.image_type)
             mic_comm.append('--config=%s' % job_args.ksfile_name)

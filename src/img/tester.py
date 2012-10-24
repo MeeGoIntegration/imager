@@ -107,10 +107,13 @@ class Commands(object):
                     '-r'
                   ]
 
+        self.kvm_env = [("QEMU_AUDIO_DRV","none")]
+
         self.kvmbase = [
                     '/usr/bin/qemu-kvm',
                     '-nographic', '-no-reboot',
                     '-daemonize', '-m', '1G',
+                    '-soundhw', 'hda',
                     '-kernel', vm_kernel,
                     '-append',
                     'root=/dev/vda panic=1 quiet rw elevator=noop ip=dhcp',
@@ -125,7 +128,7 @@ class Commands(object):
 
         self.kvm_comm = None
 
-    def run(self, command):
+    def run(self, command, env=[]):
         """Method to run an arbitrary command and pipe the log output to a file.
         Uses subprocess.check_call to properly execute and catch if any errors
         occur.
@@ -136,7 +139,7 @@ class Commands(object):
             logf.write("\n%s : %s\n" % (datetime.datetime.now(),
                                         " ".join(command)))
             logf.flush()
-        proc = Process(target=fork, args=(self._logf, command))
+        proc = Process(target=fork, args=(self._logf, command, env=env))
         proc.start()
         proc.join(self.timeout)
         if proc.is_alive():
@@ -273,7 +276,7 @@ class Commands(object):
         filearg = filearg.replace("@KVMIMAGEFILE@", overlayimg)
         kvm_comm.append(filearg)
         self.kvm_comm = kvm_comm
-        self.run(kvm_comm)
+        self.run(kvm_comm, env=self.kvm_env)
 
     def killkvm(self):
         """Kill the KVM instance launched by the command we recorded"""
@@ -509,7 +512,7 @@ class ImageTester(object):
         try:
             print "running test script"
             test_comm = ['/var/tmp/test_script.sh']
-            test_comm.extend(self.test_packages.keys())
+            #test_comm.extend(self.test_packages.keys())
             self.commands.ssh(test_comm, user=self.test_user)
         except:
             raise

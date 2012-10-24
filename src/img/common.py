@@ -52,7 +52,7 @@ def build_kickstart(base_ks, packages=[], groups=[], projects=[]):
        added
     """
     ks = ksparser.KickstartParser(KSHandlers())
-    ks.readKickstart(base_ks)
+    ks.readKickstart(str(base_ks))
     ks.handler.packages.add(packages)
     ks.handler.packages.add(groups)
     for prj in projects:
@@ -126,10 +126,15 @@ def getport():
     """
     return random.randint(49152, 65535)
 
-def fork(logfile, command):
+def fork(logfile, command, env=[]):
     with open(logfile, 'a+b') as logf:
+        for e, v in env:
+            os.environ[e] = v
         sub.check_call(command, shell=False, stdout=logf, 
                        stderr=logf, stdin=sub.PIPE)
+        for e, v in env:
+            if e in os.environ:
+                del(os.environ[e])
 
 def wait_for_vm(host, port, timeout):
 

@@ -39,6 +39,13 @@
             {% endfor %}
         {% endfor %}
     {% endif %}
+    {% if formset2.errors %}
+        {% for x in formset2.errors %}
+            {% for label, error in x.items %}
+                {{ error }}
+            {% endfor %}
+        {% endfor %}
+    {% endif %}
 </div>
 {% endif %}
 <form id="uploadform" action="{%url img-app-submit%}" method="post" enctype="multipart/form-data">
@@ -94,14 +101,18 @@
              <tr>
                  <th scope="col">Token</th>
                  <th scope="col">Value</th>
+                 <th scope="col">Description</th>
              </tr>
          </thead>
          <tbody>
-             {% for f in formset2.forms %}
-             <tr id="{{ f.label_tag }}-row">
+             {% for form in formset2.forms %}
+             {% for f in form %}
+             <tr>
                  <td>{{ f.label_tag }}</td>
                  <td>{{ f }}</td>
+                 <td>{{ f.help_text }}</td>
              </tr>
+             {% endfor %}
              {% endfor %}
          </tbody>
      </table>

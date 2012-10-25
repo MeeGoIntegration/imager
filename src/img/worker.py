@@ -20,7 +20,7 @@ import subprocess as sub
 from multiprocessing import Process, TimeoutError
 import time, datetime
 from copy import copy
-from img.common import getport, fork, wait_for_vm
+from img.common import getport, fork, wait_for_vm_up, wait_for_vm_down
 
 def find_largest_file(indir):
     """Find the largest file in a given directory string.
@@ -55,7 +55,8 @@ class Commands(object):
     """Commands object for running various image building commands"""
 
     def __init__(self, vm_kernel, ssh_key=None, log_filename=None,
-                 timeout=3600, mic_cachedir=None, mic_outputdir=None):
+                 timeout=3600, mic_cachedir=None, mic_outputdir=None,
+                 ict="mic"):
         """Constructor, creates the object with necessary parameters to run 
         commands
         
@@ -164,19 +165,16 @@ class Commands(object):
                               'file=@KVMIMAGEFILE@'
                   ])
 
+        self.ict = ict
 
-        # use the existence if mic-image-creator as a sign mic2 is installed
-        # even inside the kvm which could be incorrect, but good for now
-        if os.path.exists("/usr/bin/mic-image-creator"):
+        if self.ict == "mic2":
             self.micbase = [
                         'mic-image-creator'
                       ]
-            self.ict = "mic2"
-        elif os.path.exists("/usr/bin/mic"):
+        elif self.ict == "mic":
             self.micbase = [
                         '/usr/bin/mic', 'create'
                       ]
-            self.ict = "newmic"
         # could kiwi or debootstrap be supported ? ;)
         else:
             raise RuntimeError("Couldn't find a supported mic tool")
@@ -207,7 +205,7 @@ class Commands(object):
             raise TimeoutError("Command was still running after %s "\
                                "seconds" % self.timeout)
         elif not proc.exitcode == 0:
-            raise sub.CalledProcessError(int(proc.exitcode), " ".join(command))
+            raise sub.CalledProcessError(int(proc.exitcode), "Command returned non 0 exit code %s" % proc.exitcode)
 
     def scpto(self, source="", dest=""):
         """Generic ssh copy file method, from KVM to host.
@@ -339,7 +337,7 @@ class Commands(object):
         if self.ict == "mic2":
             mic_comm.append('--format=%s' % job_args.image_type)
             mic_comm.append('--config=%s' % job_args.ksfile_name)
-        elif self.ict == "newmic":
+        elif self.ict == "mic":
             mic_comm.append('%s' % job_args.image_type)
             mic_comm.append('%s' % job_args.ksfile_name)
 
@@ -410,7 +408,8 @@ class ImageWorker(object):
                             log_filename=self.logfile_name,
                             timeout=int(self.config.timeout),
                             mic_cachedir=mic_cachedir,
-                            mic_outputdir=self._image_dir)
+                            mic_outputdir=self._image_dir,
+                            ict=self.config.ict)
 
         print self._image_dir
         os.makedirs(self._image_dir, 0775)
@@ -445,20 +444,22 @@ class ImageWorker(object):
                                                         self.config.vm_base_img,
                                                         overlay_suffix)
                     if not overlayimg:
-                        self.error = "Setting up the overlay image failed. Is img in the disk group? Is qemu-img working?"
+                        self.error = "Setting up the overlay image failed. Is img in the disk group for lvm? Is qemu-img working for qcow2?"
                         self.result = False
                     else:
 
                         commands.runkvm(overlayimg)
 
-                        wait_for_vm('127.0.0.1', commands.port, self.config.vm_wait)
+                        wait_for_vm_up('127.0.0.1', commands.port, self.config.vm_wait)
 
-                        if commands.ict == "mic2":
+                        if commands.ict == "mic2" and os.path.exists('/etc/mic2/mic2.conf'):
                             commands.scpto(source='/etc/mic2/mic2.conf',
                                            dest='/etc/mic2/')
-                        elif commands.ict == "newmic":
+                        elif commands.ict == "mic" and os.path.exists('/etc/mic/mic.conf'):
                             commands.scpto(source='/etc/mic/mic.conf',
                                            dest='/etc/mic/')
+                        else:
+                            print "WARNING! no mic conf file found, please create one if needed."
 
                         if os.path.exists('/etc/sysconfig/proxy'):
                             commands.scpto(source='/etc/sysconfig/proxy',
@@ -467,6 +468,11 @@ class ImageWorker(object):
                         if os.path.exists('/etc/resolv.conf'):
                             commands.scpto(source='/etc/resolv.conf',
                                            dest='/etc/')
+
+                        if os.path.exists('/usr/bin/img_vm_shutdown'):
+                            commands.scpto(source='/usr/bin/img_vm_shutdown',
+                                           dest='/tmp/die')
+                            commands.ssh(['chmod', '+x', '/tmp/die'])
 
                         commands.ssh(['mkdir', '-p', self._image_dir])
 
@@ -496,9 +502,14 @@ class ImageWorker(object):
 
                     try:
                         commands.ssh(['sync'])
-                        time.sleep(int(self.config.vm_wait))
-                        commands.ssh(['shutdown', 'now'])
-                    except (sub.CalledProcessError, TimeoutError), err:
+                        if os.path.exists('/usr/bin/img_vm_shutdown'):
+                            commands.ssh(['/tmp/die'])
+                        else:
+                            commands.ssh(['/sbin/shutdown', 'now'])
+
+                        wait_for_vm_down(commands.kvm_comm, self.config.vm_wait)
+
+                    except (sub.CalledProcessError, TimeoutError, RuntimeError), err:
                         try:
                             print "error %s trying to kill kvm" % err
                             commands.killkvm()
@@ -512,6 +523,13 @@ class ImageWorker(object):
 
         elif not self.config.use_kvm:
             try:
+
+                if commands.ict == "mic2" and not os.path.exists("/usr/bin/mic-image-creator"):
+                    self.error = """/usr/bin/mic-image-creator does not exist"""
+                    self.result = False
+                elif commands.ict == "mic"and not os.path.exists("/usr/bin/mic"):
+                    self.error = """/usr/bin/mic does not exist"""
+                    self.result = False
 
                 commands.runmic(ssh=False, job_args=self.job_args)
                 self.result = True

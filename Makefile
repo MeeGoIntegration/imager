@@ -11,6 +11,7 @@ install:
 	install -D -m 755 src/img_boss/build_ks.py            $(DESTDIR)/usr/share/boss-skynet/build_ks.py
 	install -D -m 755 src/img_boss/test_vm_image.py       $(DESTDIR)/usr/share/boss-skynet/test_vm_image.py
 	install -D -m 755 src/scripts/img_test_vm.sh          $(DESTDIR)/usr/bin/img_test_vm.sh
+	install -D -m 755 src/scripts/img_vm_shutdown         $(DESTDIR)/usr/bin/img_vm_shutdown
 	install -D -m 644 src/img_boss/build_image.conf       $(DESTDIR)/etc/skynet/build_image.conf
 	install -D -m 644 src/img_boss/build_ks.conf          $(DESTDIR)/etc/skynet/build_ks.conf
 	install -D -m 644 src/img_boss/test_vm_image.conf     $(DESTDIR)/etc/skynet/test_vm_image.conf

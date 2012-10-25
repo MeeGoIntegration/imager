@@ -2,67 +2,10 @@
 Common Imager functions
 """
 
-import subprocess as sub
-
-import random, socket, time
-
-from urlparse import urlparse
-
-try:
-    import pykickstart.parser as ksparser
-    import pykickstart.version as ksversion
-    from pykickstart.handlers.control import commandMap
-    from pykickstart.handlers.control import dataMap
-except:
-    raise RuntimeError("Couldn't import pykickstart")
-
-try:
-    from mic.imgcreate.kscommands import desktop
-    from mic.imgcreate.kscommands import moblinrepo
-    from mic.imgcreate.kscommands import micboot
-except:
-    from mic.kickstart.custom_commands import desktop
-    from mic.kickstart.custom_commands import moblinrepo
-    from mic.kickstart.custom_commands import micboot
-
+import os
 import ConfigParser
-
-KSCLASS = ksversion.returnClassForVersion(version=ksversion.DEVEL)
-
-class KSHandlers(KSCLASS):
-    """Helper class for parsing a kickstart file"""
-    def __init__(self):
-        ver = ksversion.DEVEL
-        commandMap[ver]["desktop"] = desktop.Moblin_Desktop
-        commandMap[ver]["repo"] = moblinrepo.Moblin_Repo
-        commandMap[ver]["bootloader"] = micboot.Moblin_Bootloader
-        dataMap[ver]["RepoData"] = moblinrepo.Moblin_RepoData
-        KSCLASS.__init__(self, mapping=commandMap[ver])
-    
-def build_kickstart(base_ks, packages=[], groups=[], projects=[]):
-    """Build a kickstart file using the handler class, with custom kickstart,
-    packages, groups and projects.
-
-    :param base_ks: Full path to the original kickstart file
-    :param packages: list of packagenames
-    :param groups: list of groupnames
-    :param projects: list of rpm repository URLs
-
-    :returns: Validated kickstart with any extra packages, groups or repourls
-       added
-    """
-    ks = ksparser.KickstartParser(KSHandlers())
-    ks.readKickstart(str(base_ks))
-    ks.handler.packages.add(packages)
-    ks.handler.packages.add(groups)
-    for prj in projects:
-        name = urlparse(prj).path
-        name = name.replace(":/","_")
-        name = name.replace("/","_")
-        repo = moblinrepo.Moblin_RepoData(baseurl=prj, name=name, save=True)
-        ks.handler.repo.repoList.append(repo)
-    ks_txt = str(ks.handler)
-    return ks_txt
+import subprocess as sub
+import random, socket, time
 
 def worker_config(config=None, conffile="/etc/imager/img.conf"):
     """Utility function which parses the either given or  imager configuration
@@ -80,7 +23,7 @@ def worker_config(config=None, conffile="/etc/imager/img.conf"):
 
     section = "worker"
     conf = {}
-    for item in ["base_url", "base_dir", "mic_opts", "img_tmp", "vm_ssh_key",
+    for item in ["base_url", "base_dir", "mic_opts", "img_tmp", "vm_ssh_key", "ict",
                  "vm_base_img", "vm_kernel", "timeout", "mic_cachedir", "vm_wait"]:
         conf[item] = config.get(section, item)
 
@@ -136,7 +79,7 @@ def fork(logfile, command, env=[]):
             if e in os.environ:
                 del(os.environ[e])
 
-def wait_for_vm(host, port, timeout):
+def wait_for_vm_up(host, port, timeout):
 
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.settimeout(float(timeout))
@@ -150,4 +93,20 @@ def wait_for_vm(host, port, timeout):
         else:
             return True
     return False
+
+def wait_for_vm_down(command, timeout):
+    retries = 0
+    while retries < timeout:
+        print retries
+        retries = retries + 1
+        comm = ['pgrep', '-f']
+        comm.extend([" ".join(command)])
+        try:
+            retcode = sub.check_call(comm)
+            print retcode
+        except sub.CalledProcessError, err:
+            return True
+        else:
+            time.sleep(1)
+    raise RuntimeError("VM not down after %s" % timeout)
 

@@ -1,7 +1,7 @@
 %define svdir %{_sysconfdir}/supervisor/conf.d/
 
 Name: img
-Version: 0.64.1
+Version: 0.64.2
 Release: 1
 
 Group: Applications/Engineering
@@ -9,7 +9,7 @@ License: GPLv2+
 URL: http://www.meego.com
 Source0: %{name}-%{version}.tar.gz
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-buildroot
-BuildRequires: python, python-distribute, python-sphinx, python-boss-skynet, python-ruote-amqp, python-django, python-mysql, mic >= 0.4, pykickstart, python-django-taggit, python-buildservice
+BuildRequires: python, python-distribute, python-sphinx, python-boss-skynet, python-ruote-amqp, python-django, python-mysql, pykickstart, python-django-taggit, python-buildservice
 BuildArch: noarch
 Summary: Image creation service for MeeGo related products
 
@@ -25,7 +25,7 @@ Image creation service for MeeGo related products
 
 %package -n img-core
 Group: Applications/Engineering
-Requires: python >= 2.5.0, mic, sudo, pykickstart, lvm2, eat-host, testrunner-lite-hwinfo-meego
+Requires: python >= 2.5.0, sudo, pykickstart, lvm2
 Requires(pre): pwdutils
 Requires(post): sudo
 Requires(post): eat-host
@@ -39,9 +39,11 @@ Group: Applications/Engineering
 Requires: python >= 2.5.0
 Requires: python-xml
 Requires: python-boss-skynet
+Requires: python-South
+Requires: python-django-extensions
 Requires: python-django-taggit
 Requires(post): python-boss-skynet
-Requires: python-django, python-flup, python-mysql, mysql-client, mysql
+Requires: python-django, python-flup, python-mysql
 Summary: Image creation service for MeeGo related products, django web interface
 %description -n img-web
 This package provides a django based web interface for imager that is part of BOSS.
@@ -59,7 +61,6 @@ fulfill image building steps of processes
 
 %package -n img-ks
 Group: Applications/Engineering
-Requires: img-core
 Requires: python-xml
 Requires: python-buildservice
 Requires: boss-standard-workflow-common
@@ -138,6 +139,7 @@ fi
 %{_sysconfdir}/imager
 %{python_sitelib}/img*egg-info
 %{python_sitelib}/img
+%{_bindir}/img_vm_shutdown
 
 %files -n img-web
 %defattr(-,root,root,-)

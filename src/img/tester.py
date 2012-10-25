@@ -30,7 +30,7 @@ import pycurl
 #except ImportError:
 #    pass
 
-from img.common import getport, fork
+from img.common import getport, fork, wait_for_vm_up, wait_for_vm_down
 
 class Commands(object):
     """Commands object for running various image building commands"""
@@ -139,7 +139,7 @@ class Commands(object):
             logf.write("\n%s : %s\n" % (datetime.datetime.now(),
                                         " ".join(command)))
             logf.flush()
-        proc = Process(target=fork, args=(self._logf, command, env=env))
+        proc = Process(target=fork, args=(self._logf, command, env))
         proc.start()
         proc.join(self.timeout)
         if proc.is_alive():
@@ -152,7 +152,7 @@ class Commands(object):
             raise TimeoutError("Command was still running after %s "\
                                "seconds" % self.timeout)
         elif not proc.exitcode == 0:
-            raise sub.CalledProcessError(int(proc.exitcode), " ".join(command))
+            raise sub.CalledProcessError(int(proc.exitcode), "Command returned non 0 exit code %s " % proc.exitcode)
 
     def scpto(self, source="", dest=""):
         """Generic ssh copy file method, from KVM to host.
@@ -458,18 +458,24 @@ class ImageTester(object):
     def wait_for_vm(self):
 
         print "vm_wait"
-        time.sleep(int(self.vm_wait))
+        wait_for_vm_up(self.commands.device_ip, self.commands.port, self.vm_wait)
 
-        print "copying /etc/sysconfig/proxy"
+    def setup_vm(self):
         if os.path.exists('/etc/sysconfig/proxy'):
-            self.commands.scpto(source='/etc/sysconfig/proxy',
-                           dest='/etc/sysconfig/')
+             print "inserting /etc/sysconfig/proxy"
+             self.commands.scpto(source='/etc/sysconfig/proxy',
+                            dest='/etc/sysconfig/')
 
-        print "copying /etc/resolv.conf"
-        if os.path.exists('/etc/resolv.conf'):
-            self.commands.scpto(source='/etc/resolv.conf',
-                           dest='/etc/')
+        if os.path.exists('/usr/bin/img_vm_shutdown'):
+            print "inserting shutdown script"
+            self.commands.scpto(source='/usr/bin/img_vm_shutdown',
+                           dest='/tmp/die')
+            self.commands.ssh(['chmod', '+x', '/tmp/die'])
 
+        print "inserting test script"
+        self.commands.scpto(self.test_script, '/var/tmp/test_script.sh') 
+        self.commands.ssh(['chmod', '+x', '/var/tmp/test_script.sh'])
+        
     def upgrade_vm(self):
 
         if self.base_img:
@@ -505,10 +511,6 @@ class ImageTester(object):
 
         self.commands.run(['mkdir', '-p', self.results_dir])
 
-        print "inserting test script"
-        self.commands.scpto(self.test_script, '/var/tmp/test_script.sh') 
-        
-        self.commands.ssh(['chmod', '+x', '/var/tmp/test_script.sh'])
         try:
             print "running test script"
             test_comm = ['/var/tmp/test_script.sh']
@@ -528,8 +530,13 @@ class ImageTester(object):
         try:
             if self.kvm_run:
                 self.commands.ssh(['sync'])
-                time.sleep(int(self.vm_wait))
-                self.commands.ssh(['shutdown', 'now'], ignore_error=True)
+                if os.path.exists('/usr/bin/img_vm_shutdown'):
+                    self.commands.ssh(['/tmp/die'])
+                else:
+                    self.commands.ssh(['/sbin/shutdown', 'now'])
+
+                wait_for_vm_down(self.commands.kvm_comm, self.vm_wait)
+
         except (sub.CalledProcessError, TimeoutError), err:
             try:
                 if self.kvm_run:
@@ -554,6 +561,8 @@ class ImageTester(object):
             self.boot_vm()
 
             self.wait_for_vm()
+
+            self.setup_vm()
 
             self.upgrade_vm()
 

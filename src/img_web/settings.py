@@ -34,6 +34,7 @@ except Exception:
 url_prefix = config.get('web', 'url_prefix')
 static_media_collect = config.get('web', 'static_media_collect')
 TEMPLATESDIR = config.get('web', 'templates_dir')
+USE_REMOTE_AUTH = config.getboolean('web', 'use_http_remote_user')
 
 boss_host = config.get('boss', 'boss_host')
 boss_user = config.get('boss', 'boss_user')
@@ -78,6 +79,12 @@ if USE_LDAP:
   fname_attr = config.get('ldap', 'ldap_fname_attr', raw=True)
   lname_attr = config.get('ldap', 'ldap_lname_attr', raw=True)
   AUTH_LDAP_USER_ATTR_MAP = {"first_name" : fname_attr, "last_name" : lname_attr, "email":mail_attr}
+elif USE_REMOTE_AUTH:
+    AUTHENTICATION_BACKENDS = (
+        'django.contrib.auth.backends.RemoteUserBackend',
+    )
+
+SECRET_KEY = config.get('web', 'secret_key')
 
 DEBUG = True
 TEMPLATE_DEBUG = DEBUG
@@ -139,9 +146,6 @@ MEDIA_URL = '/' + url_prefix + '/site_media/'
 # Examples: "http://foo.com/media/", "/media/".
 ADMIN_MEDIA_PREFIX = '/' + url_prefix + '/site_media/admin/'
 
-# Make this unique, and don't share it with anybody.
-SECRET_KEY = 'yn!2toc#7_#!c5k)xeh9j75()8kb7n2p!tl_h#@+%eptl=vd16'
-
 STATIC_ROOT = static_media_collect
 
 #STATIC_ROOT = join(PROJECT_DIR, "site_media")
@@ -190,6 +194,8 @@ INSTALLED_APPS = (
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django.contrib.admin',
+    'south',
+    'django_extensions',
     'taggit',
     'img_web.app',
 )

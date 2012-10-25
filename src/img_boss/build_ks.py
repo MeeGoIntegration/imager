@@ -97,12 +97,307 @@ import json
 import os
 import tempfile
 from urllib2 import HTTPError
-
-from pykickstart.errors import KickstartError
 from optparse import OptionValueError
-
-from img.common import build_kickstart
 from buildservice import BuildService
+from urlparse import urlparse
+
+try:
+    import pykickstart.parser as ksparser
+    import pykickstart.version as ksversion
+    from pykickstart.handlers.control import commandMap
+    from pykickstart.handlers.control import dataMap
+    from pykickstart.base import *
+    from pykickstart.errors import *
+    from pykickstart.options import *
+    from pykickstart.commands.bootloader import *
+    from pykickstart.commands.repo import *
+    from pykickstart.commands.partition import *
+except:
+    raise RuntimeError("Couldn't import pykickstart")
+
+# Verbatim inclusion from mic upstream
+#################################################################
+
+# Copyright (c) 2008, 2009, 2010 Intel, Inc.
+#
+# Yi Yang <yi.y.yang@intel.com>
+# Anas Nashif
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the Free
+# Software Foundation; version 2 of the License
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+# or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc., 59
+# Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+
+class Moblin_Desktop(KickstartCommand):
+    def __init__(self, writePriority=0,
+                       defaultdesktop=None,
+                       defaultdm=None,
+                       autologinuser="meego",
+                       session=None):
+
+        KickstartCommand.__init__(self, writePriority)
+
+        self.__new_version = False
+        self.op = self._getParser()
+
+        self.defaultdesktop = defaultdesktop
+        self.autologinuser = autologinuser
+        self.defaultdm = defaultdm
+        self.session = session
+
+    def __str__(self):
+        retval = ""
+
+        if self.defaultdesktop != None:
+            retval += " --defaultdesktop=%s" % self.defaultdesktop
+        if self.session != None:
+            retval += " --session=\"%s\"" % self.session
+        if self.autologinuser != None:
+            retval += " --autologinuser=%s" % self.autologinuser
+        if self.defaultdm != None:
+            retval += " --defaultdm=%s" % self.defaultdm
+
+        if retval != "":
+            retval = "# Default Desktop Settings\ndesktop %s\n" % retval
+
+        return retval
+
+    def _getParser(self):
+        try:
+            op = KSOptionParser(lineno=self.lineno)
+        except TypeError:
+            # the latest version has not lineno argument
+            op = KSOptionParser()
+            self.__new_version = True
+
+        op.add_option("--defaultdesktop", dest="defaultdesktop",
+                                          action="store",
+                                          type="string",
+                                          nargs=1)
+        op.add_option("--autologinuser", dest="autologinuser",
+                                         action="store",
+                                         type="string",
+                                         nargs=1)
+        op.add_option("--defaultdm", dest="defaultdm",
+                                     action="store",
+                                     type="string",
+                                     nargs=1)
+        op.add_option("--session", dest="session",
+                                   action="store",
+                                   type="string",
+                                   nargs=1)
+        return op
+
+    def parse(self, args):
+        if self.__new_version:
+            (opts, extra) = self.op.parse_args(args=args, lineno=self.lineno)
+        else:
+            (opts, extra) = self.op.parse_args(args=args)
+
+        if extra:
+            m = _("Unexpected arguments to %(command)s command: %(options)s") \
+                  % {"command": "desktop", "options": extra}
+            raise KickstartValueError, formatErrorMsg(self.lineno, msg=m)
+
+        self._setToSelf(self.op, opts)
+
+
+class Moblin_Bootloader(F8_Bootloader):
+    def __init__(self, writePriority=10, appendLine="", driveorder=None,
+                 forceLBA=False, location="", md5pass="", password="",
+                 upgrade=False, menus=""):
+        F8_Bootloader.__init__(self, writePriority, appendLine, driveorder,
+                                forceLBA, location, md5pass, password, upgrade)
+
+        self.menus = ""
+
+    def _getArgsAsStr(self):
+        ret = F8_Bootloader._getArgsAsStr(self)
+
+        if self.menus == "":
+            ret += " --menus=%s" %(self.menus,)
+        return ret
+
+    def _getParser(self):
+        op = F8_Bootloader._getParser(self)
+        op.add_option("--menus", dest="menus")
+        return op
+
+
+class Moblin_RepoData(F8_RepoData):
+    def __init__(self, baseurl="", mirrorlist="", name="", priority=None,
+                 includepkgs=[], excludepkgs=[], save=False, proxy=None,
+                 proxy_username=None, proxy_password=None, debuginfo=False,
+                 source=False, gpgkey=None, disable=False, ssl_verify="yes"):
+        F8_RepoData.__init__(self, baseurl=baseurl, mirrorlist=mirrorlist,
+                             name=name,  includepkgs=includepkgs,
+                             excludepkgs=excludepkgs)
+        self.save = save
+        self.proxy = proxy
+        self.proxy_username = proxy_username
+        self.proxy_password = proxy_password
+        self.debuginfo = debuginfo
+        self.disable = disable
+        self.source = source
+        self.gpgkey = gpgkey
+        self.ssl_verify = ssl_verify.lower()
+        self.priority = priority
+
+    def _getArgsAsStr(self):
+        retval = F8_RepoData._getArgsAsStr(self)
+
+        if self.save:
+            retval += " --save"
+        if self.proxy:
+            retval += " --proxy=%s" % self.proxy
+        if self.proxy_username:
+            retval += " --proxyuser=%s" % self.proxy_username
+        if self.proxy_password:
+            retval += " --proxypasswd=%s" % self.proxy_password
+        if self.debuginfo:
+            retval += " --debuginfo"
+        if self.source:
+            retval += " --source"
+        if self.gpgkey:
+            retval += " --gpgkey=%s" % self.gpgkey
+        if self.disable:
+            retval += " --disable"
+        if self.ssl_verify:
+            retval += " --ssl_verify=%s" % self.ssl_verify
+        if self.priority:
+            retval += " --priority=%s" % self.priority
+
+        return retval
+
+class Moblin_Repo(F8_Repo):
+    def __init__(self, writePriority=0, repoList=None):
+        F8_Repo.__init__(self, writePriority, repoList)
+
+    def __str__(self):
+        retval = ""
+        for repo in self.repoList:
+            retval += repo.__str__()
+
+        return retval
+
+    def _getParser(self):
+        def list_cb (option, opt_str, value, parser):
+            for d in value.split(','):
+                parser.values.ensure_value(option.dest, []).append(d)
+
+        op = F8_Repo._getParser(self)
+        op.add_option("--save", action="store_true", dest="save",
+                      default=False)
+        op.add_option("--proxy", type="string", action="store", dest="proxy",
+                      default=None, nargs=1)
+        op.add_option("--proxyuser", type="string", action="store",
+                      dest="proxy_username", default=None, nargs=1)
+        op.add_option("--proxypasswd", type="string", action="store",
+                      dest="proxy_password", default=None, nargs=1)
+        op.add_option("--debuginfo", action="store_true", dest="debuginfo",
+                      default=False)
+        op.add_option("--source", action="store_true", dest="source",
+                      default=False)
+        op.add_option("--disable", action="store_true", dest="disable",
+                      default=False)
+        op.add_option("--gpgkey", type="string", action="store", dest="gpgkey",
+                      default=None, nargs=1)
+        op.add_option("--ssl_verify", type="string", action="store",
+                      dest="ssl_verify", default="yes")
+        op.add_option("--priority", type="int", action="store", dest="priority",
+                      default=None)
+        return op
+
+# Marko Saukko <marko.saukko@cybercom.com>
+#
+# Copyright (C) 2011 Nokia Corporation and/or its subsidiary(-ies).
+#
+# This copyrighted material is made available to anyone wishing to use, modify,
+# copy, or redistribute it subject to the terms and conditions of the GNU
+# General Public License v.2. This program is distributed in the hope that it
+# will be useful, but WITHOUT ANY WARRANTY expressed or implied, including the
+# implied warranties of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+# See the GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along with
+# this program; if not, write to the Free Software Foundation, Inc., 51
+# Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+
+
+class MeeGo_PartData(FC4_PartData):
+    removedKeywords = FC4_PartData.removedKeywords
+    removedAttrs = FC4_PartData.removedAttrs
+
+    def __init__(self, *args, **kwargs):
+        FC4_PartData.__init__(self, *args, **kwargs)
+        self.deleteRemovedAttrs()
+        self.align = kwargs.get("align", None)
+
+    def _getArgsAsStr(self):
+        retval = FC4_PartData._getArgsAsStr(self)
+
+        if self.align:
+            retval += " --align"
+
+        return retval
+
+class MeeGo_Partition(FC4_Partition):
+    removedKeywords = FC4_Partition.removedKeywords
+    removedAttrs = FC4_Partition.removedAttrs
+
+    def _getParser(self):
+        op = FC4_Partition._getParser(self)
+        # The alignment value is given in kBytes. e.g., value 8 means that
+        # the partition is aligned to start from 8096 byte boundary.
+        op.add_option("--align", type="int", action="store", dest="align",
+                      default=None)
+        return op
+#################################################################
+
+KSCLASS = ksversion.returnClassForVersion(version=ksversion.DEVEL)
+
+class KSHandlers(KSCLASS):
+    """Helper class for parsing a kickstart file"""
+    def __init__(self):
+        ver = ksversion.DEVEL
+        commandMap[ver]["desktop"] = Moblin_Desktop
+        commandMap[ver]["repo"] = Moblin_Repo
+        commandMap[ver]["bootloader"] = Moblin_Bootloader
+        dataMap[ver]["RepoData"] = Moblin_RepoData
+        KSCLASS.__init__(self, mapping=commandMap[ver])
+    
+def build_kickstart(base_ks, packages=[], groups=[], projects=[]):
+    """Build a kickstart file using the handler class, with custom kickstart,
+    packages, groups and projects.
+
+    :param base_ks: Full path to the original kickstart file
+    :param packages: list of packagenames
+    :param groups: list of groupnames
+    :param projects: list of rpm repository URLs
+
+    :returns: Validated kickstart with any extra packages, groups or repourls
+       added
+    """
+    ks = ksparser.KickstartParser(KSHandlers())
+    ks.readKickstart(str(base_ks))
+    ks.handler.packages.add(packages)
+    ks.handler.packages.add(groups)
+    for prj in projects:
+        name = urlparse(prj).path
+        name = name.replace(":/","_")
+        name = name.replace("/","_")
+        repo = Moblin_RepoData(baseurl=prj, name=name, save=True)
+        ks.handler.repo.repoList.append(repo)
+    ks_txt = str(ks.handler)
+    return ks_txt
 
 def get_list(value, desc):
     """Check if the value is a list, and complain (RuntimeError) if it's not.

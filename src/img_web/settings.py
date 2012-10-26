@@ -134,23 +134,18 @@ USE_L10N = True
 
 # Absolute path to the directory that holds media.
 # Example: "/home/media/media.lawrence.com/"
-MEDIA_ROOT = 'media/'
+MEDIA_ROOT = ''
 
 # URL that handles the media served from MEDIA_ROOT. Make sure to use a
 # trailing slash if there is a path component (optional in other cases).
 # Examples: "http://media.lawrence.com", "http://example.com/media/"
-MEDIA_URL = '/' + url_prefix + '/site_media/'
-
-# URL prefix for admin media -- CSS, JavaScript and images. Make sure to use a
-# trailing slash.
-# Examples: "http://foo.com/media/", "/media/".
-ADMIN_MEDIA_PREFIX = '/' + url_prefix + '/site_media/admin/'
+MEDIA_URL = ''
 
 STATIC_ROOT = static_media_collect
 
 #STATIC_ROOT = join(PROJECT_DIR, "site_media")
 
-STATIC_URL = '/site_media/'
+STATIC_URL = '/' + url_prefix + '/site_media/'
 
 # List of callables that know how to import templates from various sources.
 TEMPLATE_LOADERS = (
@@ -221,4 +216,6 @@ if USE_LDAP:
     'django_auth_ldap.backend.LDAPBackend',
     'django.contrib.auth.backends.ModelBackend',
   )
+elif USE_REMOTE_AUTH:
+  MIDDLEWARE_CLASSES += ( 'django.contrib.auth.middleware.RemoteUserMiddleware',)
 

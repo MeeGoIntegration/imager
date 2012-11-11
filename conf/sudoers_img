@@ -1,0 +1,11 @@
+img ALL=(ALL)NOPASSWD:/sbin/lvdisplay
+img ALL=(ALL)NOPASSWD:/sbin/lvcreate
+img ALL=(ALL)NOPASSWD:/sbin/lvremove
+img ALL=(ALL)NOPASSWD:/sbin/mkfs
+img ALL=(ALL)NOPASSWD:/bin/chown
+img ALL=(ALL)NOPASSWD:/bin/chmod
+img ALL=(ALL)NOPASSWD:/bin/mkdir
+img ALL=(ALL)NOPASSWD:/bin/cp
+img ALL=(ALL)NOPASSWD:/bin/tar
+img ALL=(ALL)NOPASSWD:/bin/mount
+img ALL=(ALL)NOPASSWD:/bin/umount

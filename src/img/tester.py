@@ -377,21 +377,10 @@ class ImageTester(object):
         self.logfile_name = os.path.join(job_args["outdir"],
                                          "%s.log" % job_args["name"])
 
-        # If a base image is provided we will create a snapshot of it
-        # and upgrade it using zypper
-        self.img_url = None 
-        self.base_img = None
-
-        if config["use_base_img"] and job_args.get("use_upgrade", None):
-            self.base_img = config["vm_base_img"]
-            self.kernel = config["vm_kernel"]
-            self.repos = job_args["repos"]
-
-        # Otherwise a new image will be downloaded and used everytime
-        else:
-            self.img_url = job_args["image_url"]
-            self.img_file = os.path.join(job_args["outdir"], os.path.basename(job_args["image_url"]))
-            self.img_type = job_args["image_type"] 
+        self.test_options = job_args.get("test_options", None)
+        self.img_url = job_args["image_url"]
+        self.img_file = os.path.join(job_args["outdir"], os.path.basename(job_args["image_url"]))
+        self.img_type = job_args["image_type"] 
 
         print self.logfile_name
         #setup commands object
@@ -403,48 +392,43 @@ class ImageTester(object):
                                  device_ip=config["device_ip"]
                                  )
     def create_vm(self):
-        #snapshot base_img if any
-        if self.base_img:
-            #create snapshot
-            raise RuntimeError("upgrade based testing not yet supported")
-        else:
-            if self.img_type == "fs":
-                print "create empty lvm"
-                lvname = self.commands.mklv(hashlib.md5(self.img_url).hexdigest())
-                self.vmdisk = lvname
-                print lvname
-                print "format partition"
-                self.commands.mkfs(lvname, "ext3")
-                print "formatting done"
-                try:
-                    target = "/var/tmp/%s" % os.path.basename(lvname)
+        if self.img_type == "fs":
+            print "create empty lvm"
+            lvname = self.commands.mklv(hashlib.md5(self.img_url).hexdigest())
+            self.vmdisk = lvname
+            print lvname
+            print "format partition"
+            self.commands.mkfs(lvname, "ext3")
+            print "formatting done"
+            try:
+                target = "/var/tmp/%s" % os.path.basename(lvname)
+                print target
+                os.mkdir(target)
+                print "mount"
+                self.commands.mount(target, lvname)
+                print "download image and extract it"
+                count = 1
+                result = False
+                while count < 3 and not result:
+                    print self.img_url
                     print target
-                    os.mkdir(target)
-                    print "mount"
-                    self.commands.mount(target, lvname)
-                    print "download image and extract it"
-                    count = 1
-                    result = False
-                    while count < 3 and not result:
-                        print self.img_url
-                        print target
-                        result = self.commands.download_extract(str(self.img_url), str(target))
-                        count = count + 1
-                    #copy auth ssh key
-                    self.commands.run(['sudo', '-n', 'mkdir', '-p', "%s/root/.ssh/" % target])
-                    self.commands.run(['sudo', '-n', 'cp', self.vm_pub_ssh_key, "%s/root/.ssh/authorized_keys" % target])
-                    self.commands.run(['sudo', '-n', 'chown', '-R', 'root:root', "%s/root/.ssh/" % target])
-                    self.commands.run(['sudo', '-n', 'chmod', '-R', 'o+rwx,g-rwx,o-rwx', "%s/root/.ssh/" % target])
+                    result = self.commands.download_extract(str(self.img_url), str(target))
+                    count = count + 1
+                #copy auth ssh key
+                self.commands.run(['sudo', '-n', 'mkdir', '-p', "%s/root/.ssh/" % target])
+                self.commands.run(['sudo', '-n', 'cp', self.vm_pub_ssh_key, "%s/root/.ssh/authorized_keys" % target])
+                self.commands.run(['sudo', '-n', 'chown', '-R', 'root:root', "%s/root/.ssh/" % target])
+                self.commands.run(['sudo', '-n', 'chmod', '-R', 'o+rwx,g-rwx,o-rwx', "%s/root/.ssh/" % target])
 
+            finally:
+                try:
+                    print "umount"
+                    self.commands.umount(lvname)
                 finally:
-                    try:
-                        print "umount"
-                        self.commands.umount(lvname)
-                    finally:
-                        print "rmdir"
-                        os.rmdir(target)
-            else:
-                raise RuntimeError("unspported image type %s" % self.img_type)
+                    print "rmdir"
+                    os.rmdir(target)
+        else:
+            raise RuntimeError("unspported image type %s" % self.img_type)
 
         if not self.vmdisk:
             raise RuntimeError("something went wrong while setting up vm disk")
@@ -476,12 +460,11 @@ class ImageTester(object):
         self.commands.scpto(self.test_script, '/var/tmp/test_script.sh') 
         self.commands.ssh(['chmod', '+x', '/var/tmp/test_script.sh'])
         
-    def upgrade_vm(self):
-
-        if self.base_img:
-            #add repos from workitem
-            #upgrade
-            raise RuntimeError("upgrade based testing not yet supported")
+    def update_vm(self):
+        if "update" in self.test_options:
+            print "updating vm (depending on enabled repos or ssu)"
+            update_comm = ['zypper', '-n', 'up', '--force-resolution']
+            self.commands.ssh(update_comm)
 
     def install_tests(self):
         if self.test_packages:

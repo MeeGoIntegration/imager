@@ -63,20 +63,37 @@ def submit(request):
         data = form.cleaned_data 
         data2 = formset.cleaned_data
         data3 = formset2.cleaned_data[0]
-        print data3
+
+
+        imgjob = ImageJob()
+
+        ksname = ""
         tokenmap = []
+
+        if 'template' in data and data['template']:
+            ksname = data['template']
+            filename = os.path.join(settings.TEMPLATESDIR, ksname)
+            with open(filename, mode='r') as ffd:
+                imgjob.kickstart = ffd.read()
+
+        elif 'ksfile' in data and data['ksfile']:
+            ksname = data['ksfile'].name
+            imgjob.kickstart =  data['ksfile'].read()
+
+        if ksname.endswith('.ks'):
+            ksname = ksname[0:-3]
+
         for token in Token.objects.all():
             if token.name in data3:
-                print token.name
-                print  data3[token.name]
-                tokenmap.append("%s:%s" % ( token.name, data3[token.name] ))
+                tokenvalue = data3[token.name]
             else:
-                tokenmap.append("%s:%s" % ( token.name, token.default ))
+                tokenvalue = token.default
 
-        print tokenmap
-        print ",".join(tokenmap)
-         
-        imgjob = ImageJob()
+            tokenmap.append("%s:%s" % ( token.name, tokenvalue ))
+            ksname = ksname.replace("@%s@" % token.name, tokenvalue)
+
+        imgjob.name = ksname
+        imgjob.tokenmap = ",".join(tokenmap)
 
         imgjob.image_id = "%s-%s" % ( request.user.id, 
                                       time.strftime('%Y%m%d-%H%M%S') )
@@ -86,7 +103,6 @@ def submit(request):
 
         imgjob.overlay = data['overlay']
         imgjob.arch = data['architecture']
-        imgjob.tokenmap = ",".join(tokenmap)
 
         if "test_image" in data.keys():
             imgjob.devicegroup = data['devicegroup']  
@@ -103,21 +119,7 @@ def submit(request):
 
         imgjob.extra_repos = ",".join(conf)
 
-        ksname = ""
-        if 'template' in data and data['template']:
-            ksname = data['template']
-            filename = os.path.join(settings.TEMPLATESDIR, ksname)
-            with open(filename, mode='r') as ffd:
-                imgjob.kickstart = ffd.read()
 
-        elif 'ksfile' in data and data['ksfile']:
-            ksname = data['ksfile'].name
-            imgjob.kickstart =  data['ksfile'].read()
-
-        if ksname.endswith('.ks'):
-            ksname = ksname[0:-3]
-
-        imgjob.name = ksname
 
         imgjob.queue = Queue.objects.get(name="web")
 
@@ -223,6 +225,7 @@ def retest_job(request, msgid):
     job.status = "DONE"
     job.test_image = True
     job.test_result = None
+    job.test_options = ",".join["update", job.test_options]
     job.save()
     messages.add_message(request, messages.INFO, "Image %s was set for testing." % job.image_id)
         

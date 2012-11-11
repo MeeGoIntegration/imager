@@ -76,7 +76,6 @@ Group: Applications/Engineering
 Requires: img-core
 Requires: python-xml
 Requires: python-buildservice
-Requires: boss-standard-workflow-common
 Requires: python-boss-skynet
 Requires(post): python-boss-skynet
 Summary: Image creation service for MeeGo related products, BOSS participants

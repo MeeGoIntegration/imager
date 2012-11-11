@@ -34,7 +34,7 @@ class extraReposForm(forms.Form):
 
     def __init__(self, *args, **kwargs):
         super(extraReposForm, self).__init__(*args, **kwargs)
-        self.fields['obs'].choices.extend( [(obs.apiurl , obs.name) for obs in BuildService.objects.all()] )
+        self.fields['obs'].choices = [(obs.apiurl , obs.name) for obs in BuildService.objects.all()]
 
     def clean(self):
         cleaned_data = self.cleaned_data

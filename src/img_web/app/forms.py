@@ -34,7 +34,7 @@ class extraReposForm(forms.Form):
 
     def __init__(self, *args, **kwargs):
         super(extraReposForm, self).__init__(*args, **kwargs)
-        self.fields['obs'].choices = [(obs.apiurl , obs.name) for obs in BuildService.objects.all()]
+        self.fields['obs'].choices = [("None", "None")] + [(obs.apiurl , obs.name) for obs in BuildService.objects.all()]
 
     def clean(self):
         cleaned_data = self.cleaned_data
@@ -143,6 +143,7 @@ class UploadFileForm(forms.Form):
                         name = line.split(":")[1].strip()
                         break
             self.fields['template'].choices.append((template , name))
+        self.fields['template'].choices = sorted(self.fields['template'].choices, key=lambda name: name[1])
         self.fields['architecture'].choices = [(arch.name, arch.name) for arch in Arch.objects.all()]
         self.fields['imagetype'].choices = [(itype.name, itype.name) for itype in ImageType.objects.all()]
 

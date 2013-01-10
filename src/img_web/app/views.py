@@ -224,8 +224,7 @@ def retest_job(request, msgid):
     job = ImageJob.objects.get(image_id__exact=msgid)
     job.status = "DONE"
     job.test_image = True
-    job.test_result = None
-    job.test_options = ",".join["update", job.test_options]
+    job.test_options = ",".join("update", job.test_options)
     job.save()
     messages.add_message(request, messages.INFO, "Image %s was set for testing." % job.image_id)
         

@@ -2,6 +2,6 @@
 function die {
   echo bye
   sleep 1
-  /sbin/shutdown now
+  /usr/sbin/shutdown now
 }
 head -n 1 <(die)

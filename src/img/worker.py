@@ -137,6 +137,7 @@ class Commands(object):
                     '/usr/bin/qemu-kvm',
                     '-nographic', '-no-reboot',
                     '-daemonize', '-m', '1G',
+                    '-smp', '2',
                     '-kernel', vm_kernel,
                     '-append',
                     'root=/dev/vda panic=1 quiet rw elevator=noop ip=dhcp',
@@ -149,14 +150,14 @@ class Commands(object):
             '-device',
             'virtio-9p-pci,id=fs0,fsdev=fsdev0,mount_tag=mic_cache',
             '-fsdev', 
-            'local,security_model=mapped,id=fsdev0,path=%s' %
+            'local,security_model=none,id=fsdev0,path=%s' %
             mic_cachedir,
             ])
             self.kvmbase.extend([
             '-device',
             'virtio-9p-pci,id=fs1,fsdev=fsdev1,mount_tag=mic_output',
             '-fsdev', 
-            'local,security_model=mapped,id=fsdev1,path=%s' %
+            'local,security_model=none,id=fsdev1,path=%s' %
             mic_outputdir,
             ])
 

@@ -377,7 +377,7 @@ class ImageTester(object):
         self.logfile_name = os.path.join(job_args["outdir"],
                                          "%s.log" % job_args["name"])
 
-        self.test_options = job_args.get("test_options", None)
+        self.test_options = job_args.get("test_options", [])
         self.img_url = job_args["image_url"]
         self.img_file = os.path.join(job_args["outdir"], os.path.basename(job_args["image_url"]))
         self.img_type = job_args["image_type"] 
@@ -508,7 +508,7 @@ class ImageTester(object):
             except:
                 pass
 
-    def cleanup(self):
+    def shutdown_vm(self):
 
         try:
             if self.kvm_run:
@@ -516,7 +516,7 @@ class ImageTester(object):
                 if os.path.exists('/usr/bin/img_vm_shutdown'):
                     self.commands.ssh(['/tmp/die'])
                 else:
-                    self.commands.ssh(['/sbin/shutdown', 'now'])
+                    self.commands.ssh(['/usr/sbin/shutdown', 'now'])
 
                 wait_for_vm_down(self.commands.kvm_comm, self.vm_wait)
 
@@ -527,11 +527,13 @@ class ImageTester(object):
                     self.commands.killkvm()
             except (sub.CalledProcessError, TimeoutError), err:
                 print "error %s" % err
-        finally:
-            try:
-                self.commands.removeoverlay(self.vmdisk)
-            except (sub.CalledProcessError, TimeoutError), err:
-                print "error %s" % err
+
+    def cleanup(self):
+
+        try:
+            self.commands.removeoverlay(self.vmdisk)
+        except (sub.CalledProcessError, TimeoutError), err:
+            print "error %s" % err
 
     def test(self):
         """Test the image"""
@@ -547,9 +549,15 @@ class ImageTester(object):
 
             self.setup_vm()
 
-            self.upgrade_vm()
+            self.update_vm()
 
             self.install_tests()
+
+            self.shutdown_vm()
+
+            self.boot_vm()
+
+            self.wait_for_vm()
 
             self.run_tests()
 
@@ -561,6 +569,9 @@ class ImageTester(object):
             self.result = False
         
         finally:
+
+            self.shutdown_vm()
+
             self.cleanup()
 
     def get_results(self):

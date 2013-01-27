@@ -16,6 +16,12 @@
 """Records an image job request in the django database of the web UI. Thus
 facilitating tracking and controlling it and later on removing it.
 
+This is useful to allow visibility of non-IMG processes in the IMG queue.
+
+This participant does not block and build_image should be called in the controlling process at some point after request_image.
+
+Once build_image is done, update_image_status can be called to set a status on the image.
+
 .. warning::
     The build_ks participant should have run first to provide the name and
     kickstart fields
@@ -40,14 +46,14 @@ facilitating tracking and controlling it and later on removing it.
       `<http://wiki.meego.com/Image_Configurations_-_KickStart_Files>`_
       for a description of kickstart files
    :image.image_type (string):
-      Format of image as supported by mic2. ex: livecd, raw, etc..
-      Check the available formats in mic2 --help
+      Format of image as supported by mic. ex: livecd, raw, etc..
+      Check the available formats in mic --help
    :image.name (string):
       Name of the image, usually the name of the kickstart in the format
-      `$VERTICAL-$ARCH-$VARIANT` , required by mic2 when using the --release
+      `$VERTICAL-$ARCH-$VARIANT` , required by mic when using the --release
       option ex: meego-core-ia32-minimal
    :image.release (string):
-      Turns on release creation in mic2
+      Turns on release creation in mic
    :image.arch (string):
       Architecture of image. ex: i586, armv7l, etc..
    :image.emails (list):
@@ -58,7 +64,14 @@ facilitating tracking and controlling it and later on removing it.
       OTS devicegroup. Testing is handled by the process and this is only just
       a record of it
    :image.extra_opts (list):
-      list of extra options to be passed verbatim to mic2
+      list of extra options to be passed verbatim to mic
+   :image.queue (string):
+      OPTIONAL If provided, specifies the IMG qeuee to be used.
+      defaults to "requests"
+   :image.prefix (string):
+      OPTIONAL If provided, specifies the path prefix where the resulting files
+      will be stored
+      defaults to "requests"
 
 :term:`Workitem` fields OUT:
 

@@ -23,6 +23,18 @@ facilitating tracking and controlling it and later on removing it.
 :term:`Workitem` fields IN:
 
 :Parameters:
+   :action (string):
+      "get_or_create" is the only supported value. If set the participant will
+      try to find an already created image with the parameters specified. When not
+      set or set to any unkown value the backward compatible default is to always
+      create a new job
+   :max_age (integer):
+      In days, if specified along with get_or_create will limit the search to images
+      that are older than max_age days
+
+:term:`Workitem` fields IN:
+
+:Parameters:
    :image.kickstart (string):
       Contents of a kickstart file. Refer to :
       `<http://wiki.meego.com/Image_Configurations_-_KickStart_Files>`_
@@ -61,6 +73,7 @@ facilitating tracking and controlling it and later on removing it.
 """
 
 import os, time
+import datetime
 
 os.environ['DJANGO_SETTINGS_MODULE'] = 'img_web.settings'
 from img_web.app.models import ImageJob, Queue
@@ -87,6 +100,7 @@ class ParticipantHandler(object):
     def handle_wi(self, wid):
         wid.result = False
         f = wid.fields
+        p = wid.params
         if not f.msg:
             f.msg = []
 
@@ -98,30 +112,50 @@ class ParticipantHandler(object):
             f.msg.append(f.__error__)
             raise RuntimeError("Missing mandatory field")
 
-        job = ImageJob()
-
-        job.image_id = "%s-%s" % ( str(f.ev.id),
-                                   time.strftime('%Y%m%d-%H%M%S') )
         qname = "requests"
         if f.image.queue and not f.image.queue == "web":
             qname = f.image.queue
-        job.queue = Queue.objects.get(name=qname)
-        job.user = self.user
-        job.image_type = f.image.image_type
-        job.arch = f.image.arch
-        job.kickstart = f.image.kickstart
-        job.name = f.image.name
+        queue = Queue.objects.get(name=qname)
+
+        image_args = { "queue" : queue, "user" : self.user,
+                       "image_type" : f.image.image_type,
+                       "arch" : f.image.arch,
+                       "kickstart" : f.image.kickstart,
+                       "name" : f.image.name
+                      }
         if f.emails:
-            job.emails = ",".join(f.emails)
+            image_args["email"] = ",".join(f.emails)
         else:
-            job.emails = self.user.email
-        if f.image.release:
-            job.release = f.image.release
+            image_args["email"] = self.user.email
         if f.image.devicegroup:
-            job.devicegroup = f.image.devicegroup
+            image_args["devicegroup"] = f.image.devicegroup
         if f.image.extra_opts:
-            job.test_options = f.image.extra_opts
-        job.save()
+            image_args["test_options"] = f.image.extra_opts
+        if f.image.tokenmap:
+            image_args["tokenmap"] = f.image.tokenmap
+
+        job = None
+        if wid.params.action == "get_or_create":
+            self.log.info("get_or_create")
+            jobs = ImageJob.objects.filter(**image_args).filter(status__startswith="DONE")
+            if wid.params.max_age:
+                ts = datetime.datetime.now() - datetime.timedelta(int(wid.params.max_age))
+                self.log.info(ts)
+                jobs.filter(done__gte = ts)
+            self.log.info(jobs.count())
+            if jobs.count():
+                job = jobs[0]
+                f.image.image_url = job.image_url
+                f.image.files_url = job.files_url
+                f.image.logfile_url = job.logfile_url
+ 
+        if not job:
+            self.log.info("New job")
+            job = ImageJob(**image_args)
+            job.image_id = "%s-%s" % ( str(f.ev.id),
+                                       time.strftime('%Y%m%d-%H%M%S') )
+            job.save()
+            f.image.image_url = ""
 
         f.image.prefix = "%s/%s" % (job.queue.name,
                                     job.user.username)

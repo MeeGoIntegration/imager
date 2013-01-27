@@ -170,8 +170,9 @@ class ParticipantHandler(object):
             job.save()
             f.image.image_url = ""
 
-        f.image.prefix = "%s/%s" % (job.queue.name,
-                                    job.user.username)
+        if not f.image.prefix:
+            f.image.prefix = "%s/%s" % (job.queue.name,
+                                        job.user.username)
         f.image.image_id = job.image_id 
 
         self.log.info("Requested image %s" % f.image.image_id)

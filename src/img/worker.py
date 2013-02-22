@@ -79,7 +79,7 @@ class Commands(object):
                      'sudo', '-n'
                    ]
 
-        self.killkvmbase = [
+        self.killbase = [
                      'pkill', '-f'
                    ]
 
@@ -202,7 +202,11 @@ class Commands(object):
                           (datetime.datetime.now(), self.timeout))
                 logf.flush()
 
+            kill_comm = copy(self.killbase)
+            kill_comm.append(" ".join(command))
+            self.run(kill_comm)
             proc.terminate()
+            proc.join(self.timeout)
             raise TimeoutError("Command was still running after %s "\
                                "seconds" % self.timeout)
         elif not proc.exitcode == 0:
@@ -297,7 +301,7 @@ class Commands(object):
 
     def killkvm(self):
         """Kill the KVM instance launched by the command we recorded"""
-        killkvm_comm = copy(self.killkvmbase)
+        killkvm_comm = copy(self.killbase)
         killkvm_comm.append(" ".join(self.kvm_comm))
         self.run(killkvm_comm)
 

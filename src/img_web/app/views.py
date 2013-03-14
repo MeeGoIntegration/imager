@@ -143,7 +143,11 @@ def search(request, tag=None):
     
     if request.method == 'GET':
         form = SearchForm(initial={"searchterm":tag})
-        alltags = [ x.name for x in ImageJob.tags.all() ]
+        alltags = []
+        for x in ImageJob.tags.all():
+            if len(ImageJob.objects.filter(tags__name__icontains = x.name)):
+                alltags.append(x.name)
+
         results = []
         if tag:
             results = ImageJob.objects.filter(tags__name__icontains = tag)
@@ -224,7 +228,8 @@ def retest_job(request, msgid):
     job = ImageJob.objects.get(image_id__exact=msgid)
     job.status = "DONE"
     job.test_image = True
-    job.test_options = ",".join("update", job.test_options)
+    #job.test_result = None
+    job.test_options = ",".join(["update", job.test_options])
     job.save()
     messages.add_message(request, messages.INFO, "Image %s was set for testing." % job.image_id)
         

@@ -116,7 +116,7 @@ class Commands(object):
                     '-soundhw', 'hda',
                     '-kernel', vm_kernel,
                     '-append',
-                    'root=/dev/vda panic=1 quiet rw elevator=noop ip=dhcp',
+                    'root=/dev/vda panic=1 quiet rw elevator=noop ip=dhcp video=vesafb:mtrr:3 vga=0x314 vt.global_cursor_default=0',
                     '-net', 'nic,model=virtio',
                     '-net', 'user,hostfwd=tcp:%s:%s-:22' % (self.device_ip, self.port)
                 ]
@@ -365,17 +365,20 @@ class ImageTester(object):
         self.test_packages = test_packages
         self.vm_pub_ssh_key = config["vm_pub_ssh_key"]
         self.vm_wait =  config["vm_wait"]
+        image_id = "".join(c for c in job_args['image_id'] if c.isalnum() or c in ['_','-']).rstrip()
+
+        self.extra_repos = job_args.get("extra_repos", [])
 
         if not "outdir" in job_args:
             job_args["outdir"] = os.path.join(config["base_dir"], job_args["prefix"],
-                                              job_args["image_id"])
+                                              image_id)
 
         self.results_dir = os.path.join(job_args["outdir"], "results")
 
         self.results_url = "%s/%s" % (job_args["files_url"], "results")
 
         self.logfile_name = os.path.join(job_args["outdir"],
-                                         "%s.log" % job_args["name"])
+                                         "%s.test.log" % job_args["name"])
 
         self.test_options = job_args.get("test_options", [])
         self.img_url = job_args["image_url"]
@@ -391,10 +394,13 @@ class ImageTester(object):
                                  vm_kernel=config["vm_kernel"],
                                  device_ip=config["device_ip"]
                                  )
+
+        self.commands.run(['mkdir', '-p', self.results_dir])
+
     def create_vm(self):
         if self.img_type == "fs":
             print "create empty lvm"
-            lvname = self.commands.mklv(hashlib.md5(self.img_url).hexdigest())
+            lvname = self.commands.mklv(hashlib.md5(self.img_url + str(time.time())).hexdigest())
             self.vmdisk = lvname
             print lvname
             print "format partition"
@@ -450,17 +456,22 @@ class ImageTester(object):
              self.commands.scpto(source='/etc/sysconfig/proxy',
                             dest='/etc/sysconfig/')
 
-        if os.path.exists('/usr/bin/img_vm_shutdown'):
-            print "inserting shutdown script"
-            self.commands.scpto(source='/usr/bin/img_vm_shutdown',
-                           dest='/tmp/die')
-            self.commands.ssh(['chmod', '+x', '/tmp/die'])
-
         print "inserting test script"
         self.commands.scpto(self.test_script, '/var/tmp/test_script.sh') 
         self.commands.ssh(['chmod', '+x', '/var/tmp/test_script.sh'])
         
     def update_vm(self):
+        count = 0
+        for repo in self.extra_repos:
+            #addrepo_comm = ['zypper', '-n', 'ar', '-f', '-G']
+            addrepo_comm = ['ssu', 'ar']
+            addrepo_comm.extend(['extra_repo_%s' % str(count), '"%s"' % repo])
+            self.commands.ssh(addrepo_comm)
+            count += 1
+
+        ref_comm = ['zypper', '-n', 'ref']
+        self.commands.ssh(ref_comm)
+
         if "update" in self.test_options:
             print "updating vm (depending on enabled repos or ssu)"
             update_comm = ['zypper', '-n', 'up', '--force-resolution']
@@ -468,10 +479,14 @@ class ImageTester(object):
 
     def install_tests(self):
         if self.test_packages:
-            print "adding test repo"
-            addrepo_comm = ['zypper', '-n', 'ar', '-f', '-G']
-            addrepo_comm.extend([self.testtools_repourl])
+            print "adding test tools repo"
+            #addrepo_comm = ['zypper', '-n', 'ar', '-f', '-G']
+            addrepo_comm = ['ssu', 'ar']
+            addrepo_comm.extend(['testtools', '"%s"' % self.testtools_repourl])
             self.commands.ssh(addrepo_comm)
+
+            ref_comm = ['zypper', '-n', 'ref']
+            self.commands.ssh(ref_comm)
             packages = []
             patterns = []
             for name in self.test_packages.keys():
@@ -492,7 +507,6 @@ class ImageTester(object):
 
     def run_tests(self):
 
-        self.commands.run(['mkdir', '-p', self.results_dir])
 
         try:
             print "running test script"
@@ -504,7 +518,8 @@ class ImageTester(object):
         finally:
             try:
                 print "trying to get any test results"
-                self.commands.scpfrom("/tmp/results/*.xml", self.results_dir)
+                self.commands.scpfrom("/tmp/results/*", self.results_dir)
+                self.commands.ssh(['rm', '-rf', '/tmp/results/*'])
             except:
                 pass
 
@@ -514,7 +529,12 @@ class ImageTester(object):
             if self.kvm_run:
                 self.commands.ssh(['sync'])
                 if os.path.exists('/usr/bin/img_vm_shutdown'):
-                    self.commands.ssh(['/tmp/die'])
+                    print "inserting shutdown script"
+                    self.commands.scpto(source='/usr/bin/img_vm_shutdown',
+                                   dest='/var/tmp/die')
+                    self.commands.ssh(['chmod', '+x', '/var/tmp/die'])
+
+                    self.commands.ssh(['/var/tmp/die'])
                 else:
                     self.commands.ssh(['/usr/sbin/shutdown', 'now'])
 
@@ -529,11 +549,12 @@ class ImageTester(object):
                 print "error %s" % err
 
     def cleanup(self):
-
-        try:
-            self.commands.removeoverlay(self.vmdisk)
-        except (sub.CalledProcessError, TimeoutError), err:
-            print "error %s" % err
+        if self.vmdisk:
+            try:
+                self.commands.removeoverlay(self.vmdisk)
+                self.commands.run(['mv', self.logfile_name, self.results_dir])
+            except (sub.CalledProcessError, TimeoutError), err:
+                print "error %s" % err
 
     def test(self):
         """Test the image"""
@@ -567,6 +588,8 @@ class ImageTester(object):
             print "error %s" % err
             self.error = str(err)
             self.result = False
+        except Exception, err:
+            print "error %s" % err
         
         finally:
 

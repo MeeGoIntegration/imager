@@ -459,18 +459,22 @@ class ParticipantHandler(object):
                                " or image.ksfile")
 
         projects = []
+
+        if f.image.extra_repos:
+            projects.extend(get_list(f.image.extra_repos, "extra_repos field"))
+
         if wid.params.project:
             if wid.params.repository:
                 repositories = [ wid.params.repository ]
             else:
                 repositories = self.get_repositories(wid, wid.params.project)
             for repo in repositories:
-                projects.append("%s/%s/%s" % (self.reposerver,
-                                              wid.params.project.replace(":", ":/"),
-                                              repo.replace(":", ":/")))
+                repourl = "%s/%s/%s" % (self.reposerver,
+                                        wid.params.project.replace(":", ":/"),
+                                        repo.replace(":", ":/"))
+                projects.append(repourl)
 
-        if f.image.extra_repos:
-            projects.extend(get_list(f.image.extra_repos, "extra_repos field"))
+       f.image.extra_repos = projects
 
         packages = []
         packages.extend(get_list(wid.params.packages, "packages parameter"))
@@ -511,7 +515,6 @@ class ParticipantHandler(object):
             if not f.image.name:
                 f.image.name = os.path.basename(ksfile)[0:-3]
 
-            f.msg.append("Kickstart handled successfully.")
             wid.result = True
         finally:
             if remove:

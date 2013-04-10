@@ -83,16 +83,29 @@ def submit(request):
         if ksname.endswith('.ks'):
             ksname = ksname[0:-3]
 
+
         for token in Token.objects.all():
             if token.name in data3:
                 tokenvalue = data3[token.name]
             else:
                 tokenvalue = token.default
 
+            if token.name == "RNDFLAVOUR":
+                rndpattern = ":/%s" % tokenvalue
+                if tokenvalue == "devel":
+                    rndpattern = ""
+                tokenmap.append("RNDPATTERN:%s" % rndpattern)
+
             tokenmap.append("%s:%s" % ( token.name, tokenvalue ))
             ksname = ksname.replace("@%s@" % token.name, tokenvalue)
 
+        archtoken = data['architecture']
+        if archtoken == "i686":
+            archtoken = "i586"
+        tokenmap.append("ARCH:%s" % archtoken)
+        
         imgjob.name = ksname
+        imgjob.arch = data['architecture']
         imgjob.tokenmap = ",".join(tokenmap)
 
         imgjob.image_id = "%s-%s" % ( request.user.id, 
@@ -102,7 +115,6 @@ def submit(request):
         imgjob.user = request.user
 
         imgjob.overlay = data['overlay']
-        imgjob.arch = data['architecture']
 
         if "test_image" in data.keys():
             imgjob.devicegroup = data['devicegroup']  
@@ -128,7 +140,8 @@ def submit(request):
         if data["pinned"]:
             imgjob.tags.add("pinned")
         if data["tags"]:
-            imgjob.tags.add(*data["tags"].split(","))
+            tags = [tag.replace(" ","_") for tag in data["tags"].split(",")]
+            imgjob.tags.add(*tags)
         
         return HttpResponseRedirect(reverse('img-app-queue'))
 
@@ -308,7 +321,8 @@ def job(request, msgid):
                                        'obj': imgjob,
                                        'tagform': tagform},
                                        context_instance=RequestContext(request))
-        imgjob.tags.set(*tagform.cleaned_data['tags'])
+        tags = [tag.replace(" ","_") for tag in tagform.cleaned_data['tags']]
+        imgjob.tags.set(*tags)
 
     if imgjob.status == "IN QUEUE":
         errors = { 'Error' : ["Job still in queue"] }

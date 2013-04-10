@@ -116,6 +116,7 @@ class Commands(object):
                   '-o', 'ConnectTimeout=60',
                   '-o', 'ConnectionAttempts=4',
                   '-o', 'UserKnownHostsFile=/dev/null',
+                  '-o', 'LogLevel=quiet',
                   '-o', 'StrictHostKeyChecking=no',
                   '-o', 'PasswordAuthentication=no'
                 ]
@@ -150,7 +151,7 @@ class Commands(object):
             '-device',
             'virtio-9p-pci,id=fs0,fsdev=fsdev0,mount_tag=mic_cache',
             '-fsdev', 
-            'local,security_model=none,id=fsdev0,path=%s' %
+            'local,security_model=mapped,id=fsdev0,path=%s' %
             mic_cachedir,
             ])
             self.kvmbase.extend([
@@ -207,6 +208,7 @@ class Commands(object):
             self.run(kill_comm)
             proc.terminate()
             proc.join(self.timeout)
+
             raise TimeoutError("Command was still running after %s "\
                                "seconds" % self.timeout)
         elif not proc.exitcode == 0:
@@ -376,8 +378,11 @@ class ImageWorker(object):
         """
         self.config = config
         
+        image_id = job_args.image_id
+        self.image_id = "".join(c for c in image_id if c.isalnum() or c in ['_','-']).rstrip()
+
         self._image_dir = os.path.join(config.base_dir, job_args.prefix,
-                                       job_args.image_id)
+                                       self.image_id)
 
         self._image_dir = "%s/" % self._image_dir
 
@@ -388,7 +393,7 @@ class ImageWorker(object):
         self.logfile_url = self.logfile_name.replace(self.config.base_dir,
                                                      self.config.base_url)
         self.files_url = "%s/%s/%s" % (config.base_url, job_args.prefix, 
-                                       job_args.image_id)
+                                       self.image_id)
         
         self.job_args = job_args
         self.image_file = None
@@ -407,6 +412,12 @@ class ImageWorker(object):
         mic_cachedir = None
         if self.config.use_kvm and self.config.use_9p_cache:
             mic_cachedir = self.config.mic_cachedir
+            if "SUPERVISOR_ENABLED" in os.environ:
+                mic_cachedir = os.path.join(mic_cachedir, os.environ["SUPERVISOR_PROCESS_NAME"])
+                try:
+                    os.mkdir(mic_cachedir)
+                except OSError as e:
+                    print e
 
         commands = Commands(self.config.vm_kernel,
                             ssh_key=self.config.vm_ssh_key,
@@ -417,7 +428,11 @@ class ImageWorker(object):
                             ict=self.config.ict)
 
         print self._image_dir
-        os.makedirs(self._image_dir, 0775)
+        try:
+            os.makedirs(self._image_dir, 0775)
+        except OSError as e:
+            if e.errno == 17:
+                pass
 
         ksfile_name = os.path.join(self._image_dir, "%s.ks" %\
                                    self.job_args.name)
@@ -441,9 +456,8 @@ class ImageWorker(object):
             else:
 
                 try:
-
                     overlay_suffix = 'overlay-%s-port-%s' % \
-                                     (self.job_args.image_id, commands.port)
+                                     (self.image_id, commands.port)
 
                     overlayimg = commands.overlaycreate(self.config.img_tmp,
                                                         self.config.vm_base_img,
@@ -485,7 +499,7 @@ class ImageWorker(object):
                                        dest=self._image_dir)
 
                         if mic_cachedir:
-                            commands.mount_mic_cache(mic_cachedir)
+                            commands.mount_mic_cache(os.path.dirname(mic_cachedir))
                             commands.mount_mic_output(self._image_dir)
 
                         commands.runmic(ssh=True, job_args=self.job_args)
@@ -495,7 +509,8 @@ class ImageWorker(object):
                                              dest=self._image_dir)
 
                         commands.run(['chmod', '-R', 'g+r,o+r', self._image_dir])
-
+ 
+                        self.success()
                         self.result = True
 
                 except (sub.CalledProcessError, TimeoutError), err:
@@ -521,10 +536,11 @@ class ImageWorker(object):
                         except (sub.CalledProcessError, TimeoutError), err:
                             print "error %s" % err
                     finally:
-                        try:
-                            commands.removeoverlay(overlayimg)
-                        except (sub.CalledProcessError, TimeoutError), err:
-                            print "error %s" % err
+                        if overlayimg:
+                            try:
+                                commands.removeoverlay(overlayimg)
+                            except (sub.CalledProcessError, TimeoutError), err:
+                                print "error %s" % err
 
         elif not self.config.use_kvm:
             try:
@@ -537,6 +553,7 @@ class ImageWorker(object):
                     self.result = False
 
                 commands.runmic(ssh=False, job_args=self.job_args)
+                self.success()
                 self.result = True
 
             except (sub.CalledProcessError, TimeoutError), err:
@@ -544,8 +561,8 @@ class ImageWorker(object):
                 self.error = str(err)
                 self.result = False
 
+    def success(self):
         self.image_file = find_largest_file(self._image_dir)
-    
         self.image_url = self.image_file.replace(self.config.base_dir,
                                                  self.config.base_url)
 

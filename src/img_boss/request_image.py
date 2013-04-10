@@ -143,7 +143,9 @@ class ParticipantHandler(object):
         if f.image.devicegroup:
             image_args["devicegroup"] = f.image.devicegroup
         if f.image.extra_opts:
-            image_args["test_options"] = f.image.extra_opts
+            image_args["extra_opts"] = f.image.extra_opts
+        if f.image.test_options:
+            image_args["test_options"] = f.image.test_options
         if f.image.tokenmap:
             image_args["tokenmap"] = f.image.tokenmap
 
@@ -152,9 +154,9 @@ class ParticipantHandler(object):
             self.log.info("get_or_create")
             jobs = ImageJob.objects.filter(**image_args).filter(status__startswith="DONE")
             if wid.params.max_age:
-                ts = datetime.datetime.now() - datetime.timedelta(int(wid.params.max_age))
+                ts = datetime.datetime.now() - datetime.timedelta(days=int(wid.params.max_age))
                 self.log.info(ts)
-                jobs.filter(done__gte = ts)
+                jobs = jobs.exclude(done__lte = ts)
             self.log.info(jobs.count())
             if jobs.count():
                 job = jobs[0]

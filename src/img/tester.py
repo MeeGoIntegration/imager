@@ -461,13 +461,12 @@ class ImageTester(object):
         self.commands.ssh(['chmod', '+x', '/var/tmp/test_script.sh'])
         
     def update_vm(self):
-        count = 0
         for repo in self.extra_repos:
             #addrepo_comm = ['zypper', '-n', 'ar', '-f', '-G']
             addrepo_comm = ['ssu', 'ar']
-            addrepo_comm.extend(['extra_repo_%s' % str(count), '%s' % repo])
+            reponame = repo.replace('/','_').replace(':','_')
+            addrepo_comm.extend([reponame, '%s' % repo])
             self.commands.ssh(addrepo_comm)
-            count += 1
 
         ref_comm = ['zypper', '-n', 'ref']
         self.commands.ssh(ref_comm)

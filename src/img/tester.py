@@ -465,7 +465,7 @@ class ImageTester(object):
         for repo in self.extra_repos:
             #addrepo_comm = ['zypper', '-n', 'ar', '-f', '-G']
             addrepo_comm = ['ssu', 'ar']
-            addrepo_comm.extend(['extra_repo_%s' % str(count), '"%s"' % repo])
+            addrepo_comm.extend(['extra_repo_%s' % str(count), '%s' % repo])
             self.commands.ssh(addrepo_comm)
             count += 1
 
@@ -478,13 +478,14 @@ class ImageTester(object):
             self.commands.ssh(update_comm)
 
     def install_tests(self):
-        if self.test_packages:
+        if self.testtools_repourl:
             print "adding test tools repo"
             #addrepo_comm = ['zypper', '-n', 'ar', '-f', '-G']
             addrepo_comm = ['ssu', 'ar']
-            addrepo_comm.extend(['testtools', '"%s"' % self.testtools_repourl])
+            addrepo_comm.extend(['testtools', '%s' % self.testtools_repourl])
             self.commands.ssh(addrepo_comm)
 
+        if self.test_packages:
             ref_comm = ['zypper', '-n', 'ref']
             self.commands.ssh(ref_comm)
             packages = []

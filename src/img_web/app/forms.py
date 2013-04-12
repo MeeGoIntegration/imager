@@ -15,7 +15,7 @@
 
 """ Image job creation forms """
 
-import os,re
+import os,re, glob
 from django import forms
 from django.forms.formsets import formset_factory
 from django.core.validators import validate_email
@@ -135,9 +135,9 @@ class UploadFileForm(forms.Form):
     def __init__(self, *args, **kwargs):
         super(UploadFileForm, self).__init__(*args, **kwargs)
         self.fields['template'].choices=[("None", "None")]
-        for template in os.listdir(settings.TEMPLATESDIR):
-            name = template
-            with open("%s/%s" % (settings.TEMPLATESDIR, template)) as tf:
+        for template in glob.glob(os.path.join(settings.TEMPLATESDIR, '*.ks')):
+            name = os.path.basename(template)
+            with open(template, 'r') as tf:
                 for line in tf:
                     if re.match(r'^#DisplayName:.+$', line):
                         name = line.split(":")[1].strip()

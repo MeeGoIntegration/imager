@@ -64,7 +64,6 @@ def submit(request):
         data2 = formset.cleaned_data
         data3 = formset2.cleaned_data[0]
 
-
         imgjob = ImageJob()
 
         ksname = ""
@@ -123,15 +122,13 @@ def submit(request):
         if "notify_image" in data.keys():
             imgjob.notify = data["notify_image"]
 
-        conf = []
-        for prj in data2:
-            if prj['obs']:
-                repo = prj['obs'] + prj['repo'].replace(':',':/')
-                conf.append(repo)
+        extra_repos = []
+        for repo in data2:
+            if repo['obs']:
+                repo_url = repo['obs'] + repo[project].replace(':', ':/') + repo['repo']
+                extra_repos.append(repo_url)
 
-        imgjob.extra_repos = ",".join(conf)
-
-
+        imgjob.extra_repos = ",".join(extra_repos)
 
         imgjob.queue = Queue.objects.get(name="web")
 

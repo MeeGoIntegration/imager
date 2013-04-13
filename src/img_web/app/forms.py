@@ -28,9 +28,12 @@ class extraReposForm(forms.Form):
     obs = forms.ChoiceField(label="OBS", choices=[("None", "None")],
                             help_text="Extra OBS instances from which packages"\
                                       " may be downloaded from.")
+    project = forms.CharField(label = "Project", required=False, max_length=500,
+                              help_text = "Project name in which the repository "\
+                              "lives. For example: home:user")
     repo = forms.CharField(label = "Repository", required=False, max_length=500,
-                           help_text = "Repositories in which the packages "\
-                           "live. For example: Core:Devel:Kernel/standard")
+                           help_text = "Repository name in which the packages "\
+                           "live. For example: latest_i486")
 
     def __init__(self, *args, **kwargs):
         super(extraReposForm, self).__init__(*args, **kwargs)
@@ -139,7 +142,7 @@ class UploadFileForm(forms.Form):
             name = os.path.basename(template)
             with open(template, 'r') as tf:
                 for line in tf:
-                    if re.match(r'^#DisplayName:.+$', line):
+                    if re.match(r'^#.*?DisplayName:.+$', line):
                         name = line.split(":")[1].strip()
                         break
             self.fields['template'].choices.append((template , name))

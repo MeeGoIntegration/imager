@@ -114,6 +114,7 @@ class Commands(object):
                     '-nographic', '-no-reboot',
                     '-daemonize', '-m', '1G',
                     '-soundhw', 'hda',
+                    '-usb', '-usbdevice', 'tablet',
                     '-kernel', vm_kernel,
                     '-append',
                     'root=/dev/vda panic=1 quiet rw elevator=noop ip=dhcp video=vesafb:mtrr:3 vga=0x314 vt.global_cursor_default=0',
@@ -128,7 +129,7 @@ class Commands(object):
 
         self.kvm_comm = None
 
-    def run(self, command, env=[]):
+    def run(self, command, env=[], ignore_error=False):
         """Method to run an arbitrary command and pipe the log output to a file.
         Uses subprocess.check_call to properly execute and catch if any errors
         occur.
@@ -151,8 +152,8 @@ class Commands(object):
             proc.terminate()
             raise TimeoutError("Command was still running after %s "\
                                "seconds" % self.timeout)
-        elif not proc.exitcode == 0:
-            raise sub.CalledProcessError(int(proc.exitcode), "Command returned non 0 exit code %s " % proc.exitcode)
+        if not proc.exitcode == 0 and not ignore_error:
+           raise sub.CalledProcessError(int(proc.exitcode), "Command returned non 0 exit code %s " % proc.exitcode)
 
     def scpto(self, source="", dest=""):
         """Generic ssh copy file method, from KVM to host.
@@ -191,9 +192,12 @@ class Commands(object):
             self.run(ssh_comm)
         except sub.CalledProcessError:
             if ignore_error:
-                pass
+                print "SSH command raised error and ignore_error was False"
+                return False
             else:
                 raise
+        else:
+            return True
 
     def is_lvm(self, img):
         """Returns true if a file is recognized by lvdisplay as an LV
@@ -373,7 +377,7 @@ class ImageTester(object):
             job_args["outdir"] = os.path.join(config["base_dir"], job_args["prefix"],
                                               image_id)
 
-        self.results_dir = os.path.join(job_args["outdir"], "results")
+        self.results_dir = os.path.join(job_args["outdir"], "results") + "/"
 
         self.results_url = "%s/%s" % (job_args["files_url"], "results")
 
@@ -456,17 +460,14 @@ class ImageTester(object):
              self.commands.scpto(source='/etc/sysconfig/proxy',
                             dest='/etc/sysconfig/')
 
-        print "inserting test script"
-        self.commands.scpto(self.test_script, '/var/tmp/test_script.sh') 
-        self.commands.ssh(['chmod', '+x', '/var/tmp/test_script.sh'])
-        
     def update_vm(self):
+        count = 0
         for repo in self.extra_repos:
             #addrepo_comm = ['zypper', '-n', 'ar', '-f', '-G']
             addrepo_comm = ['ssu', 'ar']
-            reponame = repo.replace('/','_').replace(':','_')
-            addrepo_comm.extend([reponame, '%s' % repo])
+            addrepo_comm.extend(['extra_repo_%s' % str(count), '"%s"' % repo])
             self.commands.ssh(addrepo_comm)
+            count += 1
 
         ref_comm = ['zypper', '-n', 'ref']
         self.commands.ssh(ref_comm)
@@ -477,14 +478,13 @@ class ImageTester(object):
             self.commands.ssh(update_comm)
 
     def install_tests(self):
-        if self.testtools_repourl:
+        if self.test_packages:
             print "adding test tools repo"
             #addrepo_comm = ['zypper', '-n', 'ar', '-f', '-G']
             addrepo_comm = ['ssu', 'ar']
-            addrepo_comm.extend(['testtools', '%s' % self.testtools_repourl])
+            addrepo_comm.extend(['testtools', '"%s"' % self.testtools_repourl])
             self.commands.ssh(addrepo_comm)
 
-        if self.test_packages:
             ref_comm = ['zypper', '-n', 'ref']
             self.commands.ssh(ref_comm)
             packages = []
@@ -496,23 +496,26 @@ class ImageTester(object):
                     packages.append(name)
             if packages:
                 print "installing test packages"
-                install_comm = ['zypper', 'in', '-y', '-f', '--force-resolution']
+                install_comm = ['zypper', '-vv', 'in', '-y', '-f', '--force-resolution']
                 install_comm.extend(packages)
                 self.commands.ssh(install_comm)
             if patterns:
                 print "installing test patterns"
-                install_comm = ['zypper', 'in', '-y', '-f', '--force-resolution', '-t', 'pattern']
+                install_comm = ['zypper', '-vv', 'in', '-y', '-f', '--force-resolution', '-t', 'pattern']
                 install_comm.extend(patterns)
                 self.commands.ssh(install_comm)
 
     def run_tests(self):
 
-
         try:
             print "running test script"
+            print "inserting test script"
+            self.commands.scpto(self.test_script, '/var/tmp/test_script.sh') 
+            self.commands.ssh(['chmod', '+x', '/var/tmp/test_script.sh'])
             test_comm = ['/var/tmp/test_script.sh']
             #test_comm.extend(self.test_packages.keys())
-            self.commands.ssh(test_comm, user=self.test_user)
+            self.result = self.commands.ssh(test_comm, user=self.test_user, ignore_error=True)
+            print "Test result is %s" % self.result
         except:
             raise
         finally:
@@ -581,8 +584,6 @@ class ImageTester(object):
             self.wait_for_vm()
 
             self.run_tests()
-
-            self.result = True
 
         except (sub.CalledProcessError, TimeoutError), err:
             print "error %s" % err

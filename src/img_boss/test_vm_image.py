@@ -24,18 +24,43 @@
 
 from img.common import tester_config
 from img.tester import ImageTester
+from RuoteAMQP import Launcher 
 
 class ParticipantHandler(object):
+    """Participant class as defined by the SkyNET API"""
 
     def __init__(self):
-        self.config = None
+
+        self.launcher = None
+        self.process = \
+        """Ruote.process_definition 'test_image_ondemand' do
+             sequence do
+               set :f => 'debug_dump', :value => 'true'
+               update_image_status :status => '%s'
+             end
+           end
+        """
 
     def handle_wi_control(self, ctrl):
+        """ job control thread """
         pass
+
+    def push_img_status(self, status, fields):
+        """ function to push status by launching a process, ?utility """
+        self.launcher.launch(self.process % status, fields)
 
     def handle_lifecycle_control(self, ctrl):
         if ctrl.message == "start":
             self.config = tester_config(config=ctrl.config)
+            self.launcher = Launcher(amqp_host = ctrl.config.get("boss",
+                                                                 "amqp_host"),
+                                     amqp_user = ctrl.config.get("boss",
+                                                                 "amqp_user"),
+                                     amqp_pass = ctrl.config.get("boss",
+                                                                 "amqp_pwd"),
+                                     amqp_vhost = ctrl.config.get("boss",
+                                                                  "amqp_vhost")
+                                     )
 
     def handle_wi(self, wid):
         wid.result = False
@@ -54,6 +79,8 @@ class ParticipantHandler(object):
                                  job_args=jargs,
                                  test_packages=test_packages)
 
+            self.push_img_status("DONE, TESTING", f.as_dict())
+
             tester.test()
 
             f.image.test_result = tester.get_results()["result"]
@@ -66,4 +93,5 @@ class ParticipantHandler(object):
             f.msg.append(f.__error__)
             raise
         else:
+            self.push_img_status("DONE, TESTED", f.as_dict())
             wid.result = f.image.test_result

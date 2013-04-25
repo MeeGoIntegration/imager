@@ -483,7 +483,7 @@ class ParticipantHandler(object):
             packages.extend(get_list(extra_packages,
                             "field %s" % wid.params.packages_from))
         if wid.params.packages_event:
-            packages.extend([act['targetpackage'] for act in f.ev.actions])
+            packages.extend([act['targetpackage'] for act in f.ev.actions if act['type'] == 'submit'])
         packages.extend(get_list(f.image.packages, "image.packages field"))
 
         groups = []

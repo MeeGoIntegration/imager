@@ -67,7 +67,6 @@ def submit(request):
         imgjob = ImageJob()
 
         ksname = ""
-        tokenmap = []
 
         if 'template' in data and data['template']:
             ksname = data['template']
@@ -82,7 +81,20 @@ def submit(request):
         if ksname.endswith('.ks'):
             ksname = ksname[0:-3]
 
+        extra_repos = set()
+        for repo in data2:
+            if repo['obs']:
+                repo_url = repo['obs'] + repo[project].replace(':', ':/') + repo['repo']
+                extra_repos.add(repo_url)
 
+        overlay = set([ x for x in data['overlay'].split(',') if x.strip()])
+        if 'features' in data:
+            for feat in data['features']:
+                print feat
+                extra_repos.update(feat.get('repos', set()))
+                overlay.update(feat.get('pattern', set()))
+
+        tokenmap = {}
         for token in Token.objects.all():
             if token.name in data3:
                 tokenvalue = data3[token.name]
@@ -93,27 +105,34 @@ def submit(request):
                 rndpattern = ":/%s" % tokenvalue
                 if tokenvalue == "devel":
                     rndpattern = ""
-                tokenmap.append("RNDPATTERN:%s" % rndpattern)
-
-            tokenmap.append("%s:%s" % ( token.name, tokenvalue ))
-            ksname = ksname.replace("@%s@" % token.name, tokenvalue)
+                tokenmap["RNDPATTERN"] = rndpattern
+            
+            tokenmap[token.name] = tokenvalue
 
         archtoken = data['architecture']
         if archtoken == "i686":
             archtoken = "i586"
-        tokenmap.append("ARCH:%s" % archtoken)
+        tokenmap["ARCH"] = archtoken
+
+        tokens_list = []
+        extra_repos_tmp = []
+        for token, tokenvalue in tokenmap.items(): 
+            ksname = ksname.replace("@%s@" % token, tokenvalue)
+            tokens_list.append("%s:%s" % (token, tokenvalue))
+            for repo in extra_repos:
+                extra_repos_tmp.append(repo.replace("@%s@" % token, tokenvalue))
+            extra_repos = extra_repos_tmp[:]
+            extra_repos_tmp = []
         
         imgjob.name = ksname
         imgjob.arch = data['architecture']
-        imgjob.tokenmap = ",".join(tokenmap)
+        imgjob.tokenmap = ",".join(tokens_list)
 
         imgjob.image_id = "%s-%s" % ( request.user.id, 
                                       time.strftime('%Y%m%d-%H%M%S') )
         imgjob.email = data['email']
         imgjob.image_type = data['imagetype']
         imgjob.user = request.user
-
-        imgjob.overlay = data['overlay']
 
         if "test_image" in data.keys():
             imgjob.devicegroup = data['devicegroup']  
@@ -122,16 +141,11 @@ def submit(request):
         if "notify_image" in data.keys():
             imgjob.notify = data["notify_image"]
 
-        extra_repos = []
-        for repo in data2:
-            if repo['obs']:
-                repo_url = repo['obs'] + repo[project].replace(':', ':/') + repo['repo']
-                extra_repos.append(repo_url)
 
         imgjob.extra_repos = ",".join(extra_repos)
+        imgjob.overlay = ",".join(overlay)
 
         imgjob.queue = Queue.objects.get(name="web")
-
         imgjob.save()
         
         if data["pinned"]:

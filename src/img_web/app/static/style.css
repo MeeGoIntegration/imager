@@ -522,3 +522,12 @@ div.logtext {
         font-size:      10px;
 	background: #E1E1E1;
 }
+
+div#features ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+div#features ul li {
+  display: inline;
+}

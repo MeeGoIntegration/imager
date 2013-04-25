@@ -10,8 +10,8 @@
         $('#id_extra_repos_table tbody tr').formset({
             extraClasses: ['row1', 'row2', 'row3']
         });
-        $('#ksfile').attr("checked","checked");
-        $('#id_template').attr("disabled","disabled");
+        $('#id_ksfile').attr("disabled","disabled");
+        $('#template').attr("checked","checked");
         $('#ksfile , #template').change(function(e){
             var enid = '' + $(e.target).attr('id');
             var dissel = 'input:radio:not([id=' + enid + '])';
@@ -71,11 +71,11 @@
         </tr>
         <tr>
             <td>
-              <input type="radio" name="choice" id="{{ form.ksfile.name }}"/>
-            {{ form.ksfile.label_tag }} 
+              <input type="radio" name="choice" id="{{ form.template.name }}"/>
+            {{ form.template.label_tag }} 
             </td>
             <td>
-            {{ form.ksfile }}
+            {{ form.template }}
             </td>
         </tr>
         <tr border="15px">
@@ -84,11 +84,11 @@
         </tr>
         <tr>
             <td>
-              <input type="radio" name="choice" id="{{ form.template.name }}"/>
-            {{ form.template.label_tag }} 
+              <input type="radio" name="choice" id="{{ form.ksfile.name }}"/>
+            {{ form.ksfile.label_tag }} 
             </td>
             <td>
-            {{ form.template }}
+            {{ form.ksfile }}
             </td>
         </tr>
         </table>
@@ -119,51 +119,33 @@
     {{ formset2.management_form }}
 </fieldset>
 <fieldset>
-    <legend>Notification options</legend>
-    <table width="100%">
-        <tr>
-            <td>
-            {{ form.notify_image.label_tag }} 
-            </td>
-            <td>
-            {{ form.notify_image }}
-            </td>
-        </tr>
-        <tr>
-            <td>
-            {{ form.email.label_tag }} 
-            </td>
-            <td>
-            {{ form.email }}
-            </td>
-        </tr>
-    </table>
+    <legend>Optional Features</legend>
+    <div id="features">
+         <table>
+             <tr>
+                 <td>{{ form.features }}</td>
+             </tr>
+         </table>
+    </div>
 </fieldset>
+    <p><input type="submit" value="Submit" /></p>
 <fieldset>
-    <legend>Testing options</legend>
+    <legend>Metadata options</legend>
     <table width="100%">
         <tr>
             <td>
-            {{ form.test_image.label_tag }} 
+            {{ form.pinned.label_tag }} 
             </td>
             <td>
-            {{ form.test_image }}
-            </td>
-        </tr>
-        <tr>
-            <td>
-            {{ form.devicegroup.label_tag }} 
-            </td>
-            <td>
-            {{ form.devicegroup }}
+            {{ form.pinned }} 
             </td>
         </tr>
         <tr>
             <td>
-            {{ form.test_options.label_tag }} 
+            {{ form.tags.label_tag }} 
             </td>
             <td>
-            {{ form.test_options }}
+            {{ form.tags }} 
             </td>
         </tr>
     </table>
@@ -201,22 +183,51 @@
     </table>
 </fieldset>
 <fieldset>
-    <legend>Metadata options</legend>
+    <legend>QA options</legend>
     <table width="100%">
         <tr>
             <td>
-            {{ form.pinned.label_tag }} 
+            {{ form.test_image.label_tag }} 
             </td>
             <td>
-            {{ form.pinned }} 
+            {{ form.test_image }}
             </td>
         </tr>
         <tr>
             <td>
-            {{ form.tags.label_tag }} 
+            {{ form.devicegroup.label_tag }} 
             </td>
             <td>
-            {{ form.tags }} 
+            {{ form.devicegroup }}
+            </td>
+        </tr>
+        <tr>
+            <td>
+            {{ form.test_options.label_tag }} 
+            </td>
+            <td>
+            {{ form.test_options }}
+            </td>
+        </tr>
+    </table>
+</fieldset>
+<fieldset>
+    <legend>Notification options</legend>
+    <table width="100%">
+        <tr>
+            <td>
+            {{ form.notify_image.label_tag }} 
+            </td>
+            <td>
+            {{ form.notify_image }}
+            </td>
+        </tr>
+        <tr>
+            <td>
+            {{ form.email.label_tag }} 
+            </td>
+            <td>
+            {{ form.email }}
             </td>
         </tr>
     </table>

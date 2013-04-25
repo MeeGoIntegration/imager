@@ -16,12 +16,42 @@
 """ Image job creation forms """
 
 import os,re, glob
+from collections import defaultdict
+import ConfigParser
 from django import forms
 from django.forms.formsets import formset_factory
 from django.core.validators import validate_email
 from taggit.forms import TagField
 from img_web import settings
 from img_web.app.models import ImageType, Arch, BuildService, Token
+
+def get_features():
+    config = ConfigParser.ConfigParser()
+    for feature in glob.glob(os.path.join(settings.FEATURESDIR, '*.feature')):
+        config.read(feature)
+    return config
+
+def list_features():
+    features = get_features()
+    choices = set()
+    for name in features.sections():
+        if name == "repositories":
+            continue
+        description = name
+        if features.has_option(name, "description"):
+            description = features.get(name, "description")
+        choices.add((name, description))
+    return choices
+
+def expand_feature(name):
+    features = get_features()
+    feat = defaultdict(set)
+    if features.has_option(name, "pattern"):
+        feat["pattern"].add(features.get(name, "pattern"))
+    if features.has_option(name, "repos"):
+        for repo in features.get(name, "repos").split(","):
+            feat["repos"].add(features.get("repositories", repo))
+    return dict(feat)
 
 class extraReposForm(forms.Form):
     """ Django form that can be used multiple times in the UploadFileForm """
@@ -102,9 +132,9 @@ class UploadFileForm(forms.Form):
                                            "when the image building is done.")
 
     if settings.testing_enabled:
-        test_image = forms.BooleanField(label="Test image", required=False,
+        test_image = forms.BooleanField(label="QA image", required=False,
                                         initial=False,
-                            help_text="Test image: Send image for testing. ")
+                            help_text="Test image: Send image for QA. ")
         devicegroup = forms.CharField(label="Device group", required=False,
                                 help_text="Device group: device group to "\
                                 "use for test run.",
@@ -115,6 +145,11 @@ class UploadFileForm(forms.Form):
                                                     help_text=\
                               "Test options: comma separated list of test "\
                               "options you want to send to the testing server.")
+
+    features = forms.TypedMultipleChoiceField(label="Features", choices=[],
+                            help_text="Features: Commonly used extra features", empty_value={},
+                            coerce=expand_feature, required = False,
+                            widget=forms.widgets.CheckboxSelectMultiple)
 
     overlay = forms.CharField(label="Packages", required=False,
                               widget=forms.Textarea(attrs={'rows':'4'}),
@@ -128,7 +163,7 @@ class UploadFileForm(forms.Form):
                                 initial=False,
                             help_text="Pin image so it doesn't expire or get "\
                                       "deleted by mistake. ")
-    tags = forms.CharField(label="Free Tags", required=False,
+    tags = forms.CharField(label="Tags", required=False,
                            widget=forms.Textarea(attrs={'rows':'2'}),
                                                  help_text=\
                               "Packages: comma separated list of tags "\
@@ -140,15 +175,17 @@ class UploadFileForm(forms.Form):
         self.fields['template'].choices=[("None", "None")]
         for template in glob.glob(os.path.join(settings.TEMPLATESDIR, '*.ks')):
             name = os.path.basename(template)
+            templatename = os.path.basename(template)
             with open(template, 'r') as tf:
                 for line in tf:
                     if re.match(r'^#.*?DisplayName:.+$', line):
                         name = line.split(":")[1].strip()
                         break
-            self.fields['template'].choices.append((template , name))
+            self.fields['template'].choices.append((templatename , name))
         self.fields['template'].choices = sorted(self.fields['template'].choices, key=lambda name: name[1])
         self.fields['architecture'].choices = [(arch.name, arch.name) for arch in Arch.objects.all()]
         self.fields['imagetype'].choices = [(itype.name, itype.name) for itype in ImageType.objects.all()]
+        self.fields['features'].choices = list_features()
 
     def clean(self):
         cleaned_data = self.cleaned_data

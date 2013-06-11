@@ -30,7 +30,7 @@ import pycurl
 #except ImportError:
 #    pass
 
-from img.common import getport, fork, wait_for_vm_up, wait_for_vm_down
+from img.common import getmac, getport, fork, wait_for_vm_up, wait_for_vm_down
 
 class Commands(object):
     """Commands object for running various image building commands"""
@@ -47,6 +47,8 @@ class Commands(object):
 
         """
         self.port = getport()
+
+        self.mac = getmac()
 
         self._logf = logfn
 
@@ -118,7 +120,7 @@ class Commands(object):
                     '-kernel', vm_kernel,
                     '-append',
                     'root=/dev/vda panic=1 quiet rw elevator=noop ip=dhcp video=vesafb:mtrr:3 vga=0x314 vt.global_cursor_default=0',
-                    '-net', 'nic,model=virtio',
+                    '-net', 'nic,model=virtio,macaddr=%s' % self.mac, 
                     '-net', 'user,hostfwd=tcp:%s:%s-:22' % (self.device_ip, self.port)
                 ]
 
@@ -461,15 +463,14 @@ class ImageTester(object):
                             dest='/etc/sysconfig/')
 
     def update_vm(self):
-        count = 0
         for repo in self.extra_repos:
             #addrepo_comm = ['zypper', '-n', 'ar', '-f', '-G']
+            reponame = repo.replace('/','_').replace(':','_')
             addrepo_comm = ['ssu', 'ar']
-            addrepo_comm.extend(['extra_repo_%s' % str(count), '"%s"' % repo])
+            addrepo_comm.extend([reponame, '"%s"' % repo])
             self.commands.ssh(addrepo_comm)
-            count += 1
 
-        ref_comm = ['zypper', '-n', 'ref']
+        ref_comm = ['zypper', '-vvv', '-n', 'ref', '-f']
         self.commands.ssh(ref_comm)
 
         if "update" in self.test_options:
@@ -481,9 +482,10 @@ class ImageTester(object):
         if self.test_packages:
             print "adding test tools repo"
             #addrepo_comm = ['zypper', '-n', 'ar', '-f', '-G']
-            addrepo_comm = ['ssu', 'ar']
-            addrepo_comm.extend(['testtools', '"%s"' % self.testtools_repourl])
-            self.commands.ssh(addrepo_comm)
+            if self.testtools_repourl:
+                addrepo_comm = ['ssu', 'ar']
+                addrepo_comm.extend(['testtools', '"%s"' % self.testtools_repourl])
+                self.commands.ssh(addrepo_comm)
 
             ref_comm = ['zypper', '-n', 'ref']
             self.commands.ssh(ref_comm)

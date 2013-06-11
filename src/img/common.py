@@ -56,6 +56,9 @@ def tester_config(config=None, conffile="/etc/imager/img.conf"):
     for item in ["base_dir", "vm_kernel", "timeout", "vm_priv_ssh_key", "vm_pub_ssh_key", "vg_name", "vm_wait", "testtools_repourl", "test_script", "test_user", "device_ip"]:
         conf[item] = config.get(section, item)
 
+    for item in ["use_base_img"]:
+        conf[item] = config.getboolean(section, item)
+
     return conf
 
 def getport():
@@ -66,18 +69,27 @@ def getport():
     """
     return random.randint(49152, 65535)
 
+def getmac():
+    """Gets a random mac address for the KVM virtual machine communtication.
+
+    :returns: random mac address
+    """
+    return 'DE:AD:BE:EF:%0.2X:%0.2X' % (random.randint(0, 32), random.randint(0, 32))
+
 def fork(logfile, command, env=[]):
     with open(logfile, 'a+b') as logf:
         for e, v in env:
             os.environ[e] = v
-        sub.check_call(command, shell=False, stdout=logf, 
-                       stderr=logf, stdin=sub.PIPE)
+        x = sub.check_call(command, shell=False, stdout=logf, 
+                          stderr=logf, stdin=sub.PIPE)
+        logf.flush()
         for e, v in env:
             if e in os.environ:
                 del(os.environ[e])
+	return x
 
 def wait_for_vm_up(host, port, timeout):
-
+    time.sleep(10)
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.settimeout(float(timeout))
     retries = 0

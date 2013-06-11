@@ -84,7 +84,7 @@ def submit(request):
         extra_repos = set()
         for repo in data2:
             if repo['obs']:
-                repo_url = repo['obs'] + repo[project].replace(':', ':/') + repo['repo']
+                repo_url = repo['obs'] + repo['project'].replace(':', ':/') + repo['repo']
                 extra_repos.add(repo_url)
 
         overlay = set([ x for x in data['overlay'].split(',') if x.strip()])

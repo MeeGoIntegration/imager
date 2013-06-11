@@ -20,7 +20,7 @@ import subprocess as sub
 from multiprocessing import Process, TimeoutError
 import time, datetime
 from copy import copy
-from img.common import getport, fork, wait_for_vm_up, wait_for_vm_down
+from img.common import getmac, getport, fork, wait_for_vm_up, wait_for_vm_down
 
 def find_largest_file(indir):
     """Find the largest file in a given directory string.
@@ -70,6 +70,8 @@ class Commands(object):
 
         """
         self.port = getport()
+
+        self.mac = getmac()
 
         self._logf = log_filename
 
@@ -142,7 +144,7 @@ class Commands(object):
                     '-kernel', vm_kernel,
                     '-append',
                     'root=/dev/vda panic=1 quiet rw elevator=noop ip=dhcp',
-                    '-net', 'nic,model=virtio',
+                    '-net', 'nic,model=virtio,macaddr=%s' % self.mac,
                     '-net', 'user,hostfwd=tcp:127.0.0.1:%s-:22' % self.port
                 ]
 
@@ -346,7 +348,7 @@ class Commands(object):
             mic_comm.append('--config=%s' % job_args.ksfile_name)
         elif self.ict == "mic":
             mic_comm.append('%s' % job_args.image_type)
-            mic_comm.append('%s' % job_args.ksfile_name)
+            mic_comm.append('"%s"' % job_args.ksfile_name)
 
         mic_comm.append('--arch=%s' % job_args.arch)
         mic_comm.append('--outdir=%s' % job_args.outdir)
@@ -508,7 +510,7 @@ class ImageWorker(object):
                             commands.scpfrom(source="%s*" % self._image_dir,
                                              dest=self._image_dir)
 
-                        commands.run(['chmod', '-R', 'g+r,o+r', self._image_dir])
+                        commands.run(['chmod', '-R', 'g+rw,o+rw', self._image_dir])
  
                         self.success()
                         self.result = True

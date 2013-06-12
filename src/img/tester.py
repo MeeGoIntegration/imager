@@ -467,7 +467,7 @@ class ImageTester(object):
             #addrepo_comm = ['zypper', '-n', 'ar', '-f', '-G']
             reponame = repo.replace('/','_').replace(':','_')
             addrepo_comm = ['ssu', 'ar']
-            addrepo_comm.extend([reponame, '"%s"' % repo])
+            addrepo_comm.extend([reponame, '%s' % repo])
             self.commands.ssh(addrepo_comm)
 
         ref_comm = ['zypper', '-vvv', '-n', 'ref', '-f']
@@ -484,7 +484,7 @@ class ImageTester(object):
             #addrepo_comm = ['zypper', '-n', 'ar', '-f', '-G']
             if self.testtools_repourl:
                 addrepo_comm = ['ssu', 'ar']
-                addrepo_comm.extend(['testtools', '"%s"' % self.testtools_repourl])
+                addrepo_comm.extend(['testtools', '%s' % self.testtools_repourl])
                 self.commands.ssh(addrepo_comm)
 
             ref_comm = ['zypper', '-n', 'ref']

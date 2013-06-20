@@ -367,6 +367,7 @@ class ImageTester(object):
         self.result = False
         self.testtools_repourl = config["testtools_repourl"]
         self.test_script = config["test_script"]
+        self.host_test_script = config["host_test_script"]
         self.test_user = config["test_user"]
         self.test_packages = test_packages
         self.vm_pub_ssh_key = config["vm_pub_ssh_key"]
@@ -491,9 +492,12 @@ class ImageTester(object):
             self.commands.ssh(ref_comm)
             packages = []
             patterns = []
+            host_test_packages = []
             for name in self.test_packages.keys():
                 if name.startswith('@'):
                     patterns.append(name[1:])
+                elif name.endswith('-host-tests'):
+                    host_test_packages.append(name)
                 else:
                     packages.append(name)
             if packages:
@@ -506,25 +510,52 @@ class ImageTester(object):
                 install_comm = ['zypper', '-vv', 'in', '-y', '-f', '--force-resolution', '-t', 'pattern']
                 install_comm.extend(patterns)
                 self.commands.ssh(install_comm)
+            if host_test_packages:
+                print "updating host packages reposity cache"
+                update_comm = ['sudo', '-n', 'yum', '-v', '-y', 'makecache']
+                self.commands.run(update_comm)
+                print "installing testrunner-lite on host"
+                testrunner_comm = ['sudo', '-n', 'yum', '-v', '-y', 'install', 'testrunner-lite']
+                self.commands.run(testrunner_comm)
+                print "installing host test packages"
+                install_comm = ['sudo', '-n', 'yum', '-v', '-y', 'install']
+                install_comm.extend(host_test_packages)
+                self.commands.run(install_comm)
 
     def run_tests(self):
 
+        print "Check host based test packages"
+        host_test_packages = []
+        for name in self.test_packages.keys():
+            if name.endswith('-host-tests'):
+                host_test_packages.append(name)
         try:
             print "running test script"
-            print "inserting test script"
-            self.commands.scpto(self.test_script, '/var/tmp/test_script.sh') 
-            self.commands.ssh(['chmod', '+x', '/var/tmp/test_script.sh'])
-            test_comm = ['/var/tmp/test_script.sh']
-            #test_comm.extend(self.test_packages.keys())
-            self.result = self.commands.ssh(test_comm, user=self.test_user, ignore_error=True)
-            print "Test result is %s" % self.result
+            if host_test_packages:
+                print "running host based test packages"
+                test_comm = [self.host_test_script]
+                test_comm.extend(host_test_packages)
+                self.result = self.commands.run(test_comm)
+                print "Host test result is %s" % self.result
+            else:
+                print "inserting test script"
+                self.commands.scpto(self.test_script, '/var/tmp/test_script.sh') 
+                self.commands.ssh(['chmod', '+x', '/var/tmp/test_script.sh'])
+                test_comm = ['/var/tmp/test_script.sh']
+                self.result = self.commands.ssh(test_comm, user=self.test_user, ignore_error=True)
+                print "Test result is %s" % self.result
         except:
             raise
         finally:
             try:
-                print "trying to get any test results"
-                self.commands.scpfrom("/tmp/results/*", self.results_dir)
-                self.commands.ssh(['rm', '-rf', '/tmp/results/*'])
+                if host_test_packages:
+                    print "trying to get host based test results"
+		    self.commands.run(['sh', '-c', "cp -v /tmp/results/* " + self.results_dir])
+                    self.commands.run(['rm', '-rf', '/tmp/results'])
+                else:
+                    print "trying to get any test results"
+                    self.commands.scpfrom("/tmp/results/*", self.results_dir)
+                    self.commands.ssh(['rm', '-rf', '/tmp/results/*'])
             except:
                 pass
 

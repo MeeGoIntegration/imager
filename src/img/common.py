@@ -53,7 +53,7 @@ def tester_config(config=None, conffile="/etc/imager/img.conf"):
 
     section = "tester"
     conf = {}
-    for item in ["base_dir", "vm_kernel", "timeout", "vm_priv_ssh_key", "vm_pub_ssh_key", "vg_name", "vm_wait", "testtools_repourl", "test_script", "test_user", "device_ip"]:
+    for item in ["base_dir", "vm_kernel", "timeout", "vm_priv_ssh_key", "vm_pub_ssh_key", "vg_name", "vm_wait", "testtools_repourl", "test_script", "host_test_script", "test_user", "device_ip"]:
         conf[item] = config.get(section, item)
 
     for item in ["use_base_img"]:

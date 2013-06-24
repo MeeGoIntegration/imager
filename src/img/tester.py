@@ -356,11 +356,13 @@ class Commands(object):
 class ImageTester(object):
     """Tester class that does vm based testing"""
 
-    def __init__(self, config=None, job_args=None, test_packages={}):
+    def __init__(self, config=None, job_args=None, test_packages={}, test_id=0):
         """Initialize the tester using a config and job args.
 
         :param config: Worker config in a hash proxy object
-        :param job_args: hash proxy object describing the image job 
+        :param job_args: hash proxy object describing the image job
+        :param test_packages: space seprated test package names
+        :param test_id: test run ID
         
         """
 
@@ -390,7 +392,8 @@ class ImageTester(object):
         self.test_options = job_args.get("test_options", [])
         self.img_url = job_args["image_url"]
         self.img_file = os.path.join(job_args["outdir"], os.path.basename(job_args["image_url"]))
-        self.img_type = job_args["image_type"] 
+        self.img_type = job_args["image_type"]
+        self.test_id = test_id
 
         print self.logfile_name
         #setup commands object
@@ -534,6 +537,9 @@ class ImageTester(object):
             if host_test_packages:
                 print "running host based test packages"
                 test_comm = [self.host_test_script]
+                test_comm.append(self.commands.device_ip)
+                test_comm.append(self.commands.port)
+                test_comm.append(self.test_id)
                 test_comm.extend(host_test_packages)
                 self.result = self.commands.run(test_comm)
                 print "Host test result is %s" % self.result
@@ -550,8 +556,8 @@ class ImageTester(object):
             try:
                 if host_test_packages:
                     print "trying to get host based test results"
-		    self.commands.run(['sh', '-c', "cp -v /tmp/results/* " + self.results_dir])
-                    self.commands.run(['rm', '-rf', '/tmp/results'])
+                    self.commands.run(['sh', '-c', "cp -v /tmp/" + self.test_id + "/results/* " + self.results_dir])
+                    self.commands.run(['rm', '-rf', "/tmp/" + self.test_id])
                 else:
                     print "trying to get any test results"
                     self.commands.scpfrom("/tmp/results/*", self.results_dir)

@@ -369,7 +369,9 @@ class ImageTester(object):
         self.result = False
         self.testtools_repourl = config["testtools_repourl"]
         self.test_script = config["test_script"]
+        self.host_based_testing_enabled = config["host_based_testing"]
         self.host_test_script = config["host_test_script"]
+        self.host_test_package_manager = config["host_test_package_manager"]
         self.test_user = config["test_user"]
         self.test_packages = test_packages
         self.vm_pub_ssh_key = config["vm_pub_ssh_key"]
@@ -499,7 +501,7 @@ class ImageTester(object):
             for name in self.test_packages.keys():
                 if name.startswith('@'):
                     patterns.append(name[1:])
-                elif name.endswith('-host-tests'):
+                elif self.host_based_testing_enabled and name.endswith('-host-tests'):
                     host_test_packages.append(name)
                 else:
                     packages.append(name)
@@ -513,15 +515,21 @@ class ImageTester(object):
                 install_comm = ['zypper', '-vv', 'in', '-y', '-f', '--force-resolution', '-t', 'pattern']
                 install_comm.extend(patterns)
                 self.commands.ssh(install_comm)
-            if host_test_packages:
+            if self.host_based_testing_enabled and host_test_packages:
                 print "updating host packages reposity cache"
-                update_comm = ['sudo', '-n', 'yum', '-v', '-y', 'makecache']
+                update_comm = ['sudo', '-n', self.host_test_package_manager, '-v']
+                if self.host_test_package_manager == 'yum':
+                    update_comm.append('-y')
+                    update_comm.append('makecache')
+                if self.host_test_package_manager == 'zypper':
+                    update_comm.append('-n')
+                    update_comm.append('ref')
                 self.commands.run(update_comm)
                 print "installing testrunner-lite on host"
-                testrunner_comm = ['sudo', '-n', 'yum', '-v', '-y', 'install', 'testrunner-lite']
+                testrunner_comm = ['sudo', '-n', self.host_test_package_manager, '-v', 'install', '-y', 'testrunner-lite']
                 self.commands.run(testrunner_comm)
                 print "installing host test packages"
-                install_comm = ['sudo', '-n', 'yum', '-v', '-y', 'install']
+                install_comm = ['sudo', '-n', self.host_test_package_manager, '-v', 'install', '-y']
                 install_comm.extend(host_test_packages)
                 self.commands.run(install_comm)
 
@@ -534,15 +542,14 @@ class ImageTester(object):
                 host_test_packages.append(name)
         try:
             print "running test script"
-            if host_test_packages:
+            if self.host_based_testing_enabled and host_test_packages:
                 print "running host based test packages"
                 test_comm = [self.host_test_script]
                 test_comm.append(self.commands.device_ip)
                 test_comm.append(self.commands.port)
                 test_comm.append(self.test_id)
                 test_comm.extend(host_test_packages)
-                self.result = self.commands.run(test_comm)
-                print "Host test result is %s" % self.result
+                self.commands.run(test_comm)
             else:
                 print "inserting test script"
                 self.commands.scpto(self.test_script, '/var/tmp/test_script.sh') 
@@ -554,7 +561,7 @@ class ImageTester(object):
             raise
         finally:
             try:
-                if host_test_packages:
+                if self.host_based_testing_enabled and host_test_packages:
                     print "trying to get host based test results"
                     self.commands.run(['sh', '-c', "cp -v /tmp/" + self.test_id + "/results/* " + self.results_dir])
                     self.commands.run(['rm', '-rf', "/tmp/" + self.test_id])

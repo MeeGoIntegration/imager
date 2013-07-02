@@ -14,10 +14,14 @@ done
 
 TEST_PACKAGES=$@
 
+# we don't know how to handle patterns!
+if [[ "$TEST_PACKAGES" == *@* ]]; then
+  TEST_PACKAGES=""
+fi
+
+
 if [ -z "$TEST_PACKAGES" ]; then
-
   TEST_PACKAGES="$(rpm -qal | grep '/tests.xml' | xargs -r rpm -qf)"
-
 fi
 
 

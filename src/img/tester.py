@@ -555,6 +555,7 @@ class ImageTester(object):
                 self.commands.scpto(self.test_script, '/var/tmp/test_script.sh') 
                 self.commands.ssh(['chmod', '+x', '/var/tmp/test_script.sh'])
                 test_comm = ['/var/tmp/test_script.sh']
+                test_comm.extend(self.test_packages.keys())
                 self.result = self.commands.ssh(test_comm, user=self.test_user, ignore_error=True)
                 print "Test result is %s" % self.result
         except:

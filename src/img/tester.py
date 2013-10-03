@@ -369,6 +369,7 @@ class ImageTester(object):
         self.result = False
         self.testtools_repourl = config["testtools_repourl"]
         self.test_script = config["test_script"]
+        self.package_manager = config["package_manager"]
         self.host_based_testing_enabled = config["host_based_testing"]
         self.host_test_script = config["host_test_script"]
         self.host_test_package_manager = config["host_test_package_manager"]
@@ -470,49 +471,60 @@ class ImageTester(object):
 
     def update_vm(self):
         for repo in self.extra_repos:
-            #addrepo_comm = ['zypper', '-n', 'ar', '-f', '-G']
             reponame = repo.replace('/','_').replace(':','_')
             addrepo_comm = ['ssu', 'ar']
             addrepo_comm.extend([reponame, '%s' % repo])
             self.commands.ssh(addrepo_comm)
 
-        ref_comm = ['zypper', '-vvv', '-n', 'ref', '-f']
+        if self.package_manager == 'zypper':
+            ref_comm = ['zypper', '-vvv', '-n', 'ref', '-f']
+            update_comm = ['zypper', '-n', 'up', '--force-resolution']
+        if self.package_manager == 'pkcon':
+            ref_comm = ['pkcon', '-v', '-p', '-y', 'refresh']
+            update_comm = ['pkcon', '-v', '-p', '-y', 'update']
         self.commands.ssh(ref_comm)
 
         if "update" in self.test_options:
             print "updating vm (depending on enabled repos or ssu)"
-            update_comm = ['zypper', '-n', 'up', '--force-resolution']
             self.commands.ssh(update_comm)
 
     def install_tests(self):
         if self.test_packages:
             print "adding test tools repo"
-            #addrepo_comm = ['zypper', '-n', 'ar', '-f', '-G']
             if self.testtools_repourl:
                 addrepo_comm = ['ssu', 'ar']
                 addrepo_comm.extend(['testtools', '%s' % self.testtools_repourl])
                 self.commands.ssh(addrepo_comm)
 
-            ref_comm = ['zypper', '-n', 'ref']
+            if self.package_manager == 'zypper':
+                ref_comm = ['zypper', '-n', 'ref']
+            if self.package_manager == 'pkcon':
+                ref_comm = ['pkcon', '-v', '-p', '-y', 'refresh']
+                install_comm = ['pkcon', '-v', '-p', '-y', 'install']
             self.commands.ssh(ref_comm)
             packages = []
             patterns = []
             host_test_packages = []
             for name in self.test_packages.keys():
                 if name.startswith('@'):
-                    patterns.append(name[1:])
+                    if self.package_manager == 'zypper':
+                        patterns.append(name[1:])
+                    if self.package_manager == 'pkcon':
+                        patterns.append('pattern:' + name[1:])
                 elif self.host_based_testing_enabled and name.endswith('-host-tests'):
                     host_test_packages.append(name)
                 else:
                     packages.append(name)
             if packages:
                 print "installing test packages"
-                install_comm = ['zypper', '-vv', 'in', '-y', '-f', '--force-resolution']
+                if self.package_manager == 'zypper':
+                    install_comm = ['zypper', '-vv', 'in', '-y', '-f', '--force-resolution']
                 install_comm.extend(packages)
                 self.commands.ssh(install_comm)
             if patterns:
                 print "installing test patterns"
-                install_comm = ['zypper', '-vv', 'in', '-y', '-f', '--force-resolution', '-t', 'pattern']
+                if self.package_manager == 'zypper':
+                    install_comm = ['zypper', '-vv', 'in', '-y', '-f', '--force-resolution', '-t', 'pattern']
                 install_comm.extend(patterns)
                 self.commands.ssh(install_comm)
             if self.host_based_testing_enabled and host_test_packages:

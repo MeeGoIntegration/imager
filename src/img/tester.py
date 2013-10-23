@@ -37,7 +37,8 @@ class Commands(object):
 
     def __init__(self, logfn=None,
                  vgname=None, ssh_key=None,
-                 timeout=3600, vm_kernel=None, device_ip="127.0.0.1"):
+                 timeout=3600, vm_kernel=None,
+                 usb_port=0, usb_pwr=0, device_ip="127.0.0.1"):
         """Constructor, creates the object with necessary parameters to run 
         commands
         
@@ -47,6 +48,10 @@ class Commands(object):
 
         """
         self.port = getport()
+
+        self.usb_port = usb_port
+
+        self.usb_pwr = usb_pwr
 
         self.mac = getmac()
 
@@ -559,6 +564,8 @@ class ImageTester(object):
                 test_comm = [self.host_test_script]
                 test_comm.append(self.commands.device_ip)
                 test_comm.append(self.commands.port)
+                test_comm.append(self.commands.usb_port)
+                test_comm.append(self.commands.usb_pwr)
                 test_comm.append(self.test_id)
                 test_comm.extend(host_test_packages)
                 self.commands.run(test_comm)

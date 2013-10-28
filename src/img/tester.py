@@ -485,8 +485,8 @@ class ImageTester(object):
             ref_comm = ['zypper', '-vvv', '-n', 'ref', '-f']
             update_comm = ['zypper', '-n', 'up', '--force-resolution']
         if self.package_manager == 'pkcon':
-            ref_comm = ['pkcon', '-v', '-p', '-y', 'refresh']
-            update_comm = ['pkcon', '-v', '-p', '-y', 'update']
+            ref_comm = ['pkcon', '-v', '-p', '--noninteractive', 'refresh', 'force']
+            update_comm = ['pkcon', '-v', '-p', '--noninteractive', 'update']
         self.commands.ssh(ref_comm)
 
         if "update" in self.test_options:
@@ -504,8 +504,8 @@ class ImageTester(object):
             if self.package_manager == 'zypper':
                 ref_comm = ['zypper', '-n', 'ref']
             if self.package_manager == 'pkcon':
-                ref_comm = ['pkcon', '-v', '-p', '-y', 'refresh']
-                install_comm = ['pkcon', '-v', '-p', '-y', 'install']
+                ref_comm = ['pkcon', '-v', '-p', '--noninteractive', 'refresh', 'force']
+                install_comm = ['pkcon', '-v', '-p', '--noninteractive', 'install']
             self.commands.ssh(ref_comm)
             packages = []
             patterns = []

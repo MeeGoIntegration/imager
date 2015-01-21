@@ -38,7 +38,7 @@ class Commands(object):
     def __init__(self, logfn=None,
                  vgname=None, ssh_key=None,
                  timeout=3600, vm_kernel=None,
-                 usb_port=0, usb_pwr=0, device_ip="127.0.0.1"):
+                 usb_port="0", usb_pwr="0", device_ip="127.0.0.1"):
         """Constructor, creates the object with necessary parameters to run 
         commands
         

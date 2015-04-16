@@ -18,6 +18,8 @@
             var disid = $(dissel).attr('id');
             $('#id_'+enid).removeAttr("disabled");
             $('#id_'+disid).attr("disabled","disabled");
+            if (disid == 'template') { $('#id_'+disid).val("None") }
+            else if(disid == 'ksfile') { $('#id_'+disid).val("") }
         });
         $("#uploadform").submit( function () {
            $('#id_ksfile , #id_template').each(function(){ $(this).removeAttr("disabled")});

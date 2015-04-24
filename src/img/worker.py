@@ -38,6 +38,7 @@ def find_largest_file(indir):
     fmap = {}
     for path, dirs, files in os.walk(indir):    
         for file_ in files:
+            if file_.startswith("."): continue
             fullpath = os.path.join(path, file_)
             size = int(os.path.getsize(fullpath))
             fmap[fullpath] = size

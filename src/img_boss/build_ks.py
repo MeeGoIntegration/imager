@@ -96,6 +96,7 @@
 import json
 import os
 import tempfile
+import re
 from urllib2 import HTTPError
 from optparse import OptionValueError
 from buildservice import BuildService
@@ -104,6 +105,7 @@ from urlparse import urlparse
 try:
     import pykickstart.parser as ksparser
     import pykickstart.version as ksversion
+    import pykickstart.sections as kssections
     from pykickstart.handlers.control import commandMap
     from pykickstart.handlers.control import dataMap
     from pykickstart.base import *
@@ -114,6 +116,10 @@ try:
     from pykickstart.commands.partition import *
 except:
     raise RuntimeError("Couldn't import pykickstart")
+
+import gettext
+import warnings
+_ = lambda x: gettext.ldgettext("pykickstart", x)
 
 # Verbatim inclusion from mic upstream
 #################################################################
@@ -316,6 +322,48 @@ class Moblin_Repo(F8_Repo):
                       default=None)
         return op
 
+class PrepackageSection(kssections.Section):
+    sectionOpen = "%prepackages"
+
+    def __str__(self):
+
+        retval = kssections.Section.__str__(self)
+        retval = "\n%prepackages\n" + retval
+        return retval
+
+    def handleLine(self, line):
+        if not self.handler:
+            return
+
+        (h, s, t) = line.partition('#')
+        line = h.rstrip()
+
+        self.handler.prepackages.add([line])
+
+    def handleHeader(self, lineno, args):
+        kssections.Section.handleHeader(self, lineno, args)
+
+class AttachmentSection(kssections.Section):
+    sectionOpen = "%attachment"
+
+    def __str__(self):
+
+        retval = kssections.Section.__str__(self)
+        retval = "\n%attachment\n" + retval
+        return retval
+
+    def handleLine(self, line):
+        if not self.handler:
+            return
+
+        (h, s, t) = line.partition('#')
+        line = h.rstrip()
+
+        self.handler.attachment.add([line])
+
+    def handleHeader(self, lineno, args):
+        kssections.Section.handleHeader(self, lineno, args)
+
 # Marko Saukko <marko.saukko@cybercom.com>
 #
 # Copyright (C) 2011 Nokia Corporation and/or its subsidiary(-ies).
@@ -361,19 +409,285 @@ class MeeGo_Partition(FC4_Partition):
                       default=None)
         return op
 #################################################################
+#
+# Chris Lumens <clumens@redhat.com>
+# David Lehman <dlehman@redhat.com>
+#
+# Copyright 2005, 2006, 2007, 2011 Red Hat, Inc.
+#
+# This copyrighted material is made available to anyone wishing to use, modify,
+# copy, or redistribute it subject to the terms and conditions of the GNU
+# General Public License v.2.  This program is distributed in the hope that it
+# will be useful, but WITHOUT ANY WARRANTY expressed or implied, including the
+# implied warranties of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+# See the GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along with
+# this program; if not, write to the Free Software Foundation, Inc., 51
+# Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.  Any Red Hat
+# trademarks that are incorporated in the source code or documentation are not
+# subject to the GNU General Public License and may only be used or replicated
+# with the express permission of Red Hat, Inc. 
+#
 
-KSCLASS = ksversion.returnClassForVersion(version=ksversion.DEVEL)
+class BTRFSData(BaseData):
+    removedKeywords = BaseData.removedKeywords
+    removedAttrs = BaseData.removedAttrs
 
-class KSHandlers(KSCLASS):
-    """Helper class for parsing a kickstart file"""
-    def __init__(self):
-        ver = ksversion.DEVEL
-        commandMap[ver]["desktop"] = Moblin_Desktop
-        commandMap[ver]["repo"] = Moblin_Repo
-        commandMap[ver]["bootloader"] = Moblin_Bootloader
-        dataMap[ver]["RepoData"] = Moblin_RepoData
-        KSCLASS.__init__(self, mapping=commandMap[ver])
-    
+    def __init__(self, *args, **kwargs):
+        BaseData.__init__(self, *args, **kwargs)
+        self.format = kwargs.get("format", True)
+        self.preexist = kwargs.get("preexist", False)
+        self.label = kwargs.get("label", "")
+        self.mountpoint = kwargs.get("mountpoint", "")
+        self.devices = kwargs.get("devices", [])
+        self.dataLevel = kwargs.get("data", None)
+        self.metaDataLevel = kwargs.get("metadata", None)
+
+        # subvolume-specific
+        self.subvol = kwargs.get("subvol", False)
+        self.parent = kwargs.get("parent", "")
+        self.snapshot = kwargs.get("snapshot", False)                                                                                                         
+        self.base = kwargs.get("base", "")
+        self.quota = kwargs.get("quota", False)
+        self.name = kwargs.get("name", None)        # required
+
+    def __eq__(self, y):
+        if not y:
+            return False
+
+        return self.mountpoint == y.mountpoint
+
+    def __ne__(self, y):
+        return not self == y
+
+    def _getArgsAsStr(self):
+        retval = ""
+        if not self.format:
+            retval += " --noformat"
+        if self.preexist:
+            retval += " --useexisting"
+        if self.label:
+            retval += " --label=%s" % self.label
+        if self.dataLevel:
+            retval += " --data=%s" % self.dataLevel
+        if self.metaDataLevel:
+            retval += " --metadata=%s" % self.metaDataLevel
+        if self.subvol:
+            retval += " --subvol --name=%s" % self.name
+        if self.parent:
+            retval += " --parent=%s" % self.parent
+        if self.snapshot:
+            retval += " --snapshot --name=%s" % self.name
+        if self.quota:
+            retval += " --quota"
+        if self.base:
+            retval += " --base=%s" % self.base
+
+        return retval
+
+    def __str__(self):
+        retval = BaseData.__str__(self)
+        retval += "btrfs %s" % self.mountpoint
+        retval += self._getArgsAsStr()
+        return retval + " " + " ".join(self.devices) + "\n"
+
+class BTRFS(KickstartCommand):
+    removedKeywords = KickstartCommand.removedKeywords
+    removedAttrs = KickstartCommand.removedAttrs
+
+    def __init__(self, writePriority=132, *args, **kwargs):
+        KickstartCommand.__init__(self, writePriority, *args, **kwargs)
+        self.op = self._getParser()
+
+        # A dict of all the RAID levels we support.  This means that if we
+        # support more levels in the future, subclasses don't have to
+        # duplicate too much.
+        self.levelMap = { "RAID0": "raid0", "0": "raid0",
+                          "RAID1": "raid1", "1": "raid1",
+                          "RAID10": "raid10", "10": "raid10",
+                          "single": "single" }
+
+        self.btrfsList = kwargs.get("btrfsList", [])
+
+    def __str__(self):
+        retval = ""
+        for btr in self.btrfsList:
+            retval += btr.__str__()
+
+        return retval
+
+    def _getParser(self):
+        # Have to be a little more complicated to set two values.
+        def btrfs_cb (option, opt_str, value, parser):
+            parser.values.format = False
+            parser.values.preexist = True
+
+        def level_cb (option, opt_str, value, parser):
+            if self.levelMap.has_key(value):
+                parser.values.ensure_value(option.dest, self.levelMap[value])
+
+        op = KSOptionParser()
+        op.add_option("--noformat", action="callback", callback=btrfs_cb,
+                      dest="format", default=True, nargs=0)
+        op.add_option("--useexisting", action="callback", callback=btrfs_cb,
+                      dest="preexist", default=False, nargs=0)
+
+        # label, data, metadata
+        op.add_option("--label", dest="label", default="")
+        op.add_option("--data", dest="dataLevel", action="callback",
+                      callback=level_cb, type="string", nargs=1)
+        op.add_option("--metadata", dest="metaDataLevel", action="callback",
+                      callback=level_cb, type="string", nargs=1)
+
+        op.add_option("--quota", dest="quota", action="store_true",
+                      default=False)
+        #
+        # subvolumes
+        #
+        op.add_option("--subvol", dest="subvol", action="store_true",
+                      default=False)
+
+        # parent must be a device spec (LABEL, UUID, &c)                                                                                                       
+        op.add_option("--parent", dest="parent", default="")
+        op.add_option("--snapshot", dest="snapshot", action="store_true",
+                      default=False)
+        op.add_option("--name", dest="name", default="")
+        op.add_option("--base", dest="base", default="")
+
+        return op
+
+    def parse(self, args):
+        (opts, extra) = self.op.parse_args(args=args, lineno=self.lineno)
+        data = self.handler.BTRFSData()
+        self._setToObj(self.op, opts, data)
+        data.lineno = self.lineno
+
+        if len(extra) == 0 and not data.snapshot:
+            raise KickstartValueError, formatErrorMsg(self.lineno, msg=_("btrfs must be given a mountpoint"))
+ 
+        if len(extra) == 1 and not data.subvol:
+            raise KickstartValueError, formatErrorMsg(self.lineno, msg=_("btrfs must be given a list of partitions"))
+        elif len(extra) == 1:
+            raise KickstartValueError, formatErrorMsg(self.lineno, msg=_("btrfs subvol requires specification of parent volume"))
+ 
+        if data.subvol and not data.name:
+            raise KickstartValueError, formatErrorMsg(self.lineno, msg=_("btrfs subvolume requires a name"))
+ 
+        if data.snapshot and not data.name:
+            raise KickstartValueError, formatErrorMsg(self.lineno, msg=_("btrfs snapshot requires a name"))
+ 
+        if data.snapshot and data.subvol:
+            raise KickstartValueError, formatErrorMsg(self.lineno, msg=_("btrfs subvolume cannot be snapshot at the same time"))
+ 
+        if data.snapshot and not data.base:
+            raise KickstartValueError, formatErrorMsg(self.lineno, msg=_("btrfs snapshot requires a base"))
+ 
+        if len(extra) > 0:
+            data.mountpoint = extra[0]
+            data.devices = extra[1:]
+
+        # Check for duplicates in the data list.
+        if data in self.dataList():
+            warnings.warn(_("A btrfs volume with the mountpoint %s has already been defined.") % data.label)
+
+        return data
+
+    def dataList(self):
+        return self.btrfsList
+
+#################################################################
+
+class PrePackages(ksparser.Packages):
+
+    def __str__(self):
+        """Return a string formatted for output to a kickstart file."""
+        pkgs = ""
+
+        if not self.default:
+            grps = self.groupList
+            grps.sort()
+            for grp in grps:
+                pkgs += "%s\n" % grp.__str__()
+
+            p = self.packageList
+            p.sort()
+            for pkg in p:
+                pkgs += "%s\n" % pkg
+
+            grps = self.excludedGroupList
+            grps.sort()
+            for grp in grps:
+                pkgs += "-%s\n" % grp.__str__()
+
+            p = self.excludedList
+            p.sort()
+            for pkg in p:
+                pkgs += "-%s\n" % pkg
+
+            if pkgs == "":
+                return ""
+
+        retval = "\n%prepackages"
+
+        return retval + "\n" + pkgs + "\n%end\n"
+
+class Attachment(ksparser.Packages):
+
+    def __str__(self):
+        """Return a string formatted for output to a kickstart file."""
+        pkgs = ""
+
+        if not self.default:
+            grps = self.groupList
+            grps.sort()
+            for grp in grps:
+                pkgs += "%s\n" % grp.__str__()
+
+            p = self.packageList
+            p.sort()
+            for pkg in p:
+                pkgs += "%s\n" % pkg
+
+            grps = self.excludedGroupList
+            grps.sort()
+            for grp in grps:
+                pkgs += "-%s\n" % grp.__str__()
+
+            p = self.excludedList
+            p.sort()
+            for pkg in p:
+                pkgs += "-%s\n" % pkg
+
+            if pkgs == "":
+                return ""
+
+        retval = "\n%attachment"
+
+        return retval + "\n" + pkgs + "\n%end\n"
+
+KS_SCRIPT_PACK = 100
+ 
+class PackScriptSection(kssections.ScriptSection):
+    sectionOpen = "%pack"
+
+    def __str__(self):
+        retval = kssections.ScriptSection.__str__(self)
+        retval = "\n%pack\n" + retval
+        return retval
+
+    def _resetScript(self):
+        kssections.ScriptSection._resetScript(self)
+        self._script["type"] = KS_SCRIPT_PACK
+
+class PackScript(ksparser.Script):
+
+    def __str__(self):
+
+        retval = ksparser.Script.__str__(self)
+        retval = "\n%pack" + retval
+        return retval
+
 def build_kickstart(base_ks, packages=[], groups=[], projects=[]):
     """Build a kickstart file using the handler class, with custom kickstart,
     packages, groups and projects.
@@ -386,7 +700,37 @@ def build_kickstart(base_ks, packages=[], groups=[], projects=[]):
     :returns: Validated kickstart with any extra packages, groups or repourls
        added
     """
-    ks = ksparser.KickstartParser(KSHandlers())
+    ver = ksversion.DEVEL
+    commandMap[ver]["desktop"] = Moblin_Desktop
+    commandMap[ver]["repo"] = Moblin_Repo
+    commandMap[ver]["bootloader"] = Moblin_Bootloader
+    commandMap[ver]["btrfs"] = BTRFS
+
+    dataMap[ver]["RepoData"] = Moblin_RepoData
+    dataMap[ver]["PartData"] = MeeGo_PartData
+    dataMap[ver]["BTRFSData"] = BTRFSData
+
+    superclass = ksversion.returnClassForVersion(version=ver)
+ 
+    class KSHandlers(superclass):
+        def __init__(self, mapping={}):
+            superclass.__init__(self, mapping=commandMap[ver], dataMapping=dataMap[ver])
+            self.prepackages = PrePackages()
+            self.attachment = Attachment()
+
+        def __str__(self):
+            retval = superclass.__str__(self)
+            if self.prepackages:
+                retval += self.prepackages.__str__()
+            if self.attachment:
+                retval += self.attachment.__str__()
+            return retval
+ 
+    ks = ksparser.KickstartParser(KSHandlers(), errorsAreFatal=False)
+    ks.registerSection(PackScriptSection(ks.handler, dataObj=PackScript))
+    ks.registerSection(PrepackageSection(ks.handler))
+    ks.registerSection(AttachmentSection(ks.handler))
+
     ks.readKickstart(str(base_ks))
     ks.handler.packages.add(packages)
     ks.handler.packages.add(groups)
@@ -394,8 +738,10 @@ def build_kickstart(base_ks, packages=[], groups=[], projects=[]):
         name = urlparse(prj).path
         name = name.replace(":/","_")
         name = name.replace("/","_")
+        name = re.sub('@[A-Z]*@', '_', name)
         repo = Moblin_RepoData(baseurl=prj, name=name, save=True)
         ks.handler.repo.repoList.append(repo)
+
     ks_txt = str(ks.handler)
     return ks_txt
 
@@ -474,7 +820,15 @@ class ParticipantHandler(object):
                                         repo.replace(":", ":/"))
                 projects.append(repourl)
 
-       f.image.extra_repos = projects
+        for prj in wid.fields.build_trial.as_dict().get("subprojects", []):
+            repositories = self.get_repositories(wid, prj)
+            for repo in repositories:
+                repourl = "%s/%s/%s" % (self.reposerver,
+                                        prj.replace(":", ":/"),
+                                        repo.replace(":", ":/"))
+                projects.append(repourl)
+
+        f.image.extra_repos = projects
 
         packages = []
         packages.extend(get_list(wid.params.packages, "packages parameter"))
@@ -482,8 +836,8 @@ class ParticipantHandler(object):
             extra_packages = f.as_dict().get(wid.params.packages_from, None)
             packages.extend(get_list(extra_packages,
                             "field %s" % wid.params.packages_from))
-        if wid.params.packages_event:
-            packages.extend([act['targetpackage'] for act in f.ev.actions if act['type'] == 'submit'])
+        #if wid.params.packages_event:
+        #    packages.extend([act['targetpackage'] for act in f.ev.actions if act['type'] == 'submit'])
         packages.extend(get_list(f.image.packages, "image.packages field"))
 
         groups = []

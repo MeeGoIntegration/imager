@@ -28,12 +28,7 @@ setup(
                 'img_web.app.templatetags',
                 'img_web.utils'
                 ],    
-    package_dir = {'img':'src/img',
-                   'img_web':'src/img_web',
-                   'img_web.app':'src/img_web/app', 
-                   'img_web.app.templatetags':'src/img_web/app/templatetags',
-                   'img_web.utils':'src/img_web/utils',
-                  },
+    package_dir = {'' : 'src'},
     package_data = { 'img_web' : ['templates/*.html',
                                   'templates/app/*.html', 
                                   'templates/registration/*.html',

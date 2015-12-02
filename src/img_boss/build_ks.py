@@ -790,6 +790,24 @@ class ParticipantHandler(object):
             raise
         return repositories
 
+    def get_build_trial_repos(self, wid):
+        prj_repos = []
+        projects = wid.fields.build_trial.as_dict().get("subprojects", [])
+        suffix = wid.fields.build_trial.suffix or ""
+        exclude_prjs = wid.fields.image.exclude_prjs or []
+        if suffix:
+            exclude_prjs = [prj + suffix for prj in exclude_prjs]
+
+        for prj in projects:
+            if prj in exclude_prjs: continue
+            repositories = self.get_repositories(wid, prj)
+            for repo in repositories:
+                repourl = "%s/%s/%s" % (self.reposerver,
+                                        prj.replace(":", ":/"),
+                                        repo.replace(":", ":/"))
+                prj_repos.append(repourl)
+        return prj_repos
+
     def handle_wi(self, wid):
         """ Workitem handling function """
         wid.result = False
@@ -820,13 +838,8 @@ class ParticipantHandler(object):
                                         repo.replace(":", ":/"))
                 projects.append(repourl)
 
-        for prj in wid.fields.build_trial.as_dict().get("subprojects", []):
-            repositories = self.get_repositories(wid, prj)
-            for repo in repositories:
-                repourl = "%s/%s/%s" % (self.reposerver,
-                                        prj.replace(":", ":/"),
-                                        repo.replace(":", ":/"))
-                projects.append(repourl)
+        if wid.fields.build_trial:
+            projects.extend(self.get_build_trial_repos(wid))
 
         f.image.extra_repos = projects
 

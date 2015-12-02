@@ -16,6 +16,8 @@
 """ imager views """
 
 import os, time
+import json
+import re
 from urllib2 import urlopen, HTTPError
 from django.http import HttpResponseRedirect, HttpResponseForbidden
 from django.template import RequestContext
@@ -24,11 +26,12 @@ from django.shortcuts import render_to_response
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator, InvalidPage, EmptyPage
 from django.contrib import messages
+from django.forms.formsets import formset_factory
 
 import img_web.settings as settings
-from img_web.app.forms import UploadFileForm, extraReposFormset, extraTokensFormset, TagForm, SearchForm
-from img_web.app.models import ImageJob, Queue, Token
-from django.db import transaction
+from img_web.app.forms import ImageJobForm, extraReposFormset, extraTokensFormset, TagForm, SearchForm, BasePostProcessFormset, PostProcessForm
+from img_web.app.models import ImageJob, Queue, Token, PostProcess
+from django.db import transaction, IntegrityError
 
 @login_required
 @transaction.autocommit
@@ -38,66 +41,87 @@ def submit(request):
 
     POST: process a user submitted UploadFileForm
     """
-    
+    postProcessFormset = formset_factory(PostProcessForm, formset=BasePostProcessFormset, extra=PostProcess.objects.filter(active=True).count())
+
     if request.method == 'GET':
-        form = UploadFileForm(initial = {'devicegroup':settings.DEVICEGROUP,
+        jobform = ImageJobForm(initial = {'devicegroup':settings.DEVICEGROUP,
                                'email':request.user.email}
                                )
-        formset = extraReposFormset()
-        formset2 = extraTokensFormset()
+        reposformset = extraReposFormset()
+        tokensformset = extraTokensFormset()
+        ppformset = postProcessFormset()
         return render_to_response('app/upload.html',
-                                  {'form' : form, 'formset' : formset, 'formset2' : formset2},
-                                  context_instance=RequestContext(request)
+                                  {'jobform' : jobform, 'reposformset' : reposformset, 'tokensformset' : tokensformset,
+                                   'ppformset' : ppformset}, context_instance=RequestContext(request)
                                   )
 
     if request.method == 'POST':
-        form = UploadFileForm(request.POST, request.FILES)
-        formset = extraReposFormset(request.POST)
-        formset2 = extraTokensFormset(request.POST)
+        jobform = ImageJobForm(request.POST, request.FILES)
+        reposformset = extraReposFormset(request.POST)
+        tokensformset = extraTokensFormset(request.POST)
+        ppformset = postProcessFormset(request.POST)
 
-        if not form.is_valid() or not formset.is_valid():
+        if not jobform.is_valid() or not reposformset.is_valid() or not ppformset.is_valid():
             return render_to_response('app/upload.html',
-                                      {'form': form, 'formset' : formset, 'formset2' : formset2},
+                                      {'jobform': jobform, 'reposformset' : reposformset, 'tokensformset' : tokensformset,
+                                       'ppformset' : ppformset},
                                        context_instance=RequestContext(request)
                                        )
-        data = form.cleaned_data 
-        data2 = formset.cleaned_data
-        data3 = formset2.cleaned_data[0]
+        jobdata = jobform.cleaned_data 
+        reposdata = reposformset.cleaned_data
+        tokensdata = tokensformset.cleaned_data[0]
 
         imgjob = ImageJob()
 
+        ks = ""
         ksname = ""
+        ks_type = ""
 
-        if 'template' in data and data['template']:
-            ksname = data['template']
+        if 'template' in jobdata and jobdata['template']:
+            ksname = jobdata['template']
             filename = os.path.join(settings.TEMPLATESDIR, ksname)
             with open(filename, mode='r') as ffd:
-                imgjob.kickstart = ffd.read()
+                ks = ffd.readlines()
 
-        elif 'ksfile' in data and data['ksfile']:
-            ksname = data['ksfile'].name
-            imgjob.kickstart =  data['ksfile'].read()
+        elif 'ksfile' in jobdata and jobdata['ksfile']:
+            ksname = jobdata['ksfile'].name
+            ks =  jobdata['ksfile'].readlines()
+
+        imgjob.kickstart = "\n".join(ks)
+
+        for line in ks:
+            if re.match(r'^#.*?KickstartType:.+$', line):
+                ks_type = line.split(":", 1)[1].strip()
+                break
 
         if ksname.endswith('.ks'):
             ksname = ksname[0:-3]
 
         extra_repos = set()
-        for repo in data2:
-            if repo['obs']:
-                repo_url = repo['obs'] + repo['project'].replace(':', ':/') + repo['repo']
+        for repo in reposdata:
+            if repo.get('obs', None):
+                reponame = repo['repo']
+                if not reponame.startswith('/'):
+                    reponame = "/%s" % reponame
+                repo_url = repo['obs'] + repo['project'].replace(':', ':/') + reponame
                 extra_repos.add(repo_url)
 
-        overlay = set([ x for x in data['overlay'].split(',') if x.strip()])
-        if 'features' in data:
-            for feat in data['features']:
+        overlay = set([ x for x in jobdata['overlay'].split(',') if x.strip()])
+        if 'features' in jobdata:
+            for feat in jobdata['features']:
                 print feat
-                extra_repos.update(feat.get('repos', set()))
-                overlay.update(feat.get('pattern', set()))
+                repos_type = 'repositories-%s' % ks_type
+                if not ks_type or not repos_type in feat:
+                    repos_type = 'repositories'
+
+                extra_repos.update(feat.get(repos_type , set()))
+                overlay.update(feat.get('pattern', ''))
+                overlay.update(feat.get('packages', set()))
 
         tokenmap = {}
         for token in Token.objects.all():
-            if token.name in data3:
-                tokenvalue = data3[token.name]
+            if token.name in tokensdata:
+                tokenvalue = tokensdata[token.name]
             else:
                 tokenvalue = token.default
 
@@ -106,10 +130,19 @@ def submit(request):
                 if tokenvalue == "devel":
                     rndpattern = ""
                 tokenmap["RNDPATTERN"] = rndpattern
-            
+
+            if token.name == "RELEASE":
+                if tokenvalue == "":
+                    tokenmap["RELEASEPATTERN"] = ""
+                else:
+                    tokenmap["RELEASEPATTERN"] = ":/%s" % tokenvalue
+
+            if " " in tokenvalue:
+                tokenvalue = '"%s"' % tokenvalue
+ 
             tokenmap[token.name] = tokenvalue
 
-        archtoken = data['architecture']
+        archtoken = jobdata['architecture']
         if archtoken == "i686":
             archtoken = "i586"
         tokenmap["ARCH"] = archtoken
@@ -125,33 +158,51 @@ def submit(request):
             extra_repos_tmp = []
         
         imgjob.name = ksname
-        imgjob.arch = data['architecture']
+        imgjob.arch = jobdata['architecture']
         imgjob.tokenmap = ",".join(tokens_list)
-
-        imgjob.image_id = "%s-%s" % ( request.user.id, 
-                                      time.strftime('%Y%m%d-%H%M%S') )
-        imgjob.email = data['email']
-        imgjob.image_type = data['imagetype']
+        imgjob.image_type = jobdata['imagetype']
         imgjob.user = request.user
-
-        if "test_image" in data.keys():
-            imgjob.devicegroup = data['devicegroup']  
-            imgjob.test_image = data['test_image']
-
-        if "notify_image" in data.keys():
-            imgjob.notify = data["notify_image"]
-
-
         imgjob.extra_repos = ",".join(extra_repos)
         imgjob.overlay = ",".join(overlay)
-
         imgjob.queue = Queue.objects.get(name="web")
-        imgjob.save()
+
+        all_pps = PostProcess.objects.filter(active=True)
+        post_processes = set()
+        post_processes_args = {}
+        for ppform in ppformset:
+            ppdata = ppform.cleaned_data
+            
+            for pp in all_pps:
+                if ppdata.get(pp.name, pp.default):
+                    post_processes.add(pp.id)
+                    pparg = ppdata.get(pp.argname, False)
+                    if pparg:
+                        try:
+                            post_processes_args[pp.argname] = json.loads(pparg)
+                        except ValueError:
+                            post_processes_args[pp.argname] = pparg
+
+        imgjob.pp_args = json.dumps(post_processes_args)
+
+        saved = False
+        while not saved:
+            try:
+                imgjob.image_id = "%s-%s" % ( request.user.id, 
+                                              time.strftime('%Y%m%d-%H%M%S') )
+                imgjob.save()
+                saved = True
+            except IntegrityError, exc:
+                print exc
+                print "couldn't save %s, retrying" % imgjob.image_id
+                time.sleep(1)
+
+        print "saved %s" % imgjob.image_id
+        imgjob.post_processes.add(*list(post_processes))
         
-        if data["pinned"]:
+        if jobdata["pinned"]:
             imgjob.tags.add("pinned")
-        if data["tags"]:
-            tags = [tag.replace(" ","_") for tag in data["tags"].split(",")]
+        if jobdata["tags"]:
+            tags = [tag.replace(" ","_") for tag in jobdata["tags"].split(",")]
             imgjob.tags.add(*tags)
         
         return HttpResponseRedirect(reverse('img-app-queue'))
@@ -271,14 +322,14 @@ def retry_job(request, msgid):
     imgjob.image_id = "%s-%s" % ( request.user.id, 
                                   time.strftime('%Y%m%d-%H%M%S') )
     imgjob.user = request.user
-    imgjob.email = oldjob.email
+    #imgjob.email = oldjob.email
     imgjob.image_type = oldjob.image_type
     imgjob.overlay = oldjob.overlay
     imgjob.tokenmap = oldjob.tokenmap
     imgjob.arch = oldjob.arch
-    imgjob.devicegroup = oldjob.devicegroup
-    imgjob.test_image = oldjob.test_image
-    imgjob.notify = oldjob.notify
+    #imgjob.devicegroup = oldjob.devicegroup
+    #imgjob.test_image = oldjob.test_image
+    #imgjob.notify = oldjob.notify
     imgjob.extra_repos = oldjob.extra_repos
     imgjob.kickstart = oldjob.kickstart
     imgjob.name = oldjob.name

@@ -12,6 +12,7 @@
 
 #~ You should have received a copy of the GNU General Public License
 #~ along with this program.  If not, see <http://www.gnu.org/licenses/>.
+import json
 
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
@@ -35,6 +36,7 @@ def launch(process, fields):
                         amqp_pass = settings.boss_pass,
                         amqp_vhost = settings.boss_vhost)
 
+    fields.update({"priority" : "high"})
     launcher.launch(process, fields)
 
 def imagejob_delete_callback(sender, **kwargs):
@@ -55,29 +57,7 @@ def imagejob_save_callback(sender, **kwargs):
     if not job.queue.handle_launch:
         return
 
-    fields = {"image" : { 
-                          "emails" :  [ i.strip() for i in \
-                                        job.email.split(',') ],
-                          "kickstart" : job.kickstart,
-                          "image_id" : job.image_id,
-                          "image_type" : job.image_type,
-                          "name" : job.name,
-                          "arch" : job.arch,
-                          "prefix" : "%s/%s" % (job.queue.name,
-                                                job.user.username)
-                          }
-                }
-    if job.tokenmap:
-        fields['image']['tokenmap'] = job.tokenmap
-    if job.overlay:
-        fields['image']['packages'] = job.overlay.split(",")
-    if job.extra_repos:
-        fields['image']['extra_repos'] = job.extra_repos.split(",")
-    if job.test_image:
-        fields['image']['test_image'] = job.test_image
-        fields['image']['devicegroup'] = job.devicegroup
-    if job.test_options:
-        fields['image']['test_options'] = job.test_options
+    fields = job.to_fields()
 
     if kwargs['created']:
         try:
@@ -91,53 +71,41 @@ def imagejob_save_callback(sender, **kwargs):
             kwargs['instance'].error = error
             kwargs['instance'].save()
     else:
-        #launch notify and test if configured and asked for
-        job = kwargs['instance']
+        for pp in job.post_processes.filter(active=True):
+            try:
+                state = JobState.objects.get(name=job.status)
+            except JobState.DoesNotExist:
+                continue
 
-        if job.status == "DONE" or job.status == "ERROR":
-            fields['image']['result'] = job.status
-            fields['image']['files_url'] = job.files_url
-            fields['image']['image_url'] = job.image_url
-
-            notify = False
-            test = False
-            if settings.notify_enabled and job.notify:
-                job.notify = False
-                notify = True
-            if job.status == "DONE":
-                if settings.testing_enabled and job.test_image:
-                    job.test_image = False
-                    job.status = "DONE, TESTING"
-                    test = True
-
-            post_save.disconnect(imagejob_save_callback, sender=ImageJob,
-                                 weak=False,
-                                 dispatch_uid="imagejob_save_callback")
-            job.save()
-
-            if notify:
-                with open(settings.notify_process, mode='r') as process_file:
-                    process = process_file.read()
-
-                launch(process, fields)
- 
-            if test:
-                with open(settings.test_process, mode='r') as process_file:
-                    process = process_file.read()
-
-                launch(process, fields)
-
-            post_save.connect(imagejob_save_callback, sender=ImageJob,
-                              weak=False,
-                              dispatch_uid="imagejob_save_callback")
-
-
+            if state in pp.triggers.all():
+                launch(pp.pdef, fields)
+                
 class Queue(models.Model):    
     name = models.CharField(max_length=30)
     handle_launch = models.BooleanField(default=True)
 
     def __str__(self):
         return self.name
+
+class JobState(models.Model):
+
+    def __str__(self):
+        return self.name
+
+    name = models.CharField(max_length=30, unique=True)
+
+class PostProcess(models.Model):
+
+    def __str__(self):
+        return self.name
+
+    name = models.CharField(max_length=40, unique=True)
+    active = models.BooleanField(default=True)
+    default = models.BooleanField(default=False)
+    description = models.TextField(blank=True)
+    pdef = models.TextField(blank=False)
+    argname = models.CharField(max_length=40, blank=True)
+    triggers = models.ManyToManyField(JobState)
 
 class ImageJob(models.Model):    
     """ An instance of this ImageJob model contains all the information needed
@@ -157,37 +125,57 @@ class ImageJob(models.Model):
     def pinned(self):
         return self.has_tag("pinned")
 
-    image_id = models.CharField(max_length=60)
+    def to_fields(self):
+        fields = {"image" : { 
+                          "kickstart" : self.kickstart,
+                          "image_id" : self.image_id,
+                          "image_type" : self.image_type,
+                          "name" : self.name,
+                          "arch" : self.arch,
+                          "prefix" : "%s/%s" % (self.queue.name,
+                                                self.user.username),
+                          "result" : self.status
+                          }
+                }
+
+        if self.image_url:
+            fields['image']['image_url'] = self.image_url
+        if self.tokenmap:
+            fields['image']['tokenmap'] = self.tokenmap
+        if self.overlay:
+            fields['image']['packages'] = self.overlay.split(",")
+        if self.extra_repos:
+            fields['image']['extra_repos'] = self.extra_repos.split(",")
+        if self.pp_args:
+            pp_args = json.loads(self.pp_args)
+            fields['image'].update(pp_args)
+
+        return fields
+
+    image_id = models.CharField(max_length=60, unique=True)
     created = models.DateTimeField(auto_now_add=True)
     done = models.DateTimeField(blank=True, null=True)
     queue = models.ForeignKey(Queue)
-
     user = models.ForeignKey(User)
-    email = models.TextField(blank=True)
-    notify = models.BooleanField(blank=True, default=False)
-
-    test_image = models.BooleanField(blank=True, default=False)
-    devicegroup = models.CharField(blank=True, max_length=100)
-    test_options = models.TextField(blank=True)
-    test_result = models.BooleanField(blank=True, default=False)
-    test_results_url = models.TextField(blank=True, null=True)
 
     image_type = models.CharField(max_length=10)
     tokenmap = models.CharField(max_length=1000, blank=True)
     arch = models.CharField(max_length=10)
-
-    overlay = models.CharField(max_length=500, blank=True)
-    extra_repos = models.CharField(max_length=800, blank=True)
-    
     kickstart = models.TextField()
     name = models.CharField(max_length=100)
+    overlay = models.CharField(max_length=500, blank=True)
+    extra_repos = models.CharField(max_length=800, blank=True)
 
     status = models.CharField(max_length=30, default="IN QUEUE")
     image_url = models.CharField(max_length=500, blank=True)
     files_url = models.CharField(max_length=500, blank=True)
     logfile_url = models.CharField(max_length=500, blank=True)
-    log = models.TextField(blank=True)
     error = models.CharField(max_length=1000, blank=True)
+    test_result = models.BooleanField(blank=True, default=False)
+    test_results_url = models.TextField(blank=True, null=True)
+
+    post_processes = models.ManyToManyField(PostProcess)
+    pp_args = models.TextField(blank=True)
 
 class BuildService(models.Model):
 
@@ -217,8 +205,9 @@ class Token(models.Model):
         return self.name
 
     name = models.CharField(max_length=40, unique=True)
-    default = models.CharField(max_length=500)
+    default = models.CharField(max_length=500, blank=True)
     description = models.TextField(blank=True)
+
 
 class ImageJobAdmin(admin.ModelAdmin):
     list_display = ('image_id', 'user', 'arch', 'image_type', 'status', 'queue')
@@ -239,12 +228,20 @@ class ImageTypeAdmin(admin.ModelAdmin):
 class TokenAdmin(admin.ModelAdmin):
     list_display = ('name',)
 
+class JobStateAdmin(admin.ModelAdmin):
+    list_display = ('name',)
+
+class PostProcessAdmin(admin.ModelAdmin):
+    list_display = ('name',)
+
 admin.site.register(ImageJob, ImageJobAdmin)
 admin.site.register(Queue, QueueAdmin)
 admin.site.register(BuildService, BuildServiceAdmin)
 admin.site.register(Arch, ArchAdmin)
 admin.site.register(ImageType, ImageTypeAdmin)
 admin.site.register(Token, TokenAdmin)
+admin.site.register(JobState, JobStateAdmin)
+admin.site.register(PostProcess, PostProcessAdmin)
 
 post_save.connect(imagejob_save_callback, sender=ImageJob, weak=False,
                   dispatch_uid="imagejob_save_callback")

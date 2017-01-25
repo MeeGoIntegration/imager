@@ -136,13 +136,13 @@ fi
 %files -n img-core
 %defattr(-,root,root)
 %{_sysconfdir}/imager
+%config(noreplace) %{_sysconfdir}/imager/img.conf
 %{python_sitelib}/img*egg-info
 %{python_sitelib}/img
 %{_bindir}/img_vm_shutdown
 
 %files -n img-web
 %defattr(-,root,root,-)
-%config(noreplace) %{_sysconfdir}/imager/img.conf
 %{python_sitelib}/img_web
 %{_datadir}/img_web
 %{_datadir}/boss-skynet/update_image_status.py

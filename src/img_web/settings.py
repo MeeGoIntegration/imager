@@ -34,7 +34,7 @@ except Exception:
 url_prefix = config.get('web', 'url_prefix')
 static_media_collect = config.get('web', 'static_media_collect')
 TEMPLATESDIR = config.get('web', 'templates_dir')
-FEATURESSDIR = config.get('web', 'features_dir')
+FEATURESDIR = config.get('web', 'features_dir')
 USE_REMOTE_AUTH = config.getboolean('web', 'use_http_remote_user')
 
 boss_host = config.get('boss', 'boss_host')

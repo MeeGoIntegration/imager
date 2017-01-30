@@ -139,7 +139,9 @@ class Commands(object):
 
         self.kvmbase = [
                     '/usr/bin/qemu-kvm',
-                    '-nographic', '-no-reboot',
+            #'-nographic', '-no-reboot',
+            # TODO: detection of qemu version?
+                    '-display', 'none', '-no-reboot',
                     '-daemonize', '-m', '1G',
                     '-smp', '2',
                     '-kernel', vm_kernel,

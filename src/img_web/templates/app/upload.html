@@ -57,22 +57,6 @@
     <table width="100%">
         <tr>
             <td>
-            {{ jobform.imagetype.label_tag }}
-            </td>
-            <td>
-            {{ jobform.imagetype }}
-            </td>
-        </tr>
-        <tr>
-            <td>
-            {{ jobform.architecture.label_tag }}
-            </td>
-            <td>
-            {{ jobform.architecture }}
-            </td>
-        </tr>
-        <tr>
-            <td>
               <input type="radio" name="choice" id="{{ jobform.template.name }}"/>
             {{ jobform.template.label_tag }}
             </td>
@@ -91,6 +75,22 @@
             </td>
             <td>
             {{ jobform.ksfile }}
+            </td>
+        </tr>
+        <tr>
+            <td>
+            {{ jobform.imagetype.label_tag }}
+            </td>
+            <td>
+            {{ jobform.imagetype }}
+            </td>
+        </tr>
+        <tr>
+            <td>
+            {{ jobform.architecture.label_tag }}
+            </td>
+            <td>
+            {{ jobform.architecture }}
             </td>
         </tr>
         </table>

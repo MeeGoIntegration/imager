@@ -2,7 +2,7 @@ Ruote.process_definition 'notify_image' do
 
   sequence do
     set :f => 'debug_dump', :value => 'true'
-    notify :template => 'image_build', :subject => '[BOSS] Image build done'
+    notify_irc :irc_channel => '#mer-commits', :msg => '${f:image.image_type} image ${f:image.image_id} for ${f:image.arch} requested by ${f:image.prefix} is finished with result ${f:image.result}'
   end
 
 end

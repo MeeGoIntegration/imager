@@ -523,11 +523,22 @@ div.logtext {
 	background: #E1E1E1;
 }
 
+div#features {
+-webkit-column-count: 4; /* Chrome, Safari, Opera */
+-moz-column-count: 4; /* Firefox */
+column-count: 4;
+}
+div#features label {
+display: block;
+clear: both;
+}
+
 div#features ul {
   list-style: none;
   padding: 0;
   margin: 0;
 }
-div#features ul li {
+/*div#features ul li {
   display: inline;
-}
+} */
+

@@ -227,31 +227,6 @@ class ImageJobForm(forms.Form):
                                           "and kickstart fields will be "\
                                           "ignored.")
 
-    if settings.notify_enabled:
-        notify_image = forms.BooleanField(label="Notify", required=False,
-                                          initial=True,
-                            help_text="Notify image: Send notification when "\
-                                      "image building process is done. ")
-        email = forms.CharField(label="Emails", required=False,
-                                 widget=forms.Textarea(attrs={'rows':'2'}),
-                                 help_text="Emails: Comma separated list of "\
-                                           "emails to send a notification to "\
-                                           "when the image building is done.")
-
-    if settings.testing_enabled:
-        test_image = forms.BooleanField(label="QA image", required=False,
-                                        initial=False,
-                            help_text="Test image: Send image for QA. ")
-        devicegroup = forms.CharField(label="Device group", required=False,
-                                help_text="Device group: device group to "\
-                                "use for test run.",
-                                initial='')
-
-        test_options = forms.CharField(label="Test options", required=False,
-                              widget=forms.Textarea(attrs={'rows':'2'}),
-                                                    help_text=\
-                              "Test options: comma separated list of test "\
-                              "options you want to send to the testing server.")
 
     features = forms.TypedMultipleChoiceField(label="Features", choices=[],
                             help_text="Features: Commonly used extra features", empty_value={},
@@ -298,13 +273,6 @@ class ImageJobForm(forms.Form):
         cleaned_data = self.cleaned_data
         if cleaned_data['template'] == "None":
             cleaned_data['template'] = None
-
-        if 'email' in cleaned_data.keys():
-            if cleaned_data['email'].endswith(','):
-                cleaned_data['email'] = cleaned_data['email'][:-1]
-                for email in [i.strip() for i in \
-                        cleaned_data['email'].split(",")]:
-                    validate_email(email)
 
         if (('ksfile' in cleaned_data and 'template' in cleaned_data) and
             (cleaned_data['ksfile'] and cleaned_data['template'])):

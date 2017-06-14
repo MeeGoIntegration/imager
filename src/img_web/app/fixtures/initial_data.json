@@ -97,21 +97,13 @@
     "model": "app.BuildService",
     "pk": 1,
     "fields": {
-      "name": "Community MeeGo",
-      "apiurl" : "http://repo.pub.meego.com/"
+      "name": "Mer project",
+      "apiurl" : "http://repo.merproject.org/obs/"
     }
   },
   {
     "model": "app.BuildService",
     "pk": 2,
-    "fields": {
-      "name": "MeeGo",
-      "apiurl" : "http://download.meego.com/live/"
-    }
-  },
-  {
-    "model": "app.BuildService",
-    "pk": 3,
     "fields": {
       "name": "openSUSE",
       "apiurl" : "http://download.opensuse.org/repositories/"
@@ -122,7 +114,49 @@
     "pk": 1,
     "fields": {
       "name": "RELEASE",
-      "default": ""
+      "default": "latest"
+    }
+  },
+  {
+    "model": "app.JobState",
+    "pk": 1,
+    "fields" : {
+      "name": "ERROR"
+    }
+  },
+  {
+    "model": "app.JobState",
+    "pk": 2,
+    "fields" : {
+      "name": "IN QUEUE"
+    }
+  },
+  {
+    "model": "app.JobState",
+    "pk": 3,
+    "fields" : {
+      "name": "DONE"
+    }
+  },
+  {
+    "model": "app.JobState",
+    "pk": 4,
+    "fields" : {
+      "name": "BUILDING"
+    }
+  },
+  {
+    "model": "app.JobState",
+    "pk": 5,
+    "fields" : {
+      "name": "DONE, TESTING"
+    }
+  },
+  {
+    "model": "app.JobState",
+    "pk": 6,
+    "fields" : {
+      "name": "DONE, TESTED"
     }
   }
 ]

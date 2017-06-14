@@ -29,7 +29,7 @@ from django.core.paginator import Paginator, InvalidPage, EmptyPage
 from django.contrib import messages
 
 import img_web.settings as settings
-from img_web.app.forms import UploadFileForm, extraReposFormset, extraTokensFormset, TagForm, SearchForm
+from img_web.app.forms import ImageJobForm, extraReposFormset, extraTokensFormset, TagForm, SearchForm
 from img_web.app.models import ImageJob, Queue, Token
 from django.db import transaction, IntegrityError
 
@@ -37,12 +37,12 @@ from django.db import transaction, IntegrityError
 @transaction.autocommit
 def submit(request):    
     """
-    GET: returns an unbound UploadFileForm
+    GET: returns an unbound ImageJobForm
 
     POST: process a user submitted UploadFileForm
     """
     if request.method == 'GET':
-        jobform = UploadFileForm(initial = {'devicegroup':settings.DEVICEGROUP,
+        jobform = ImageJobForm(initial = {'devicegroup':settings.DEVICEGROUP,
                                'email':request.user.email}
                                )
         reposformset = extraReposFormset()
@@ -53,7 +53,7 @@ def submit(request):
                                   )
 
     if request.method == 'POST':
-        jobform = UploadFileForm(request.POST, request.FILES)
+        jobform = ImageJobForm(request.POST, request.FILES)
         reposformset = extraReposFormset(request.POST)
         tokensformset = extraTokensFormset(request.POST)
 

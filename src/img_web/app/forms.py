@@ -104,7 +104,6 @@ class extraReposForm(forms.Form):
 extraReposFormset = formset_factory(extraReposForm)
 
 class extraTokensForm(forms.Form):
-    """ Django form that can be used multiple times in the UploadFileForm """
 
     def __init__(self, *args, **kwargs):
         super(extraTokensForm, self).__init__(*args, **kwargs)
@@ -202,7 +201,7 @@ class OptionAttrSelect(forms.Select):
 
 
 
-class UploadFileForm(forms.Form):
+class ImageJobForm(forms.Form):
     """ Django form that allows users to create image jobs """
     imagetype = forms.ChoiceField(label='Image type',
                                   choices=[],
@@ -279,7 +278,7 @@ class UploadFileForm(forms.Form):
 
 
     def __init__(self, *args, **kwargs):
-        super(UploadFileForm, self).__init__(*args, **kwargs)
+        super(ImageJobForm, self).__init__(*args, **kwargs)
         self.fields['template'].choices=[("None", "None")]
         for template in glob.glob(os.path.join(settings.TEMPLATESDIR, '*.ks')):
             name = os.path.basename(template)

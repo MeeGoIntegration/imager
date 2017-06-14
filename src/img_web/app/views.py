@@ -299,14 +299,10 @@ def retry_job(request, msgid):
     imgjob.image_id = "%s-%s" % ( request.user.id, 
                                   time.strftime('%Y%m%d-%H%M%S') )
     imgjob.user = request.user
-    imgjob.email = oldjob.email
     imgjob.image_type = oldjob.image_type
     imgjob.overlay = oldjob.overlay
     imgjob.tokenmap = oldjob.tokenmap
     imgjob.arch = oldjob.arch
-    imgjob.devicegroup = oldjob.devicegroup
-    imgjob.test_image = oldjob.test_image
-    imgjob.notify = oldjob.notify
     imgjob.extra_repos = oldjob.extra_repos
     imgjob.kickstart = oldjob.kickstart
     imgjob.name = oldjob.name

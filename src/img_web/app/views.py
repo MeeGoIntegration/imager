@@ -83,8 +83,11 @@ def submit(request):
 
         extra_repos = set()
         for repo in data2:
-            if repo['obs']:
-                repo_url = repo['obs'] + repo['project'].replace(':', ':/') + repo['repo']
+            if repo.get('obs', None):
+                reponame = repo['repo']
+                if not reponame.startswith('/'):
+                    reponame = "/%s" % reponame
+                repo_url = repo['obs'] + repo['project'].replace(':', ':/') + reponame
                 extra_repos.add(repo_url)
 
         overlay = set([ x for x in data['overlay'].split(',') if x.strip()])
@@ -92,7 +95,8 @@ def submit(request):
             for feat in data['features']:
                 print feat
                 extra_repos.update(feat.get('repos', set()))
-                overlay.update(feat.get('pattern', set()))
+                overlay.update(feat.get('pattern', ''))
+                overlay.update(feat.get('packages', set()))
 
         tokenmap = {}
         for token in Token.objects.all():

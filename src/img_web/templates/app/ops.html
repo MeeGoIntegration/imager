@@ -6,7 +6,9 @@
 <a href="{{ obj.image_url }}"><img src="{{ STATIC_URL }}/images/download.png" width="24" height="24"  alt="Image" title="Download built image"></img></a>
 {% endif %}
 <a href="{% url img-app-job obj.image_id %}"><img src="{{ STATIC_URL }}/images/tag.png" width="24" height="24"  alt="Retry" title="Change or add this jobs' tags"></img></a>
+{% if obj.queue.handle_launch %}
 <a href="{% url img-app-retry-job obj.image_id %}"><img src="{{ STATIC_URL }}/images/retry.png" width="24" height="24"  alt="Retry" title="Resubmit image as a new job"></img></a>
+{% endif %}
 <a href="{% url img-app-retest-job obj.image_id %}"><img src="{{ STATIC_URL }}/images/test.png" width="24" height="24"  alt="Re-test" title="Test or Retest same image"></img></a>
 <a href="{% url img-app-delete-job obj.image_id %}"><img src="{{ STATIC_URL }}/images/trash.png" width="24" height="24" alt="Delete" title="Request deletion of this image"></img></a>
 {% if obj.pinned %}

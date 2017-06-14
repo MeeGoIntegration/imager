@@ -124,5 +124,47 @@
       "name": "RELEASE",
       "default": ""
     }
+  },
+  {
+    "model": "app.JobState",
+    "pk": 1,
+    "fields" : {
+      "name": "ERROR"
+    }
+  },
+  {
+    "model": "app.JobState",
+    "pk": 2,
+    "fields" : {
+      "name": "IN QUEUE"
+    }
+  },
+  {
+    "model": "app.JobState",
+    "pk": 3,
+    "fields" : {
+      "name": "DONE"
+    }
+  },
+  {
+    "model": "app.JobState",
+    "pk": 4,
+    "fields" : {
+      "name": "BUILDING"
+    }
+  },
+  {
+    "model": "app.JobState",
+    "pk": 5,
+    "fields" : {
+      "name": "DONE, TESTING"
+    }
+  },
+  {
+    "model": "app.JobState",
+    "pk": 6,
+    "fields" : {
+      "name": "DONE, TESTED"
+    }
   }
 ]

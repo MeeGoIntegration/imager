@@ -15,6 +15,7 @@
 
 """ imager views """
 
+import json
 import os
 import time
 import re
@@ -27,10 +28,11 @@ from django.shortcuts import render_to_response
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator, InvalidPage, EmptyPage
 from django.contrib import messages
+from django.forms.formsets import formset_factory
 
 import img_web.settings as settings
-from img_web.app.forms import ImageJobForm, extraReposFormset, extraTokensFormset, TagForm, SearchForm
-from img_web.app.models import ImageJob, Queue, Token
+from img_web.app.forms import ImageJobForm, extraReposFormset, extraTokensFormset, TagForm, SearchForm, BasePostProcessFormset, PostProcessForm
+from img_web.app.models import ImageJob, Queue, Token, PostProcess
 from django.db import transaction, IntegrityError
 
 @login_required
@@ -41,25 +43,31 @@ def submit(request):
 
     POST: process a user submitted UploadFileForm
     """
+    postProcessFormset = formset_factory(PostProcessForm, formset=BasePostProcessFormset, extra=PostProcess.objects.filter(active=True).count())
+
     if request.method == 'GET':
         jobform = ImageJobForm(initial = {'devicegroup':settings.DEVICEGROUP,
                                'email':request.user.email}
                                )
         reposformset = extraReposFormset()
         tokensformset = extraTokensFormset()
+        ppformset = postProcessFormset()
         return render_to_response('app/upload.html',
-                                  {'jobform' : jobform, 'reposformset' : reposformset, 'tokensformset' : tokensformset,},
-                                   context_instance=RequestContext(request)
+
+                                  {'jobform' : jobform, 'reposformset' : reposformset, 'tokensformset' : tokensformset,
+                                   'ppformset' : ppformset}, context_instance=RequestContext(request)
                                   )
 
     if request.method == 'POST':
         jobform = ImageJobForm(request.POST, request.FILES)
         reposformset = extraReposFormset(request.POST)
         tokensformset = extraTokensFormset(request.POST)
+        ppformset = postProcessFormset(request.POST)
 
-        if not jobform.is_valid() or not reposformset.is_valid():
+        if not jobform.is_valid() or not reposformset.is_valid() or not ppformset.is_valid():
             return render_to_response('app/upload.html',
-                                      {'jobform': jobform, 'reposformset' : reposformset, 'tokensformset' : tokensformset},
+                                      {'jobform': jobform, 'reposformset' : reposformset, 'tokensformset' : tokensformset,
+                                       'ppformset' : ppformset},
                                        context_instance=RequestContext(request)
                                        )
         jobdata = jobform.cleaned_data
@@ -151,30 +159,48 @@ def submit(request):
                 extra_repos_tmp.append(repo.replace("@%s@" % token, tokenvalue))
             extra_repos = extra_repos_tmp[:]
             extra_repos_tmp = []
-        
+
         imgjob.name = ksname
         imgjob.arch = jobdata['architecture']
         imgjob.tokenmap = ",".join(tokens_list)
-
-        imgjob.image_id = "%s-%s" % ( request.user.id, 
-                                      time.strftime('%Y%m%d-%H%M%S') )
-        imgjob.email = jobdata['email']
         imgjob.image_type = jobdata['imagetype']
         imgjob.user = request.user
-
-        if "test_image" in jobdata.keys():
-            imgjob.devicegroup = jobdata['devicegroup']
-            imgjob.test_image = jobdata['test_image']
-
-        if "notify_image" in jobdata.keys():
-            imgjob.notify = jobdata["notify_image"]
-
-
         imgjob.extra_repos = ",".join(extra_repos)
         imgjob.overlay = ",".join(overlay)
-
         imgjob.queue = Queue.objects.get(name="web")
-        imgjob.save()
+
+        all_pps = PostProcess.objects.filter(active=True)
+        post_processes = set()
+        post_processes_args = {}
+        for ppform in ppformset:
+            ppdata = ppform.cleaned_data
+
+            for pp in all_pps:
+                if ppdata.get(pp.name, pp.default):
+                    post_processes.add(pp.id)
+                    pparg = ppdata.get(pp.argname, False)
+                    if pparg:
+                        try:
+                            post_processes_args[pp.argname] = json.loads(pparg)
+                        except ValueError:
+                            post_processes_args[pp.argname] = pparg
+
+        imgjob.pp_args = json.dumps(post_processes_args)
+
+        saved = False
+        while not saved:
+            try:
+                imgjob.image_id = "%s-%s" % ( request.user.id,
+                                              time.strftime('%Y%m%d-%H%M%S') )
+                imgjob.save()
+                saved = True
+            except IntegrityError, exc:
+                print exc
+                print "couldn't save %s, retrying" % imgjob.image_id
+                time.sleep(1)
+
+        print "saved %s" % imgjob.image_id
+        imgjob.post_processes.add(*list(post_processes))
         
         if jobdata["pinned"]:
             imgjob.tags.add("pinned")

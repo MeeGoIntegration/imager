@@ -180,56 +180,33 @@
     </tr>
     </table>
 </fieldset>
+
 <fieldset>
-    <legend>QA options</legend>
-    <table width="100%">
-        <tr>
-            <td>
-            {{ jobform.test_image.label_tag }}
-            </td>
-            <td>
-            {{ jobform.test_image }}
-            </td>
-        </tr>
-        <tr>
-            <td>
-            {{ jobform.devicegroup.label_tag }}
-            </td>
-            <td>
-            {{ jobform.devicegroup }}
-            </td>
-        </tr>
-        <tr>
-            <td>
-            {{ jobform.test_options.label_tag }}
-            </td>
-            <td>
-            {{ jobform.test_options }}
-            </td>
-        </tr>
-    </table>
+    <legend>Post processing</legend>
+    <table>
+         <tbody>
+             {% for ppform in ppformset %}
+             <tr>
+             {% for f in ppform %}
+
+                 <td>
+                     {{ f }}
+                     {% if forloop.first %}{{ f.label_tag }}{% endif %}
+                 </td>
+                 {% if forloop.last %}
+                   <td>
+                     {{ f.help_text }}
+                   </td>
+                 {% endif %}
+
+             {% endfor %}
+             </tr>
+             {% endfor %}
+         </tbody>
+     </table>
+    {{ ppformset.management_form }}
 </fieldset>
-<fieldset>
-    <legend>Notification options</legend>
-    <table width="100%">
-        <tr>
-            <td>
-            {{ jobform.notify_image.label_tag }}
-            </td>
-            <td>
-            {{ jobform.notify_image }}
-            </td>
-        </tr>
-        <tr>
-            <td>
-            {{ jobform.email.label_tag }}
-            </td>
-            <td>
-            {{ jobform.email }}
-            </td>
-        </tr>
-    </table>
-</fieldset>
+
 <p><input type="submit" value="Submit" /></p>
 </form>
 

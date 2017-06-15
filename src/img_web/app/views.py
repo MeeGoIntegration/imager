@@ -158,30 +158,48 @@ def submit(request):
                 extra_repos_tmp.append(repo.replace("@%s@" % token, tokenvalue))
             extra_repos = extra_repos_tmp[:]
             extra_repos_tmp = []
-        
+
         imgjob.name = ksname
         imgjob.arch = jobdata['architecture']
         imgjob.tokenmap = ",".join(tokens_list)
-
-        imgjob.image_id = "%s-%s" % ( request.user.id, 
-                                      time.strftime('%Y%m%d-%H%M%S') )
-        imgjob.email = jobdata['email']
         imgjob.image_type = jobdata['imagetype']
         imgjob.user = request.user
-
-        if "test_image" in jobdata.keys():
-            imgjob.devicegroup = jobdata['devicegroup']
-            imgjob.test_image = jobdata['test_image']
-
-        if "notify_image" in jobdata.keys():
-            imgjob.notify = jobdata["notify_image"]
-
-
         imgjob.extra_repos = ",".join(extra_repos)
         imgjob.overlay = ",".join(overlay)
-
         imgjob.queue = Queue.objects.get(name="web")
-        imgjob.save()
+
+        all_pps = PostProcess.objects.filter(active=True)
+        post_processes = set()
+        post_processes_args = {}
+        for ppform in ppformset:
+            ppdata = ppform.cleaned_data
+
+            for pp in all_pps:
+                if ppdata.get(pp.name, pp.default):
+                    post_processes.add(pp.id)
+                    pparg = ppdata.get(pp.argname, False)
+                    if pparg:
+                        try:
+                            post_processes_args[pp.argname] = json.loads(pparg)
+                        except ValueError:
+                            post_processes_args[pp.argname] = pparg
+
+        imgjob.pp_args = json.dumps(post_processes_args)
+
+        saved = False
+        while not saved:
+            try:
+                imgjob.image_id = "%s-%s" % ( request.user.id,
+                                              time.strftime('%Y%m%d-%H%M%S') )
+                imgjob.save()
+                saved = True
+            except IntegrityError, exc:
+                print exc
+                print "couldn't save %s, retrying" % imgjob.image_id
+                time.sleep(1)
+
+        print "saved %s" % imgjob.image_id
+        imgjob.post_processes.add(*list(post_processes))
         
         if jobdata["pinned"]:
             imgjob.tags.add("pinned")

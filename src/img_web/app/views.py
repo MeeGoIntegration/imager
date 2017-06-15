@@ -27,10 +27,11 @@ from django.shortcuts import render_to_response
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator, InvalidPage, EmptyPage
 from django.contrib import messages
+from django.forms.formsets import formset_factory
 
 import img_web.settings as settings
-from img_web.app.forms import ImageJobForm, extraReposFormset, extraTokensFormset, TagForm, SearchForm
-from img_web.app.models import ImageJob, Queue, Token
+from img_web.app.forms import ImageJobForm, extraReposFormset, extraTokensFormset, TagForm, SearchForm, BasePostProcessFormset, PostProcessForm
+from img_web.app.models import ImageJob, Queue, Token, PostProcess
 from django.db import transaction, IntegrityError
 
 @login_required
@@ -41,25 +42,31 @@ def submit(request):
 
     POST: process a user submitted UploadFileForm
     """
+    postProcessFormset = formset_factory(PostProcessForm, formset=BasePostProcessFormset, extra=PostProcess.objects.filter(active=True).count())
+
     if request.method == 'GET':
         jobform = ImageJobForm(initial = {'devicegroup':settings.DEVICEGROUP,
                                'email':request.user.email}
                                )
         reposformset = extraReposFormset()
         tokensformset = extraTokensFormset()
+        ppformset = postProcessFormset()
         return render_to_response('app/upload.html',
-                                  {'jobform' : jobform, 'reposformset' : reposformset, 'tokensformset' : tokensformset,},
-                                   context_instance=RequestContext(request)
+
+                                  {'jobform' : jobform, 'reposformset' : reposformset, 'tokensformset' : tokensformset,
+                                   'ppformset' : ppformset}, context_instance=RequestContext(request)
                                   )
 
     if request.method == 'POST':
         jobform = ImageJobForm(request.POST, request.FILES)
         reposformset = extraReposFormset(request.POST)
         tokensformset = extraTokensFormset(request.POST)
+        ppformset = postProcessFormset(request.POST)
 
-        if not jobform.is_valid() or not reposformset.is_valid():
+        if not jobform.is_valid() or not reposformset.is_valid() or not ppformset.is_valid():
             return render_to_response('app/upload.html',
-                                      {'jobform': jobform, 'reposformset' : reposformset, 'tokensformset' : tokensformset},
+                                      {'jobform': jobform, 'reposformset' : reposformset, 'tokensformset' : tokensformset,
+                                       'ppformset' : ppformset},
                                        context_instance=RequestContext(request)
                                        )
         jobdata = jobform.cleaned_data

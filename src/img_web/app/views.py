@@ -90,7 +90,7 @@ def submit(request):
             ksname = jobdata['ksfile'].name
             ks =  jobdata['ksfile'].readlines()
 
-        imgjob.kickstart = "\n".join(ks)
+        imgjob.kickstart = "".join(ks)
 
         for line in ks:
             if re.match(r'^#.*?KickstartType:.+$', line):

@@ -57,29 +57,7 @@ def imagejob_save_callback(sender, **kwargs):
     if not job.queue.handle_launch:
         return
 
-    fields = {"image" : { 
-                          "emails" :  [ i.strip() for i in \
-                                        job.email.split(',') ],
-                          "kickstart" : job.kickstart,
-                          "image_id" : job.image_id,
-                          "image_type" : job.image_type,
-                          "name" : job.name,
-                          "arch" : job.arch,
-                          "prefix" : "%s/%s" % (job.queue.name,
-                                                job.user.username)
-                          }
-                }
-    if job.tokenmap:
-        fields['image']['tokenmap'] = job.tokenmap
-    if job.overlay:
-        fields['image']['packages'] = job.overlay.split(",")
-    if job.extra_repos:
-        fields['image']['extra_repos'] = job.extra_repos.split(",")
-    if job.test_image:
-        fields['image']['test_image'] = job.test_image
-        fields['image']['devicegroup'] = job.devicegroup
-    if job.test_options:
-        fields['image']['test_options'] = job.test_options
+    fields = job.to_fields()
 
     if kwargs['created']:
         try:
@@ -146,6 +124,33 @@ class ImageJob(models.Model):
     @property
     def pinned(self):
         return self.has_tag("pinned")
+
+    def to_fields(self):
+        fields = {"image" : {
+                          "kickstart" : self.kickstart,
+                          "image_id" : self.image_id,
+                          "image_type" : self.image_type,
+                          "name" : self.name,
+                          "arch" : self.arch,
+                          "prefix" : "%s/%s" % (self.queue.name,
+                                                self.user.username),
+                          "result" : self.status
+                          }
+                }
+
+        if self.image_url:
+            fields['image']['image_url'] = self.image_url
+        if self.tokenmap:
+            fields['image']['tokenmap'] = self.tokenmap
+        if self.overlay:
+            fields['image']['packages'] = self.overlay.split(",")
+        if self.extra_repos:
+            fields['image']['extra_repos'] = self.extra_repos.split(",")
+        if self.pp_args:
+            pp_args = json.loads(self.pp_args)
+            fields['image'].update(pp_args)
+
+        return fields
 
     image_id = models.CharField(max_length=60, unique=True)
     created = models.DateTimeField(auto_now_add=True)

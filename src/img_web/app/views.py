@@ -15,6 +15,7 @@
 
 """ imager views """
 
+import json
 import os
 import time
 import re

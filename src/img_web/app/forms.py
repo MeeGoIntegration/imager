@@ -235,7 +235,7 @@ class ImageJobForm(forms.Form):
                             widget=forms.widgets.CheckboxSelectMultiple)
 
     overlay = forms.CharField(label="Packages", required=False,
-                              widget=forms.Textarea(attrs={'rows':'4'}),
+                              widget=forms.Textarea(attrs={'rows':'1'}),
                                                     help_text=\
                               "Packages: comma separated list of packages you "\
                               "want to include in the image built from the "\
@@ -247,7 +247,7 @@ class ImageJobForm(forms.Form):
                             help_text="Pin image so it doesn't expire or get "\
                                       "deleted by mistake. ")
     tags = forms.CharField(label="Tags", required=False,
-                           widget=forms.Textarea(attrs={'rows':'2'}),
+                           widget=forms.Textarea(attrs={'rows':'1'}),
                                                  help_text=\
                               "Packages: comma separated list of tags "\
                               "to describe the image built.")

@@ -68,17 +68,26 @@ def submit(request):
 
         imgjob = ImageJob()
 
+        ks = ""
         ksname = ""
+        ks_type = ""
 
         if 'template' in jobdata and jobdata['template']:
             ksname = jobdata['template']
             filename = os.path.join(settings.TEMPLATESDIR, ksname)
             with open(filename, mode='r') as ffd:
-                imgjob.kickstart = ffd.read()
+                ks = ffd.readlines()
 
         elif 'ksfile' in jobdata and jobdata['ksfile']:
             ksname = jobdata['ksfile'].name
-            imgjob.kickstart = data['ksfile'].read()
+            ks =  jobdata['ksfile'].readlines()
+
+        imgjob.kickstart = "\n".join(ks)
+
+        for line in ks:
+            if re.match(r'^#.*?KickstartType:.+$', line):
+                ks_type = line.split(":", 1)[1].strip()
+                break
 
         if ksname.endswith('.ks'):
             ksname = ksname[0:-3]
@@ -96,7 +105,11 @@ def submit(request):
         if 'features' in jobdata:
             for feat in jobdata['features']:
                 print feat
-                extra_repos.update(feat.get('repos', set()))
+                repos_type = 'repositories-%s' % ks_type
+                if not ks_type or not repos_type in feat:
+                    repos_type = 'repositories'
+
+                extra_repos.update(feat.get(repos_type, set()))
                 overlay.update(feat.get('pattern', ''))
                 overlay.update(feat.get('packages', set()))
 

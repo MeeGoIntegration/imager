@@ -114,7 +114,7 @@
     "pk": 1,
     "fields": {
       "name": "RELEASE",
-      "default": "latest"
+      "default": ""
     }
   },
   {

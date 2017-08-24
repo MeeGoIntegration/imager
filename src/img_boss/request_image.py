@@ -16,12 +16,6 @@
 """Records an image job request in the django database of the web UI. Thus
 facilitating tracking and controlling it and later on removing it.
 
-This is useful to allow visibility of non-IMG processes in the IMG queue.
-
-This participant does not block and build_image should be called in the controlling process at some point after request_image.
-
-Once build_image is done, update_image_status can be called to set a status on the image.
-
 .. warning::
     The build_ks participant should have run first to provide the name and
     kickstart fields
@@ -31,9 +25,7 @@ Once build_image is done, update_image_status can be called to set a status on t
 :Parameters:
    :action (string):
       "get_or_create" is the only supported value. If set the participant will
-      try to find an already created image with the parameters specified. When not
-      set or set to any unkown value the backward compatible default is to always
-      create a new job
+      try to find an already created image with the parameters specified
    :max_age (integer):
       In days, if specified along with get_or_create will limit the search to images
       that are older than max_age days
@@ -46,14 +38,14 @@ Once build_image is done, update_image_status can be called to set a status on t
       `<http://wiki.meego.com/Image_Configurations_-_KickStart_Files>`_
       for a description of kickstart files
    :image.image_type (string):
-      Format of image as supported by mic. ex: livecd, raw, etc..
-      Check the available formats in mic --help
+      Format of image as supported by mic2. ex: livecd, raw, etc..
+      Check the available formats in mic2 --help
    :image.name (string):
       Name of the image, usually the name of the kickstart in the format
-      `$VERTICAL-$ARCH-$VARIANT` , required by mic when using the --release
+      `$VERTICAL-$ARCH-$VARIANT` , required by mic2 when using the --release
       option ex: meego-core-ia32-minimal
    :image.release (string):
-      Turns on release creation in mic
+      Turns on release creation in mic2
    :image.arch (string):
       Architecture of image. ex: i586, armv7l, etc..
    :image.emails (list):
@@ -64,14 +56,7 @@ Once build_image is done, update_image_status can be called to set a status on t
       OTS devicegroup. Testing is handled by the process and this is only just
       a record of it
    :image.extra_opts (list):
-      list of extra options to be passed verbatim to mic
-   :image.queue (string):
-      OPTIONAL If provided, specifies the IMG qeuee to be used.
-      defaults to "requests"
-   :image.prefix (string):
-      OPTIONAL If provided, specifies the path prefix where the resulting files
-      will be stored
-      defaults to "requests"
+      list of extra options to be passed verbatim to mic2
 
 :term:`Workitem` fields OUT:
 
@@ -91,6 +76,7 @@ import datetime
 os.environ['DJANGO_SETTINGS_MODULE'] = 'img_web.settings'
 from img_web.app.models import ImageJob, Queue
 from django.contrib.auth.models import User
+from django.db import IntegrityError
 
 class ParticipantHandler(object):
 
@@ -136,16 +122,8 @@ class ParticipantHandler(object):
                        "kickstart" : f.image.kickstart,
                        "name" : f.image.name
                       }
-        if f.emails:
-            image_args["email"] = ",".join(f.emails)
-        else:
-            image_args["email"] = self.user.email
-        if f.image.devicegroup:
-            image_args["devicegroup"] = f.image.devicegroup
-        if f.image.extra_opts:
-            image_args["extra_opts"] = f.image.extra_opts
-        if f.image.test_options:
-            image_args["test_options"] = f.image.test_options
+        #if f.image.extra_opts:
+        #    image_args["extra_options"] = f.image.extra_opts
         if f.image.tokenmap:
             image_args["tokenmap"] = f.image.tokenmap
 
@@ -153,6 +131,8 @@ class ParticipantHandler(object):
         if wid.params.action == "get_or_create":
             self.log.info("get_or_create")
             jobs = ImageJob.objects.filter(**image_args).filter(status__startswith="DONE")
+            self.log.info(jobs.count())
+            self.log.info("- %(queue)s - %(image_type)s - %(arch)s - %(name)s - %(user)s - kickstart:\n%(kickstart)s\n\n" % (image_args))
             if wid.params.max_age:
                 ts = datetime.datetime.now() - datetime.timedelta(days=int(wid.params.max_age))
                 self.log.info(ts)
@@ -167,14 +147,23 @@ class ParticipantHandler(object):
         if not job:
             self.log.info("New job")
             job = ImageJob(**image_args)
-            job.image_id = "%s-%s" % ( str(f.ev.id),
-                                       time.strftime('%Y%m%d-%H%M%S') )
-            job.save()
-            f.image.image_url = ""
+            saved = False
+            while not saved:
+                try:
+                    job.image_id = "%s-%s" % ( str(f.ev.id),
+                                               time.strftime('%Y%m%d-%H%M%S') )
+                    job.save()
+                    saved = True
+                except IntegrityError, exc:
+                    print exc
+                    print "couldn't save %s, retrying" % job.image_id
+                    time.sleep(1)
 
-        if not f.image.prefix:
-            f.image.prefix = "%s/%s" % (job.queue.name,
-                                        job.user.username)
+            print "saved %s" % job.image_id
+
+        f.image.image_url = ""
+        f.image.prefix = "%s/%s" % (job.queue.name,
+                                    job.user.username)
         f.image.image_id = job.image_id 
 
         self.log.info("Requested image %s" % f.image.image_id)

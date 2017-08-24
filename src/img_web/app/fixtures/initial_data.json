@@ -126,6 +126,33 @@
     }
   },
   {
+    "pk": 2,
+    "model": "app.token",
+    "fields": {
+      "default": "latest",
+      "name": "RNDRELEASE",
+      "description": "(usually latest)"
+    }
+  },
+  {
+    "pk": 6,
+    "model": "app.token",
+    "fields": {
+      "default": "devel",
+      "name": "RNDFLAVOUR",
+      "description": "ex: devel,testing,release,next (will automatically set RNDPATTERN to <empty>,:/testing,:/release,:/next respectively)"
+    }
+  },
+  {
+    "pk": 7,
+    "model": "app.token",
+    "fields": {
+      "default": "",
+      "name": "EXTRA_NAME",
+      "description": "extra identifier added to image name ( ex: retail or demo etc .. )"
+    }
+  },
+  {
     "model": "app.JobState",
     "pk": 1,
     "fields" : {

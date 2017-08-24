@@ -25,24 +25,42 @@
            $('#id_ksfile , #id_template').each(function(){ $(this).removeAttr("disabled")});
            return true; 
         } );
+        $("select[name=template]").change(function() {
+           var selected = $(this).val();
+           var selected_elem = $("option[value$='" + selected + "']");
+           $($(selected_elem)[0].attributes).each( function() {
+             var x = this;
+             if (x.name.match(/^data-/)) {
+               var y = x.name.replace("data-", "");
+               if (x.value.match(/,/)) {
+                 $(x.value.split(",")).each( function() {
+                   $("[name=" + y + "][value=" + this + "]").attr("checked", true);
+                 });
+               } else {
+                 $("[name=" + y + "]").val(x.value);
+               }
+             }
+           });
+        });
+
     })
 </script>
-{% if form.is_bound %}
+{% if jobform.is_bound %}
 <div class="errors">
-    {% if form.errors %}
-        {% for label, error in form.errors.items %}
+    {% if jobform.errors %}
+        {% for label, error in jobform.errors.items %}
             {{ error }}
         {% endfor %}
     {% endif %}
-    {% if formset.errors %}
-        {% for x in formset.errors %}
+    {% if tokensformset.errors %}
+        {% for x in tokensformset.errors %}
             {% for label, error in x.items %}
                 {{ error }}
             {% endfor %}
         {% endfor %}
     {% endif %}
-    {% if formset2.errors %}
-        {% for x in formset2.errors %}
+    {% if reposformset.errors %}
+        {% for x in reposformset.errors %}
             {% for label, error in x.items %}
                 {{ error }}
             {% endfor %}
@@ -57,27 +75,11 @@
     <table width="100%">
         <tr>
             <td>
-            {{ form.imagetype.label_tag }} 
+              <input type="radio" name="choice" id="{{ jobform.template.name }}"/>
+            {{ jobform.template.label_tag }}
             </td>
             <td>
-            {{ form.imagetype }}
-            </td>
-        </tr>
-        <tr>
-            <td>
-            {{ form.architecture.label_tag }} 
-            </td>
-            <td>
-            {{ form.architecture }}
-            </td>
-        </tr>
-        <tr>
-            <td>
-              <input type="radio" name="choice" id="{{ form.template.name }}"/>
-            {{ form.template.label_tag }} 
-            </td>
-            <td>
-            {{ form.template }}
+            {{ jobform.template }}
             </td>
         </tr>
         <tr border="15px">
@@ -86,11 +88,27 @@
         </tr>
         <tr>
             <td>
-              <input type="radio" name="choice" id="{{ form.ksfile.name }}"/>
-            {{ form.ksfile.label_tag }} 
+              <input type="radio" name="choice" id="{{ jobform.ksfile.name }}"/>
+            {{ jobform.ksfile.label_tag }}
             </td>
             <td>
-            {{ form.ksfile }}
+            {{ jobform.ksfile }}
+            </td>
+        </tr>
+        <tr>
+            <td>
+            {{ jobform.imagetype.label_tag }}
+            </td>
+            <td>
+            {{ jobform.imagetype }}
+            </td>
+        </tr>
+        <tr>
+            <td>
+            {{ jobform.architecture.label_tag }}
+            </td>
+            <td>
+            {{ jobform.architecture }}
             </td>
         </tr>
         </table>
@@ -107,8 +125,8 @@
              </tr>
          </thead>
          <tbody>
-             {% for form in formset2.forms %}
-             {% for f in form %}
+             {% for tokensform in tokensformset.forms %}
+             {% for f in tokensform %}
              <tr>
                  <td>{{ f.label_tag }}</td>
                  <td>{{ f }}</td>
@@ -118,16 +136,12 @@
              {% endfor %}
          </tbody>
      </table>
-    {{ formset2.management_form }}
+    {{ tokensformset.management_form }}
 </fieldset>
 <fieldset>
     <legend>Optional Features</legend>
     <div id="features">
-         <table>
-             <tr>
-                 <td>{{ form.features }}</td>
-             </tr>
-         </table>
+        {{ jobform.features }}
     </div>
 </fieldset>
     <p><input type="submit" value="Submit" /></p>
@@ -136,23 +150,23 @@
     <table width="100%">
         <tr>
             <td>
-            {{ form.pinned.label_tag }} 
+            {{ jobform.pinned.label_tag }}
             </td>
             <td>
-            {{ form.pinned }} 
+            {{ jobform.pinned }}
             </td>
         </tr>
         <tr>
             <td>
-            {{ form.tags.label_tag }} 
+            {{ jobform.tags.label_tag }}
             </td>
             <td>
-            {{ form.tags }} 
+            {{ jobform.tags }}
             </td>
         </tr>
     </table>
 </fieldset>
-<fieldset> 
+<fieldset>
     <legend>Extra repositories and packages</legend>
     <table id="id_extra_repos_table" border="0" cellpadding="0" cellspacing="5">
          <thead>
@@ -163,7 +177,7 @@
              </tr>
          </thead>
          <tbody>
-             {% for f in formset.forms %}
+             {% for f in reposformset.forms %}
              <tr id="{{ f.prefix }}-row">
                  <td>{{ f.obs }}</td>
                  <td>{{ f.project }}</td>
@@ -172,68 +186,45 @@
              {% endfor %}
          </tbody>
      </table>
-    {{ formset.management_form }}
+    {{ reposformset.management_form }}
     <table>
     <tr>
         <td>
-            {{ form.overlay.label_tag }} 
+            {{ jobform.overlay.label_tag }}
         </td>
         <td>
-            {{ form.overlay }}
+            {{ jobform.overlay }}
         </td>
     </tr>
     </table>
 </fieldset>
+
 <fieldset>
-    <legend>QA options</legend>
-    <table width="100%">
-        <tr>
-            <td>
-            {{ form.test_image.label_tag }} 
-            </td>
-            <td>
-            {{ form.test_image }}
-            </td>
-        </tr>
-        <tr>
-            <td>
-            {{ form.devicegroup.label_tag }} 
-            </td>
-            <td>
-            {{ form.devicegroup }}
-            </td>
-        </tr>
-        <tr>
-            <td>
-            {{ form.test_options.label_tag }} 
-            </td>
-            <td>
-            {{ form.test_options }}
-            </td>
-        </tr>
-    </table>
+    <legend>Post processing</legend>
+    <table>
+         <tbody>
+             {% for ppform in ppformset %}
+             <tr>
+             {% for f in ppform %}
+
+                 <td>
+                     {{ f }}
+                     {% if forloop.first %}{{ f.label_tag }}{% endif %}
+                 </td>
+                 {% if forloop.last %}
+                   <td>
+                     {{ f.help_text }}
+                   </td>
+                 {% endif %}
+
+             {% endfor %}
+             </tr>
+             {% endfor %}
+         </tbody>
+     </table>
+    {{ ppformset.management_form }}
 </fieldset>
-<fieldset>
-    <legend>Notification options</legend>
-    <table width="100%">
-        <tr>
-            <td>
-            {{ form.notify_image.label_tag }} 
-            </td>
-            <td>
-            {{ form.notify_image }}
-            </td>
-        </tr>
-        <tr>
-            <td>
-            {{ form.email.label_tag }} 
-            </td>
-            <td>
-            {{ form.email }}
-            </td>
-        </tr>
-    </table>
-</fieldset>
+
 <p><input type="submit" value="Submit" /></p>
 </form>
 
@@ -242,10 +233,10 @@
 Help
 {% endblock %}
 {% block sidebar_content %}
-    {% for field in form %}
+    {% for field in jobform %}
     <li>{{ field.help_text }}</li>
     {% endfor %}
-    {% for f in formset.forms %}
+    {% for f in reposformset.forms %}
       {% for field in f %}
         <li>{{ field.help_text }}</li>
       {% endfor %}

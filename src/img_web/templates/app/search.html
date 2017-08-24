@@ -1,5 +1,7 @@
 {% extends 'base.html' %}
 
+{% load url from future %}
+
 {% block pagetitle %}Search{% endblock %}
 
 {% block title %}Search{% endblock %}
@@ -18,7 +20,7 @@
 <div>
 <table>
 <tr>
-<form id="searchform" action="{%url img-app-search %}" method="post" enctype="multipart/form-data">
+<form id="searchform" action="{% url 'img-app-search' %}" method="post" enctype="multipart/form-data">
 {% csrf_token %}
 <td>
 {{ searchform.searchterm }}
@@ -31,17 +33,17 @@
 </table>
 </div>
 <hr/>
-<div id="search_results" class="search_results"> 
+<div id="search_results" class="search_results">
 <p>All tags (click on one to search for all images with that tag):<br/>
 {% for x in alltags %}
-<a href="{%url img-app-search-tag tag=x %}">{{ x }}</a> 
+<a href="{% url 'img-app-search-tag' tag=x %}">{{ x }}</a>
 {% endfor %}
 </p>
 <p>
 {% if results %}
 <p>Results</p>
 {% for x in results %}
-<a href="{%url img-app-job msgid=x.image_id %}">{{ x.image_id }}</a> 
+<a href="{%url 'img-app-job' msgid=x.image_id %}">{{ x.image_id }}</a>
 {% endfor %}
 {% endif%}
 </p>

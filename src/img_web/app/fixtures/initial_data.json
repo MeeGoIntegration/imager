@@ -97,21 +97,13 @@
     "model": "app.BuildService",
     "pk": 1,
     "fields": {
-      "name": "Community MeeGo",
-      "apiurl" : "http://repo.pub.meego.com/"
+      "name": "Mer project",
+      "apiurl" : "http://repo.merproject.org/obs/"
     }
   },
   {
     "model": "app.BuildService",
     "pk": 2,
-    "fields": {
-      "name": "MeeGo",
-      "apiurl" : "http://download.meego.com/live/"
-    }
-  },
-  {
-    "model": "app.BuildService",
-    "pk": 3,
     "fields": {
       "name": "openSUSE",
       "apiurl" : "http://download.opensuse.org/repositories/"
@@ -123,6 +115,136 @@
     "fields": {
       "name": "RELEASE",
       "default": ""
+    }
+  },
+  {
+    "pk": 2,
+    "model": "app.token",
+    "fields": {
+      "default": "latest",
+      "name": "RNDRELEASE",
+      "description": "(usually latest)"
+    }
+  },
+  {
+    "pk": 6,
+    "model": "app.token",
+    "fields": {
+      "default": "devel",
+      "name": "RNDFLAVOUR",
+      "description": "ex: devel,testing,release,next (will automatically set RNDPATTERN to <empty>,:/testing,:/release,:/next respectively)"
+    }
+  },
+  {
+    "pk": 7,
+    "model": "app.token",
+    "fields": {
+      "default": "",
+      "name": "EXTRA_NAME",
+      "description": "extra identifier added to image name ( ex: retail or demo etc .. )"
+    }
+  },
+  {
+    "model": "app.JobState",
+    "pk": 1,
+    "fields" : {
+      "name": "ERROR"
+    }
+  },
+  {
+    "model": "app.JobState",
+    "pk": 2,
+    "fields" : {
+      "name": "IN QUEUE"
+    }
+  },
+  {
+    "model": "app.JobState",
+    "pk": 3,
+    "fields" : {
+      "name": "DONE"
+    }
+  },
+  {
+    "model": "app.JobState",
+    "pk": 4,
+    "fields" : {
+      "name": "BUILDING"
+    }
+  },
+  {
+    "model": "app.JobState",
+    "pk": 5,
+    "fields" : {
+      "name": "DONE, TESTING"
+    }
+  },
+  {
+    "model": "app.JobState",
+    "pk": 6,
+    "fields" : {
+      "name": "DONE, TESTED"
+    }
+  },
+  {
+    "pk": 1,
+    "model": "app.postprocess",
+    "fields": {
+      "name": "IRC Notification",
+      "triggers": [
+        1,
+        3
+      ],
+      "default": true,
+      "pdef": "Ruote.process_definition 'notify_image' do\r\n\r\n  sequence do\r\n    set :f => 'debug_dump', :value => 'true'\r\n    notify_irc :irc_channel => '#jolla-commits', :msg => '${f:image.image_type} image ${f:image.image_id} for ${f:image.arch} requested by ${f:image.prefix} is finished with result ${f:image.result}'\r\n  end\r\n\r\nend",
+      "active": true,
+      "argname": "",
+      "description": "(sends a notification on #jolla-commits)"
+    }
+  },
+  {
+    "pk": 2,
+    "model": "app.postprocess",
+    "fields": {
+      "name": "VM QA",
+      "triggers": [
+        3
+      ],
+      "default": false,
+      "pdef": "Ruote.process_definition 'test_image' do\r\n\r\n  sequence do\r\n    set :f => 'debug_dump', :value => 'true'\r\n    test_image\r\n  end\r\n\r\nend\r\n",
+      "active": true,
+      "argname": "test_options",
+      "description": ""
+    }
+  },
+  {
+    "pk": 3,
+    "model": "app.postprocess",
+    "fields": {
+      "name": "Make VDI",
+      "triggers": [
+        3
+      ],
+      "default": false,
+      "pdef": "Ruote.process_definition 'convert_to_vdi' do\r\n\r\n  sequence do\r\n    set :f => 'debug_dump', :value => 'true'\r\n    update_image_status :status => \"DONE, making VDI\"\r\n    make_vdi\r\n    update_image_status :status => \"DONE, Converted to VDI\"\r\n  end\r\n\r\nend",
+      "active": true,
+      "argname": "",
+      "description": "(convert a raw image to a VDI image)"
+    }
+  },
+  {
+    "pk": 4,
+    "model": "app.postprocess",
+    "fields": {
+      "name": "Device QA",
+      "triggers": [
+        3
+      ],
+      "default": false,
+      "pdef": "Ruote.process_definition 'jolla_ondemand_device_testing' do\r\n  sequence do\r\n    set 'debug_trace' => 'True'\r\n    set 'debug_dump' => 'True'\r\n    do_log :msg => 'Ondemand test run'\r\n    set :f => 'qa', :f_value => 'image.jolla_ondemand_device_testing.qa'\r\n    set :f => 'ev', :f_value => 'image.jolla_ondemand_device_testing.ev'\r\n    do_test_image\r\n    do_log :msg => 'Ondemand testrun finished'\r\n  end\r\n\r\n  define 'do_test_image' do\r\n    sequence do\r\n      select_test_packages :using => ['pattern'], :project => 'pj:qa'\r\n      update_image_status :status => 'DONE, TESTING'\r\n      set \"testing\" => \"yes\"\r\n      request_testing\r\n      do_log :msg => 'wait for worker to finish testing...'\r\n      listen :to => \"dister_notification_${test_execution_id}\", :upon => 'reply'\r\n      do_log :msg => 'worker finished testing...'\r\n\r\n      qareportsdev\r\n      notify_irc :irc_channel => '#jolla-commits'\r\n      _if :test => '${f:testing} == yes' do\r\n        update_image_status :status => 'DONE, TESTED'\r\n      end\r\n    end\r\n  end\r\n  define 'do_log' do\r\n    sequence do\r\n      echo 'process ${wfid}: ${v:msg}'\r\n      notify_irc :if => '\"${irc.log_channel}\" != \"\"',\r\n                 :msg => 'process ${wfid} ${v:msg}',\r\n                 :irc_channel => '${irc.log_channel}'\r\n    end\r\n  end # end do_log\r\n\r\nend # end Ruote.process_definition",
+      "active": true,
+      "argname": "jolla_ondemand_device_testing",
+      "description": "See: https://jollyboat.jollamobile.com/trac/wiki/QA/TriggerRcTestrun"
     }
   }
 ]

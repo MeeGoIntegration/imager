@@ -16,14 +16,18 @@
 """ Image job creation forms """
 
 import os,re, glob
+from itertools import chain
 from collections import defaultdict
 import ConfigParser
 from django import forms
-from django.forms.formsets import formset_factory
+from django.forms.formsets import BaseFormSet, formset_factory
 from django.core.validators import validate_email
 from taggit.forms import TagField
 from img_web import settings
-from img_web.app.models import ImageType, Arch, BuildService, Token
+from img_web.app.models import ImageType, Arch, BuildService, Token, PostProcess
+from django.utils.encoding import StrAndUnicode, force_unicode, smart_unicode, smart_str
+
+from django.utils.html import escape, conditional_escape
 
 def get_features():
     config = ConfigParser.ConfigParser()
@@ -35,7 +39,7 @@ def list_features():
     features = get_features()
     choices = set()
     for name in features.sections():
-        if name == "repositories":
+        if name.startswith("repositories"):
             continue
         description = name
         if features.has_option(name, "description"):
@@ -45,16 +49,24 @@ def list_features():
 
 def expand_feature(name):
     features = get_features()
+    repo_sections = [ section for section in features.sections() if section.startswith("repositories") ]
     feat = defaultdict(set)
+
     if features.has_option(name, "pattern"):
-        feat["pattern"].add(features.get(name, "pattern"))
+        feat["pattern"].add("@%s" % features.get(name, "pattern"))
+
+    if features.has_option(name, "packages"):
+        feat["packages"].update(features.get(name, "packages").split(','))
+
     if features.has_option(name, "repos"):
         for repo in features.get(name, "repos").split(","):
-            feat["repos"].add(features.get("repositories", repo))
+            for section in repo_sections:
+                if features.has_option(section, repo):
+                    feat[section].add(features.get(section, repo))
     return dict(feat)
 
 class extraReposForm(forms.Form):
-    """ Django form that can be used multiple times in the UploadFileForm """
+
     obs = forms.ChoiceField(label="OBS", choices=[("None", "None")],
                             help_text="Extra OBS instances from which packages"\
                                       " may be downloaded from.")
@@ -71,11 +83,18 @@ class extraReposForm(forms.Form):
 
     def clean(self):
         cleaned_data = self.cleaned_data
-        if cleaned_data['obs'] == "None":
+        if not 'obs' in cleaned_data or cleaned_data['obs'] == "None":
             cleaned_data['obs'] = None
 
-        if cleaned_data['repo'] == "":
+        if not 'repo' in cleaned_data or cleaned_data['repo'] == "":
             cleaned_data['repo'] = None
+        else:
+            cleaned_data['repo'] = cleaned_data['repo'].strip()
+
+        if not 'project' in cleaned_data:
+            cleaned_data['project'] = ""
+        else:
+            cleaned_data['project'] = cleaned_data['project'].strip()
 
         if cleaned_data['obs'] and not cleaned_data['repo']:
             raise forms.ValidationError("You chose an extra OBS without "\
@@ -85,7 +104,6 @@ class extraReposForm(forms.Form):
 extraReposFormset = formset_factory(extraReposForm)
 
 class extraTokensForm(forms.Form):
-    """ Django form that can be used multiple times in the UploadFileForm """
 
     def __init__(self, *args, **kwargs):
         super(extraTokensForm, self).__init__(*args, **kwargs)
@@ -94,7 +112,96 @@ class extraTokensForm(forms.Form):
 
 extraTokensFormset = formset_factory(extraTokensForm)
 
-class UploadFileForm(forms.Form):
+class PostProcessForm(forms.Form):
+
+    def __init__(self, *args, **kwargs):
+        pp = kwargs["pp"]
+        del(kwargs["pp"])
+        super(PostProcessForm, self).__init__(*args, **kwargs)
+        self.fields[pp.name] = forms.BooleanField(label=pp.name, initial=pp.default, required=False, help_text=pp.description)
+        if pp.argname:
+            self.fields[pp.argname] = forms.CharField(label=pp.argname, required=False, widget=forms.Textarea(attrs={'rows':'1'}), help_text=pp.description)
+
+
+class BasePostProcessFormset(BaseFormSet):
+
+    def _construct_forms(self):
+        # instantiate all the forms and put them in self.forms
+        self.forms = []
+        ppobjs = PostProcess.objects.filter(active=True)
+        print self.total_form_count()
+        count = 0
+        for i in xrange(self.total_form_count()):
+	    if count >= ppobjs.count():
+                break
+            self.forms.append(self._construct_form(i, pp=ppobjs[count]))
+            count = count + 1
+
+# This has to be done in the view to get new count
+#postProcessFormset = formset_factory(PostProcessForm, formset=BasePostProcessFormset, extra=PostProcess.objects.count())
+
+class OptionAttrChoiceField(forms.ChoiceField):
+
+    def valid_value(self, value):
+        "Check to see if the provided value is a valid choice"
+        for choice in self.choices:
+            k = choice[0]
+            v = choice[1]
+            if isinstance(v, (list, tuple)):
+                # This is an optgroup, so look inside the group for options
+                for k2, v2 in v:
+                    if value == smart_unicode(k2):
+                        return True
+            else:
+                if value == smart_unicode(k):
+                    return True
+        return False
+
+
+class OptionAttrSelect(forms.Select):
+
+    def render_option(self, selected_choices, option_value, option_label, option_attrs=None):
+        option_value = force_unicode(option_value)
+        if option_value in selected_choices:
+            selected_html = u' selected="selected"'
+            if not self.allow_multiple_selected:
+                # Only allow for a single selection.
+                selected_choices.remove(option_value)
+        else:
+            selected_html = ''
+
+        attrs = []
+        if option_attrs:
+            for key, val in option_attrs.items():
+                attrs.append('%s="%s"' % (key, val))
+
+        return u'<option value="%s"%s%s>%s</option>' % (
+            escape(option_value), selected_html, " ".join(attrs),
+            conditional_escape(force_unicode(option_label)))
+
+
+    def render_options(self, choices, selected_choices):
+        # Normalize to strings.
+        selected_choices = set(force_unicode(v) for v in selected_choices)
+        output = []
+        for option_iterable in chain(self.choices, choices):
+            option_value = option_iterable[0]
+            option_label = option_iterable[1]
+            if isinstance(option_label, (list, tuple)):
+                output.append(u'<optgroup label="%s">' % escape(force_unicode(option_value)))
+                for option in option_label:
+                    output.append(self.render_option(selected_choices, *option))
+                output.append(u'</optgroup>')
+            else:
+                option_attrs = None
+                if len(option_iterable) > 2:
+                    option_attrs = option_iterable[2]
+                output.append(self.render_option(selected_choices, option_value, option_label, option_attrs=option_attrs))
+        return u'\n'.join(output)
+
+
+
+class ImageJobForm(forms.Form):
     """ Django form that allows users to create image jobs """
     imagetype = forms.ChoiceField(label='Image type',
                                   choices=[],
@@ -110,8 +217,9 @@ class UploadFileForm(forms.Form):
                              help_text="Kickstart: customized kickstart file, "\
                                        "if the templates don't fit your needs.")
 
-    template = forms.ChoiceField(label='Template',
+    template = OptionAttrChoiceField(label='Template',
                                  choices=[("None", "None")],
+                                 widget=OptionAttrSelect,
                                 help_text="Template: Choose a base template "\
                                           "ontop of which your packages will "\
                                           "be added. Each template is targeted"\
@@ -120,31 +228,6 @@ class UploadFileForm(forms.Form):
                                           "and kickstart fields will be "\
                                           "ignored.")
 
-    if settings.notify_enabled:
-        notify_image = forms.BooleanField(label="Notify", required=False,
-                                          initial=True,
-                            help_text="Notify image: Send notification when "\
-                                      "image building process is done. ")
-        email = forms.CharField(label="Emails", required=False,
-                                 widget=forms.Textarea(attrs={'rows':'2'}),
-                                 help_text="Emails: Comma separated list of "\
-                                           "emails to send a notification to "\
-                                           "when the image building is done.")
-
-    if settings.testing_enabled:
-        test_image = forms.BooleanField(label="QA image", required=False,
-                                        initial=False,
-                            help_text="Test image: Send image for QA. ")
-        devicegroup = forms.CharField(label="Device group", required=False,
-                                help_text="Device group: device group to "\
-                                "use for test run.",
-                                initial='')
-
-        test_options = forms.CharField(label="Test options", required=False,
-                              widget=forms.Textarea(attrs={'rows':'2'}),
-                                                    help_text=\
-                              "Test options: comma separated list of test "\
-                              "options you want to send to the testing server.")
 
     features = forms.TypedMultipleChoiceField(label="Features", choices=[],
                             help_text="Features: Commonly used extra features", empty_value={},
@@ -152,7 +235,7 @@ class UploadFileForm(forms.Form):
                             widget=forms.widgets.CheckboxSelectMultiple)
 
     overlay = forms.CharField(label="Packages", required=False,
-                              widget=forms.Textarea(attrs={'rows':'4'}),
+                              widget=forms.Textarea(attrs={'rows':'1'}),
                                                     help_text=\
                               "Packages: comma separated list of packages you "\
                               "want to include in the image built from the "\
@@ -164,25 +247,34 @@ class UploadFileForm(forms.Form):
                             help_text="Pin image so it doesn't expire or get "\
                                       "deleted by mistake. ")
     tags = forms.CharField(label="Tags", required=False,
-                           widget=forms.Textarea(attrs={'rows':'2'}),
+                           widget=forms.Textarea(attrs={'rows':'1'}),
                                                  help_text=\
                               "Packages: comma separated list of tags "\
                               "to describe the image built.")
 
 
     def __init__(self, *args, **kwargs):
-        super(UploadFileForm, self).__init__(*args, **kwargs)
-        self.fields['template'].choices=[("None", "None")]
+        super(ImageJobForm, self).__init__(*args, **kwargs)
+        self.fields['template'].choices = []
         for template in glob.glob(os.path.join(settings.TEMPLATESDIR, '*.ks')):
             name = os.path.basename(template)
             templatename = os.path.basename(template)
+            attrs = {}
             with open(template, 'r') as tf:
                 for line in tf:
                     if re.match(r'^#.*?DisplayName:.+$', line):
                         name = line.split(":")[1].strip()
-                        break
-            self.fields['template'].choices.append((templatename , name))
+                    if re.match(r'^#.*?SuggestedFeatures:.+$', line):
+                        attrs["data-features"] = line.split(":")[1].strip()
+                    if re.match(r'^#.*?SuggestedArchitecture:.+$', line):
+                        attrs["data-architecture"] = line.split(":")[1].strip()
+                    if re.match(r'^#.*?SuggestedImageType:.+$', line):
+                        attrs["data-imagetype"] = line.split(":")[1].strip()
+
+            self.fields['template'].choices.append((templatename , name, attrs))
+
         self.fields['template'].choices = sorted(self.fields['template'].choices, key=lambda name: name[1])
+        self.fields['template'].choices.insert(0, ("None", "None"))
         self.fields['architecture'].choices = [(arch.name, arch.name) for arch in Arch.objects.all()]
         self.fields['imagetype'].choices = [(itype.name, itype.name) for itype in ImageType.objects.all()]
         self.fields['features'].choices = list_features()
@@ -191,13 +283,6 @@ class UploadFileForm(forms.Form):
         cleaned_data = self.cleaned_data
         if cleaned_data['template'] == "None":
             cleaned_data['template'] = None
-
-        if 'email' in cleaned_data.keys():
-            if cleaned_data['email'].endswith(','):
-                cleaned_data['email'] = cleaned_data['email'][:-1]
-                for email in [i.strip() for i in \
-                        cleaned_data['email'].split(",")]:
-                    validate_email(email)
 
         if (('ksfile' in cleaned_data and 'template' in cleaned_data) and
             (cleaned_data['ksfile'] and cleaned_data['template'])):

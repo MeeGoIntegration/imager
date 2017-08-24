@@ -35,7 +35,7 @@ def list_features():
     features = get_features()
     choices = set()
     for name in features.sections():
-        if name == "repositories":
+        if name.startswith("repositories"):
             continue
         description = name
         if features.has_option(name, "description"):
@@ -45,16 +45,24 @@ def list_features():
 
 def expand_feature(name):
     features = get_features()
+    repo_sections = [ section for section in features.sections() if section.startswith("repositories") ]
     feat = defaultdict(set)
+
     if features.has_option(name, "pattern"):
-        feat["pattern"].add(features.get(name, "pattern"))
+        feat["pattern"].add("@%s" % features.get(name, "pattern"))
+
+    if features.has_option(name, "packages"):
+        feat["packages"].update(features.get(name, "packages").split(','))
+
     if features.has_option(name, "repos"):
         for repo in features.get(name, "repos").split(","):
-            feat["repos"].add(features.get("repositories", repo))
+            for section in repo_sections:
+                if features.has_option(section, repo):
+                    feat[section].add(features.get(section, repo))
     return dict(feat)
 
 class extraReposForm(forms.Form):
-    """ Django form that can be used multiple times in the UploadFileForm """
+
     obs = forms.ChoiceField(label="OBS", choices=[("None", "None")],
                             help_text="Extra OBS instances from which packages"\
                                       " may be downloaded from.")
@@ -71,11 +79,18 @@ class extraReposForm(forms.Form):
 
     def clean(self):
         cleaned_data = self.cleaned_data
-        if cleaned_data['obs'] == "None":
+        if not 'obs' in cleaned_data or cleaned_data['obs'] == "None":
             cleaned_data['obs'] = None
 
-        if cleaned_data['repo'] == "":
+        if not 'repo' in cleaned_data or cleaned_data['repo'] == "":
             cleaned_data['repo'] = None
+        else:
+            cleaned_data['repo'] = cleaned_data['repo'].strip()
+
+        if not 'project' in cleaned_data:
+            cleaned_data['project'] = ""
+        else:
+            cleaned_data['project'] = cleaned_data['project'].strip()
 
         if cleaned_data['obs'] and not cleaned_data['repo']:
             raise forms.ValidationError("You chose an extra OBS without "\

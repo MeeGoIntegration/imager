@@ -32,7 +32,7 @@ def worker_config(config=None, conffile="/etc/imager/img.conf"):
 
     if config.has_option(section, "mic_opts"):
         extra_opts = config.get(section, "mic_opts")
-        extra_opts = extra_opts.split(",")
+        extra_opts = extra_opts.split(":")
         conf["extra_opts"] = extra_opts
 
     return conf

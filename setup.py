@@ -15,6 +15,7 @@ static_files=[('/etc/imager', ['src/img_web/img.conf']),
                 )
              ]
 
+toplevel = 'src/'
 setup(
     name = "img",
     version = "0.6.0",
@@ -22,18 +23,8 @@ setup(
     license = 'GPLv2',
     description = "Meego Image creation service",
     author = 'Aleksi Suomalainen <aleksi.suomalainen@nomovok.com>',
-    packages = ['img',
-                'img_web',
-                'img_web.app',
-                'img_web.app.templatetags',
-                'img_web.utils'
-                ],    
-    package_dir = {'img':'src/img',
-                   'img_web':'src/img_web',
-                   'img_web.app':'src/img_web/app', 
-                   'img_web.app.templatetags':'src/img_web/app/templatetags',
-                   'img_web.utils':'src/img_web/utils',
-                  },
+    packages = find_packages(toplevel),
+    package_dir = {'': toplevel},
     package_data = { 'img_web' : ['templates/*.html',
                                   'templates/app/*.html', 
                                   'templates/registration/*.html',

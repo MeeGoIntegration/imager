@@ -262,14 +262,13 @@ class ImageJobForm(forms.Form):
             attrs = {}
             with open(template, 'r') as tf:
                 for line in tf:
-                    if re.match(r'^#.*?DisplayName:.+$', line):
+                    match = re.match(r'^#.*?Suggested([^:]*):(.*)$', line)
+                    if match:
+                        key = 'data-' + match.group(1).lower()
+                        val = match.group(2).strip()
+                        attrs[key] = val
+                    elif re.match(r'^#.*?DisplayName:.+$', line):
                         name = line.split(":")[1].strip()
-                    if re.match(r'^#.*?SuggestedFeatures:.+$', line):
-                        attrs["data-features"] = line.split(":")[1].strip()
-                    if re.match(r'^#.*?SuggestedArchitecture:.+$', line):
-                        attrs["data-architecture"] = line.split(":")[1].strip()
-                    if re.match(r'^#.*?SuggestedImageType:.+$', line):
-                        attrs["data-imagetype"] = line.split(":")[1].strip()
 
             self.fields['template'].choices.append((templatename , name, attrs))
 

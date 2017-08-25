@@ -25,6 +25,24 @@
            $('#id_ksfile , #id_template').each(function(){ $(this).removeAttr("disabled")});
            return true; 
         } );
+        $("select[name=template]").change(function() {
+           var selected = $(this).val();
+           var selected_elem = $("option[value$='" + selected + "']");
+           $($(selected_elem)[0].attributes).each( function() {
+             var x = this;
+             if (x.name.match(/^data-/)) {
+               var y = x.name.replace("data-", "");
+               if (x.value.match(/,/)) {
+                 $(x.value.split(",")).each( function() {
+                   $("[name=" + y + "][value=" + this + "]").attr("checked", true);
+                 });
+               } else {
+                 $("[name=" + y + "]").val(x.value);
+               }
+             }
+           });
+        });
+
     })
 </script>
 {% if jobform.is_bound %}

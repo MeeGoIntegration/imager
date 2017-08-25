@@ -97,7 +97,8 @@ class ParticipantHandler(object):
                     job.files_url = wid.fields.image.files_url
                     job.image_url = wid.fields.image.image_url
                 if wid.params.status == "DONE, TESTED":
-                    job.test_result = wid.fields.image.test_result
+                    if not wid.fields.image.test_result is None:
+                        job.test_result = wid.fields.image.test_result
 
             if job.status == "BUILDING":
                 if wid.fields.image.logfile_url:

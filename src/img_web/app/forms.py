@@ -217,8 +217,9 @@ class ImageJobForm(forms.Form):
                              help_text="Kickstart: customized kickstart file, "\
                                        "if the templates don't fit your needs.")
 
-    template = forms.ChoiceField(label='Template',
+    template = OptionAttrChoiceField(label='Template',
                                  choices=[("None", "None")],
+                                 widget=OptionAttrSelect,
                                 help_text="Template: Choose a base template "\
                                           "ontop of which your packages will "\
                                           "be added. Each template is targeted"\
@@ -234,7 +235,7 @@ class ImageJobForm(forms.Form):
                             widget=forms.widgets.CheckboxSelectMultiple)
 
     overlay = forms.CharField(label="Packages", required=False,
-                              widget=forms.Textarea(attrs={'rows':'4'}),
+                              widget=forms.Textarea(attrs={'rows':'1'}),
                                                     help_text=\
                               "Packages: comma separated list of packages you "\
                               "want to include in the image built from the "\
@@ -246,7 +247,7 @@ class ImageJobForm(forms.Form):
                             help_text="Pin image so it doesn't expire or get "\
                                       "deleted by mistake. ")
     tags = forms.CharField(label="Tags", required=False,
-                           widget=forms.Textarea(attrs={'rows':'2'}),
+                           widget=forms.Textarea(attrs={'rows':'1'}),
                                                  help_text=\
                               "Packages: comma separated list of tags "\
                               "to describe the image built.")
@@ -254,17 +255,26 @@ class ImageJobForm(forms.Form):
 
     def __init__(self, *args, **kwargs):
         super(ImageJobForm, self).__init__(*args, **kwargs)
-        self.fields['template'].choices=[("None", "None")]
+        self.fields['template'].choices = []
         for template in glob.glob(os.path.join(settings.TEMPLATESDIR, '*.ks')):
             name = os.path.basename(template)
             templatename = os.path.basename(template)
+            attrs = {}
             with open(template, 'r') as tf:
                 for line in tf:
                     if re.match(r'^#.*?DisplayName:.+$', line):
                         name = line.split(":")[1].strip()
-                        break
-            self.fields['template'].choices.append((templatename , name))
+                    if re.match(r'^#.*?SuggestedFeatures:.+$', line):
+                        attrs["data-features"] = line.split(":")[1].strip()
+                    if re.match(r'^#.*?SuggestedArchitecture:.+$', line):
+                        attrs["data-architecture"] = line.split(":")[1].strip()
+                    if re.match(r'^#.*?SuggestedImageType:.+$', line):
+                        attrs["data-imagetype"] = line.split(":")[1].strip()
+
+            self.fields['template'].choices.append((templatename , name, attrs))
+
         self.fields['template'].choices = sorted(self.fields['template'].choices, key=lambda name: name[1])
+        self.fields['template'].choices.insert(0, ("None", "None"))
         self.fields['architecture'].choices = [(arch.name, arch.name) for arch in Arch.objects.all()]
         self.fields['imagetype'].choices = [(itype.name, itype.name) for itype in ImageType.objects.all()]
         self.fields['features'].choices = list_features()

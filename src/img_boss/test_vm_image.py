@@ -47,6 +47,7 @@ class ParticipantHandler(object):
 
     def push_img_status(self, status, fields):
         """ function to push status by launching a process, ?utility """
+        fields.update({"priority" : "high"})
         self.launcher.launch(self.process % status, fields)
 
     def handle_lifecycle_control(self, ctrl):

@@ -7,10 +7,6 @@ from setuptools import find_packages
 static_files=[('/etc/imager', ['src/img_web/img.conf']),
                 ('/usr/share/img_web/processes', 
                    ['src/img_web/processes/CREATE_IMAGE',
-                    'src/img_web/processes/NOTIFY_IMAGE',
-                    'src/img_web/processes/TEST_IMAGE',
-                    'src/img_web/processes/DELETE_IMAGE',
-                    'src/img_web/processes/UPDATE_STATUS'
                    ]
                 )
              ]

@@ -91,6 +91,7 @@ import datetime
 os.environ['DJANGO_SETTINGS_MODULE'] = 'img_web.settings'
 from img_web.app.models import ImageJob, Queue
 from django.contrib.auth.models import User
+from django.db import IntegrityError
 
 class ParticipantHandler(object):
 
@@ -136,16 +137,8 @@ class ParticipantHandler(object):
                        "kickstart" : f.image.kickstart,
                        "name" : f.image.name
                       }
-        if f.emails:
-            image_args["email"] = ",".join(f.emails)
-        else:
-            image_args["email"] = self.user.email
-        if f.image.devicegroup:
-            image_args["devicegroup"] = f.image.devicegroup
         if f.image.extra_opts:
             image_args["extra_opts"] = f.image.extra_opts
-        if f.image.test_options:
-            image_args["test_options"] = f.image.test_options
         if f.image.tokenmap:
             image_args["tokenmap"] = f.image.tokenmap
 
@@ -153,6 +146,8 @@ class ParticipantHandler(object):
         if wid.params.action == "get_or_create":
             self.log.info("get_or_create")
             jobs = ImageJob.objects.filter(**image_args).filter(status__startswith="DONE")
+            self.log.info(jobs.count())
+            self.log.info("- %(queue)s - %(image_type)s - %(arch)s - %(name)s - %(user)s - kickstart:\n%(kickstart)s\n\n" % (image_args))
             if wid.params.max_age:
                 ts = datetime.datetime.now() - datetime.timedelta(days=int(wid.params.max_age))
                 self.log.info(ts)
@@ -167,10 +162,20 @@ class ParticipantHandler(object):
         if not job:
             self.log.info("New job")
             job = ImageJob(**image_args)
-            job.image_id = "%s-%s" % ( str(f.ev.id),
-                                       time.strftime('%Y%m%d-%H%M%S') )
-            job.save()
-            f.image.image_url = ""
+            saved = False
+            while not saved:
+                try:
+                    job.image_id = "%s-%s" % ( str(f.ev.id),
+                                               time.strftime('%Y%m%d-%H%M%S') )
+                    job.save()
+                    saved = True
+                    f.image.image_url = ""
+                except IntegrityError, exc:
+                    print exc
+                    print "couldn't save %s, retrying" % job.image_id
+                    time.sleep(1)
+
+            print "saved %s" % job.image_id
 
         if not f.image.prefix:
             f.image.prefix = "%s/%s" % (job.queue.name,

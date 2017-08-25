@@ -124,5 +124,93 @@
       "name": "RELEASE",
       "default": ""
     }
+  },
+  {
+    "model": "app.JobState",
+    "pk": 1,
+    "fields" : {
+      "name": "ERROR"
+    }
+  },
+  {
+    "model": "app.JobState",
+    "pk": 2,
+    "fields" : {
+      "name": "IN QUEUE"
+    }
+  },
+  {
+    "model": "app.JobState",
+    "pk": 3,
+    "fields" : {
+      "name": "DONE"
+    }
+  },
+  {
+    "model": "app.JobState",
+    "pk": 4,
+    "fields" : {
+      "name": "BUILDING"
+    }
+  },
+  {
+    "model": "app.JobState",
+    "pk": 5,
+    "fields" : {
+      "name": "DONE, TESTING"
+    }
+  },
+  {
+    "model": "app.JobState",
+    "pk": 6,
+    "fields" : {
+      "name": "DONE, TESTED"
+    }
+  },
+  {
+    "pk": 1,
+    "model": "app.postprocess",
+    "fields": {
+      "name": "IRC Notification",
+      "triggers": [
+        1,
+        3
+      ],
+      "default": true,
+      "pdef": "Ruote.process_definition 'notify_image' do\r\n\r\n  sequence do\r\n    set :f => 'debug_dump', :value => 'true'\r\n    notify_irc :irc_channel => '#mer-commits', :msg => '${f:image.image_type} image ${f:image.image_id} for ${f:image.arch} requested by ${f:image.prefix} is finished with result ${f:image.result}'\r\n  end\r\n\r\nend",
+      "active": true,
+      "argname": "",
+      "description": "(sends a notification on #mer-commits)"
+    }
+  },
+  {
+    "pk": 2,
+    "model": "app.postprocess",
+    "fields": {
+      "name": "VM QA",
+      "triggers": [
+        3
+      ],
+      "default": false,
+      "pdef": "Ruote.process_definition 'test_image' do\r\n\r\n  sequence do\r\n    set :f => 'debug_dump', :value => 'true'\r\n    test_image\r\n  end\r\n\r\nend\r\n",
+      "active": true,
+      "argname": "test_options",
+      "description": ""
+    }
+  },
+  {
+    "pk": 3,
+    "model": "app.postprocess",
+    "fields": {
+      "name": "Make VDI",
+      "triggers": [
+        3
+      ],
+      "default": false,
+      "pdef": "Ruote.process_definition 'convert_to_vdi' do\r\n\r\n  sequence do\r\n    set :f => 'debug_dump', :value => 'true'\r\n    update_image_status :status => \"DONE, making VDI\"\r\n    make_vdi\r\n    update_image_status :status => \"DONE, Converted to VDI\"\r\n  end\r\n\r\nend",
+      "active": true,
+      "argname": "",
+      "description": "(convert a raw image to a VDI image)"
+    }
   }
 ]

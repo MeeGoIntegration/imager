@@ -49,14 +49,8 @@ db_pass = config.get('db', 'db_pass')
 db_host = config.get('db', 'db_host')
 
 create_image_process = config.get('processes', 'create_image_process')
-notify_process = config.get('processes', 'notify_process')
-test_process = config.get('processes', 'test_process')
-delete_process = config.get('processes', 'delete_process')
 
-testing_enabled = config.getboolean('test', 'enabled')
 DEVICEGROUP = config.get('test', 'devicegroup')
-
-notify_enabled = config.getboolean('notify', 'enabled')
 
 USE_LDAP = config.getboolean('ldap', 'use_ldap')
 USE_SEARCH = config.getboolean('ldap', 'use_search')

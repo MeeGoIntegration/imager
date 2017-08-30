@@ -1,20 +1,20 @@
 %define svdir %{_sysconfdir}/supervisor/conf.d/
 
 Name: img
-Version: 0.64.4
+Version: 0.67.1
 Release: 1
 
 Group: Applications/Engineering
 License: GPLv2+
-URL: http://www.meego.com
+URL: https://github.com/MeegoIntegration/imager.git
 Source0: %{name}-%{version}.tar.gz
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-buildroot
-BuildRequires: python, python-distribute, python-sphinx, python-boss-skynet, python-ruote-amqp, python-django, python-mysql, pykickstart, python-django-taggit, python-buildservice
+BuildRequires: python, python-distribute, python-sphinx, python-boss-skynet, python-ruote-amqp, python-django < 1.5, python-mysql, pykickstart, python-django-taggit, python-buildservice
 BuildArch: noarch
-Summary: Image creation service for MeeGo related products
+Summary: Image creation service for SailfishOS related products
 
 %description
-Image creation service for MeeGo related products
+Image creation service for SailfishOS related products
 
 %define python python%{?__python_ver}
 %define __python /usr/bin/%{python}
@@ -29,7 +29,7 @@ Requires: python >= 2.5.0, sudo, pykickstart, lvm2
 Requires(pre): pwdutils
 Requires(post): sudo
 Requires(post): eat-host
-Summary: Image creation service for MeeGo related products, core package
+Summary: Image creation service for SailfishOS related products, core package
 %description -n img-core
 This package provides the core worker logic of imager.
 It builds images using mic optionally in a virtual machine.
@@ -43,8 +43,8 @@ Requires: python-South
 Requires: python-django-extensions
 Requires: python-django-taggit
 Requires(post): python-boss-skynet
-Requires: python-django, python-flup, python-mysql
-Summary: Image creation service for MeeGo related products, django web interface
+Requires: python-django < 1.5, python-flup, python-mysql
+Summary: Image creation service for SailfishOS related products, django web interface
 %description -n img-web
 This package provides a django based web interface for imager that is part of BOSS.
 
@@ -54,7 +54,7 @@ Requires: img-core
 Requires: python-xml
 Requires: python-boss-skynet
 Requires(post): python-boss-skynet
-Summary: Image creation service for MeeGo related products, BOSS participants
+Summary: Image creation service for SailfishOS related products, BOSS participants
 %description -n img-worker
 This package provides imager participants that plugin into a BOSS system to 
 fulfill image building steps of processes
@@ -66,7 +66,7 @@ Requires: python-buildservice
 Requires: boss-standard-workflow-common
 Requires: python-boss-skynet
 Requires(post): python-boss-skynet
-Summary: Image creation service for MeeGo related products, BOSS participants
+Summary: Image creation service for SailfishOS related products, BOSS participants
 %description -n img-ks
 This package provides imager participants that plugin into a BOSS system to
 handle kickstarts
@@ -78,7 +78,7 @@ Requires: python-xml
 Requires: python-buildservice
 Requires: python-boss-skynet
 Requires(post): python-boss-skynet
-Summary: Image creation service for MeeGo related products, BOSS participants
+Summary: Image creation service for SailfishOS related products, BOSS participants
 %description -n img-test-vm
 This package provides imager participant that can test images using VMs
 

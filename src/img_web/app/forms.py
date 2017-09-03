@@ -251,7 +251,16 @@ class ImageJobForm(forms.Form):
                                                  help_text=\
                               "Packages: comma separated list of tags "\
                               "to describe the image built.")
-
+    devicemodel = forms.CharField(
+        label="Device model",
+        required=False,
+        widget=forms.TextInput(attrs={'readonly': 'readonly'}),
+    )
+    devicevariant = forms.CharField(
+        label="Device variant",
+        required=False,
+        widget=forms.TextInput(attrs={'readonly': 'readonly'}),
+    )
 
     def __init__(self, *args, **kwargs):
         super(ImageJobForm, self).__init__(*args, **kwargs)
@@ -270,6 +279,10 @@ class ImageJobForm(forms.Form):
                         attrs["data-architecture"] = line.split(":")[1].strip()
                     if re.match(r'^#.*?SuggestedImageType:.+$', line):
                         attrs["data-imagetype"] = line.split(":")[1].strip()
+                    if re.match(r'^#.*?DeviceModel:.+$', line):
+                        attrs['data-devicemodel'] = line.split(":")[1].strip()
+                    if re.match(r'^#.*?DeviceVariant:.+$', line):
+                        attrs['data-devicevariant'] = line.split(":")[1].strip()
 
             self.fields['template'].choices.append((templatename , name, attrs))
 

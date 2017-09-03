@@ -150,6 +150,10 @@ def submit(request):
             archtoken = "i586"
         tokenmap["ARCH"] = archtoken
 
+        devicetoken = jobdata.get('device')
+        if devicetoken:
+            tokenmap['DEVICE'] = devicetoken
+
         tokens_list = []
         extra_repos_tmp = []
         for token, tokenvalue in tokenmap.items(): 

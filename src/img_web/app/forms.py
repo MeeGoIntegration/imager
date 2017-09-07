@@ -251,8 +251,8 @@ class ImageJobForm(forms.Form):
                                                  help_text=\
                               "Packages: comma separated list of tags "\
                               "to describe the image built.")
-    device = forms.CharField(
-        label="Device",
+    devicemodel = forms.CharField(
+        label="Device model",
         required=False,
         widget=forms.TextInput(attrs={'readonly': 'readonly'}),
     )
@@ -273,8 +273,8 @@ class ImageJobForm(forms.Form):
                         attrs[key] = val
                     elif re.match(r'^#.*?DisplayName:.+$', line):
                         name = line.split(":")[1].strip()
-                    elif re.match(r'^#.*?Device:.+$', line):
-                        attrs['data-device'] = line.split(":")[1].strip()
+                    elif re.match(r'^#.*?DeviceModel:.+$', line):
+                        attrs['data-devicemodel'] = line.split(":")[1].strip()
 
             self.fields['template'].choices.append((templatename , name, attrs))
 

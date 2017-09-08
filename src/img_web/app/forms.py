@@ -256,6 +256,11 @@ class ImageJobForm(forms.Form):
         required=False,
         widget=forms.TextInput(attrs={'readonly': 'readonly'}),
     )
+    devicevariant = forms.CharField(
+        label="Device variant",
+        required=False,
+        widget=forms.TextInput(attrs={'readonly': 'readonly'}),
+    )
 
     def __init__(self, *args, **kwargs):
         super(ImageJobForm, self).__init__(*args, **kwargs)
@@ -275,6 +280,8 @@ class ImageJobForm(forms.Form):
                         name = line.split(":")[1].strip()
                     elif re.match(r'^#.*?DeviceModel:.+$', line):
                         attrs['data-devicemodel'] = line.split(":")[1].strip()
+                    elif re.match(r'^#.*?DeviceVariant:.+$', line):
+                        attrs['data-devicevariant'] = line.split(":")[1].strip()
 
             self.fields['template'].choices.append((templatename , name, attrs))
 

@@ -152,7 +152,10 @@ def submit(request):
 
         devicemodeltoken = jobdata.get('devicemodel')
         if devicemodeltoken:
-            tokenmap['DEVICE'] = devicemodeltoken
+            tokenmap['DEVICEMODEL'] = devicemodeltoken
+        devicevarianttoken = jobdata.get('devicevariant')
+        if devicevarianttoken:
+            tokenmap['DEVICEVARIANT'] = devicevarianttoken
 
         tokens_list = []
         extra_repos_tmp = []

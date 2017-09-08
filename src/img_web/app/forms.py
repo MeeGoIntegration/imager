@@ -251,7 +251,16 @@ class ImageJobForm(forms.Form):
                                                  help_text=\
                               "Packages: comma separated list of tags "\
                               "to describe the image built.")
-
+    devicemodel = forms.CharField(
+        label="Device model",
+        required=False,
+        widget=forms.TextInput(attrs={'readonly': 'readonly'}),
+    )
+    devicevariant = forms.CharField(
+        label="Device variant",
+        required=False,
+        widget=forms.TextInput(attrs={'readonly': 'readonly'}),
+    )
 
     def __init__(self, *args, **kwargs):
         super(ImageJobForm, self).__init__(*args, **kwargs)
@@ -262,14 +271,17 @@ class ImageJobForm(forms.Form):
             attrs = {}
             with open(template, 'r') as tf:
                 for line in tf:
-                    if re.match(r'^#.*?DisplayName:.+$', line):
+                    match = re.match(r'^#.*?Suggested([^:]*):(.*)$', line)
+                    if match:
+                        key = 'data-' + match.group(1).lower()
+                        val = match.group(2).strip()
+                        attrs[key] = val
+                    elif re.match(r'^#.*?DisplayName:.+$', line):
                         name = line.split(":")[1].strip()
-                    if re.match(r'^#.*?SuggestedFeatures:.+$', line):
-                        attrs["data-features"] = line.split(":")[1].strip()
-                    if re.match(r'^#.*?SuggestedArchitecture:.+$', line):
-                        attrs["data-architecture"] = line.split(":")[1].strip()
-                    if re.match(r'^#.*?SuggestedImageType:.+$', line):
-                        attrs["data-imagetype"] = line.split(":")[1].strip()
+                    elif re.match(r'^#.*?DeviceModel:.+$', line):
+                        attrs['data-devicemodel'] = line.split(":")[1].strip()
+                    elif re.match(r'^#.*?DeviceVariant:.+$', line):
+                        attrs['data-devicevariant'] = line.split(":")[1].strip()
 
             self.fields['template'].choices.append((templatename , name, attrs))
 

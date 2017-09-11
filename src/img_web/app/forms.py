@@ -265,24 +265,25 @@ class ImageJobForm(forms.Form):
     def __init__(self, *args, **kwargs):
         super(ImageJobForm, self).__init__(*args, **kwargs)
         self.fields['template'].choices = []
+        suggested_re = re.compile(
+            r'^#.*?Suggested(Architecture|ImageType|Features):(.*)$'
+        )
+        device_re = re.compile(
+            r'^#.*?(DeviceModel|DeviceVariant):(.*)$'
+        )
         for template in glob.glob(os.path.join(settings.TEMPLATESDIR, '*.ks')):
             name = os.path.basename(template)
             templatename = os.path.basename(template)
             attrs = {}
             with open(template, 'r') as tf:
                 for line in tf:
-                    if re.match(r'^#.*?DisplayName:.+$', line):
+                    match = suggested_re.match(line) or device_re.match(line)
+                    if match:
+                        key = 'data-' + match.group(1).lower()
+                        val = match.group(2).strip()
+                        attrs[key] = val
+                    elif re.match(r'^#.*?DisplayName:.+$', line):
                         name = line.split(":")[1].strip()
-                    if re.match(r'^#.*?SuggestedFeatures:.+$', line):
-                        attrs["data-features"] = line.split(":")[1].strip()
-                    if re.match(r'^#.*?SuggestedArchitecture:.+$', line):
-                        attrs["data-architecture"] = line.split(":")[1].strip()
-                    if re.match(r'^#.*?SuggestedImageType:.+$', line):
-                        attrs["data-imagetype"] = line.split(":")[1].strip()
-                    if re.match(r'^#.*?DeviceModel:.+$', line):
-                        attrs['data-devicemodel'] = line.split(":")[1].strip()
-                    if re.match(r'^#.*?DeviceVariant:.+$', line):
-                        attrs['data-devicevariant'] = line.split(":")[1].strip()
 
             self.fields['template'].choices.append((templatename , name, attrs))
 

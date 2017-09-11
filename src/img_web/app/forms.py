@@ -254,12 +254,12 @@ class ImageJobForm(forms.Form):
     devicemodel = forms.CharField(
         label="Device model",
         required=False,
-        widget=forms.TextInput(attrs={'readonly': 'readonly'}),
+        widget=forms.HiddenInput(attrs={'readonly': 'readonly'}),
     )
     devicevariant = forms.CharField(
         label="Device variant",
         required=False,
-        widget=forms.TextInput(attrs={'readonly': 'readonly'}),
+        widget=forms.HiddenInput(attrs={'readonly': 'readonly'}),
     )
 
     def __init__(self, *args, **kwargs):

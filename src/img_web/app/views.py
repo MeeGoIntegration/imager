@@ -140,9 +140,6 @@ def submit(request):
                 else:
                     tokenmap["RELEASEPATTERN"] = ":/%s" % tokenvalue
 
-            if " " in tokenvalue:
-                tokenvalue = '"%s"' % tokenvalue
-
             tokenmap[token.name] = tokenvalue
 
         archtoken = jobdata['architecture']

@@ -13,6 +13,7 @@
 #~ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import os, sys
+import pipes
 import hashlib
 import subprocess as sub
 from multiprocessing import Process, TimeoutError
@@ -194,7 +195,7 @@ class Commands(object):
         ssh_comm = copy(self.sshbase)
         ssh_comm.extend(["-l%s" % user])
         ssh_comm.extend(self.sopts)
-        ssh_comm.extend(command)
+        ssh_comm.extend([pipes.quote(arg) for arg in command])
         try:
             self.run(ssh_comm)
         except sub.CalledProcessError:
@@ -588,7 +589,7 @@ class ImageTester(object):
                 else:
                     print "trying to get any test results"
                     self.commands.scpfrom("/tmp/results/*", self.results_dir)
-                    self.commands.ssh(['rm', '-rf', '/tmp/results/*'])
+                    self.commands.ssh(['sh', '-c', 'rm -rf /tmp/results/*'])
             except:
                 pass
 

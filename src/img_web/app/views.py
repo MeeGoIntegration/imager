@@ -140,9 +140,6 @@ def submit(request):
                 else:
                     tokenmap["RELEASEPATTERN"] = ":/%s" % tokenvalue
 
-            if " " in tokenvalue:
-                tokenvalue = '"%s"' % tokenvalue
-
             tokenmap[token.name] = tokenvalue
 
         archtoken = jobdata['architecture']
@@ -159,7 +156,9 @@ def submit(request):
 
         tokens_list = []
         extra_repos_tmp = []
-        for token, tokenvalue in tokenmap.items(): 
+        for token, tokenvalue in tokenmap.items():
+            if " " in tokenvalue:
+                tokenvalue = '"%s"' % tokenvalue
             ksname = ksname.replace("@%s@" % token, tokenvalue)
             tokens_list.append("%s:%s" % (token, tokenvalue))
             for repo in extra_repos:

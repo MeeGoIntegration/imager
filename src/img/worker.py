@@ -16,6 +16,7 @@
 """MIC2 mic-image-creator wrapper"""
 
 import os
+import pipes
 import subprocess as sub
 from multiprocessing import Process, TimeoutError
 import time, datetime
@@ -250,7 +251,7 @@ class Commands(object):
         """
         ssh_comm = copy(self.sshbase)
         ssh_comm.extend(self.sopts)
-        ssh_comm.extend(command)
+        ssh_comm.extend([pipes.quote(arg) for arg in command])
         self.run(ssh_comm)
 
     def is_lvm(self, img):
@@ -351,7 +352,7 @@ class Commands(object):
             mic_comm.append('--config=%s' % job_args.ksfile_name)
         elif self.ict == "mic":
             mic_comm.append('%s' % job_args.image_type)
-            mic_comm.append('"%s"' % job_args.ksfile_name)
+            mic_comm.append('%s' % job_args.ksfile_name)
 
         mic_comm.append('--arch=%s' % job_args.arch)
         mic_comm.append('--outdir=%s' % job_args.outdir)

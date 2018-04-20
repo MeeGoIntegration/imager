@@ -71,6 +71,19 @@ Summary: Image creation service for SailfishOS related products, BOSS participan
 This package provides imager participants that plugin into a BOSS system to
 handle kickstarts
 
+%package -n img-make-vdi
+Group: Applications/Engineering
+Requires: python-xml
+Requires: python-buildservice
+Requires: boss-standard-workflow-common
+Requires: python-boss-skynet
+Requires: virtualbox
+Requires(post): python-boss-skynet
+Summary: Image creation service for SailfishOS related products, BOSS participants
+%description -n img-make-vdi
+This package provides imager participants that plugin into a BOSS system to
+handle VirtualBox VDI images
+
 %package -n img-test-vm
 Group: Applications/Engineering
 Requires: img-core
@@ -121,6 +134,12 @@ if [ $1 -ge 1 ] ; then
     skynet reload build_ks || true
 fi
 
+%post -n img-make-vdi
+if [ $1 -ge 1 ] ; then
+    skynet apply || true
+    skynet reload make_vdi || true
+fi
+
 %post -n img-test-vm
 if [ $1 -ge 1 ] ; then
     skynet apply || true
@@ -169,6 +188,15 @@ fi
 %{_datadir}/boss-skynet/build_ks.py
 %config(noreplace) %{_sysconfdir}/skynet/build_ks.conf
 %config(noreplace) %{svdir}/build_ks.conf
+%dir /etc/supervisor
+%dir /etc/supervisor/conf.d
+%dir /usr/share/boss-skynet
+
+%files -n img-make-vdi
+%defattr(-,root,root,-)
+%{_datadir}/boss-skynet/make_vdi.py
+%config(noreplace) %{_sysconfdir}/skynet/make_vdi.conf
+%config(noreplace) %{svdir}/make_vdi.conf
 %dir /etc/supervisor
 %dir /etc/supervisor/conf.d
 %dir /usr/share/boss-skynet

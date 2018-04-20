@@ -818,6 +818,8 @@ class ParticipantHandler(object):
         self.reposerver = ""
         self.ksstore = ""
         self.oscrc = ""
+        self.namespace = None
+        self.obs = None
 
     def handle_wi_control(self, ctrl):
         """ job control thread """
@@ -832,11 +834,14 @@ class ParticipantHandler(object):
                 self.oscrc = ctrl.config.get("obs", "oscrc")
 
     def get_repositories(self, wid, project):
-        if not wid.fields.ev or not wid.fields.ev.namespace:
+        if not (wid.fields.ev and wid.fields.ev.namespace):
             raise RuntimeError("Missing field: ev.namespace")
-        obs = BuildService(oscrc=self.oscrc, apiurl=wid.fields.ev.namespace)
+        if self.obs is None or self.namespace != wid.fields.ev.namespace:
+            self.namespace = wid.fields.ev.namespace
+            self.obs = BuildService(oscrc=self.oscrc, apiurl=self.namespace)
+
         try:
-            repositories = obs.getProjectRepositories(project)
+            repositories = self.obs.getProjectRepositories(project)
         except HTTPError, exobj:
             if exobj.code == 404:
                 raise RuntimeError("Project %s not found in OBS" % project)

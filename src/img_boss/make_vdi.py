@@ -100,16 +100,6 @@ class ParticipantHandler(object):
                     raw = raw[0:-8] + ".raw"
                     os.rename(os.path.join(os.path.dirname(raw), new_raw),
                               raw)
-#                    new_raw = subprocess.check_output(["tar", "xv",
-#                                                       "-C", "/tmp",
-#                                                       "-f", raw]
-#                                                       ).rstrip('\n')
-#                    os.unlink(raw)
-#                    raw = raw[0:-8] + ".raw"
-#                    shutil.copy(os.path.join("/tmp", new_raw),
-#                                raw)
-#                    os.unlink(os.path.join("/tmp", new_raw))
-
                 if raw.endswith(".bz2"):
                     print "bunzip2 %s\n" % raw                    
                     subprocess.check_output(["bunzip2", raw])

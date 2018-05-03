@@ -79,7 +79,7 @@ class ParticipantHandler(object):
             wid.fields.__error__ = "Mandatory field: image.image.id "\
                                    "does not exist."
             wid.fields.msg.append(wid.fields.__error__)
-            raise RuntimeError("Missing mandatory field")
+            raise RuntimeError("Missing mandatory field: image.image.id")
 
         job = get_or_none(ImageJob, image_id__exact=wid.fields.image.image_id)
         if job:

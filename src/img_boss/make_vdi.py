@@ -63,7 +63,7 @@ class ParticipantHandler(object):
                 self.config = dap({})
                 self.config.base_url = ctrl.config.get("make_vdi", "base_url")
                 self.config.base_dir = ctrl.config.get("make_vdi", "base_dir")
-                print "config base_url %s" % self.config.base_url
+                self.log.debug("config base_url %s" % self.config.base_url)
 
     def handle_wi(self, wid):
         """Handle the workitem to convert an image
@@ -87,11 +87,11 @@ class ParticipantHandler(object):
                 orig=raw
                 # Try to uncompress
                 if raw.endswith(".gz"):
-                    print "gunzip %s\n" % raw
+                    self.log.debug("gunzip %s\n" % raw)
                     subprocess.check_output(["gunzip", raw])
                     raw = raw[0:-3]
                 if raw.endswith(".tar.bz2"):
-                    print "tar xv -C %s -f %s\n" % (os.path.dirname(raw), raw)
+                    self.log.debug("extracting: tar xv -C %s -f %s\n" % (os.path.dirname(raw), raw))
                     new_raw = subprocess.check_output(["tar", "xv",
                                                        "-C", os.path.dirname(raw),
                                                        "-f", raw]
@@ -101,14 +101,14 @@ class ParticipantHandler(object):
                     os.rename(os.path.join(os.path.dirname(raw), new_raw),
                               raw)
                 if raw.endswith(".bz2"):
-                    print "bunzip2 %s\n" % raw                    
+                    self.log.debug("bunzip2 %s\n" % raw)
                     subprocess.check_output(["bunzip2", raw])
                     raw = raw[0:-4]
             except subprocess.CalledProcessError,e:
                 return False, "Failed whilst trying to uncompress %s.\n%s\n" % (raw, e.output)
             if not raw.endswith(".raw") and not os.path.isfile(raw):
                 return False, "Failed to convert %s to a .raw called %s" % (orig, raw)
-            print "Got %s" % raw
+            self.log.info("Unpacked raw file to %s" % raw)
         try:
             vdi = raw[0:-3]+"VDI"
             command = [ "VBoxManage", "convertfromraw",
@@ -121,7 +121,7 @@ class ParticipantHandler(object):
             if f.vboxmanage and f.vboxmanage.variant:
                 command.append("--variant=%s" % f.vboxmanage.variant)
 
-            print " ".join(command)
+            self.log.info(" ".join(command))
             subprocess.check_output(command)
             subprocess.check_call(["chmod", "0664", vdi])
             subprocess.check_call(["bzip2", "--fast", vdi])

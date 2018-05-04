@@ -163,6 +163,9 @@ class ParticipantHandler(object):
         if self.worker_config.extra_opts:
             jargs.extra_opts.extend(self.worker_config.extra_opts)
 
+        if (jargs.image_type == "fs" and (self.worker_config.fs_pack is not None)):
+            jargs.extra_opts.append("--pack-to=%s" % self.worker_config.fs_pack)
+
         if not jargs.prefix or jargs.prefix == "":
             jargs.prefix = "requests"
 

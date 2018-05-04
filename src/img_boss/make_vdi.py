@@ -130,6 +130,11 @@ class ParticipantHandler(object):
             return False, "Running convertfromraw failed:\n%s" % e.output
 
         # Cleanup
+        for key in ["image_type","image_url"]:
+            try:
+                del f.image.as_dict()[key]
+            except:
+                pass
         os.remove(raw)
 
         return True

@@ -165,10 +165,13 @@ fi
 %{python_sitelib}/img_web
 %{_datadir}/img_web
 %{_datadir}/boss-skynet/update_image_status.py
+%{_datadir}/boss-skynet/update_symlinks.py
 %{_datadir}/boss-skynet/request_image.py
+%config(noreplace) %{_sysconfdir}/skynet/update_symlinks.conf
 %config(noreplace) %{_sysconfdir}/skynet/request_image.conf
 %config(noreplace) %{svdir}/request_image.conf
 %config(noreplace) %{svdir}/update_image_status.conf
+%config(noreplace) %{svdir}/update_symlinks.conf
 %config(noreplace) %{svdir}/img_web.conf
 %dir /etc/supervisor
 %dir /etc/supervisor/conf.d

@@ -18,7 +18,9 @@ install:
 	install -D -m 644 src/img_boss/build_ks.conf          $(DESTDIR)/etc/skynet/build_ks.conf
 	install -D -m 644 src/img_boss/make_vdi.conf          $(DESTDIR)/etc/skynet/make_vdi.conf
 	install -D -m 644 src/img_boss/test_vm_image.conf     $(DESTDIR)/etc/skynet/test_vm_image.conf
+	install -D -m 644 src/img_boss/update_symlinks.conf   $(DESTDIR)/etc/skynet/update_symlinks.conf
 	install -D -m 755 src/img_boss/update_image_status.py $(DESTDIR)/usr/share/boss-skynet/update_image_status.py
+	install -D -m 755 src/img_boss/update_symlinks.py     $(DESTDIR)/usr/share/boss-skynet/update_symlinks.py
 	install -D -m 755 src/img_boss/request_image.py       $(DESTDIR)/usr/share/boss-skynet/request_image.py
 	install -D -m 644 src/img_boss/request_image.conf     $(DESTDIR)/etc/skynet/request_image.conf
 	install -D -m 644 conf/supervisor/request_image.conf  $(DESTDIR)/etc/supervisor/conf.d/request_image.conf
@@ -27,6 +29,7 @@ install:
 	install -D -m 644 conf/supervisor/test_vm_image.conf  $(DESTDIR)/etc/supervisor/conf.d/test_vm_image.conf
 	install -D -m 644 conf/supervisor/build_image.conf    $(DESTDIR)/etc/supervisor/conf.d/build_image.conf
 	install -D -m 644 conf/supervisor/update_image_status.conf $(DESTDIR)/etc/supervisor/conf.d/update_image_status.conf
+	install -D -m 644 conf/supervisor/update_symlinks.conf $(DESTDIR)/etc/supervisor/conf.d/update_symlinks.conf
 	install -D -m 644 conf/supervisor/img_web.conf    $(DESTDIR)/etc/supervisor/conf.d/img_web.conf
 
 clean:

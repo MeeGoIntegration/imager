@@ -104,7 +104,6 @@ make docs
 %install
 rm -rf %{buildroot}
 make PREFIX=%{_prefix} DESTDIR=%{buildroot} install
-sed -i -e 's/django-admin/django-admin\.py/' %{buildroot}/%{svdir}/img_web.conf
 
 %clean
 rm -rf %{buildroot}

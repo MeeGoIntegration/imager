@@ -261,6 +261,15 @@ class Commands(object):
         :param img: path to file to be checked
         :returns: True if the file is an lvm logical volume, False otherwise
         """
+
+        # lvdisplay returns 0 when run against stuff not in /dev.
+        # It's not a problem even for /dev/shm/ qcow2 overlays, since
+        # for non-LVs in /dev/, lvdisplay returns error 5.
+        #
+        # This makes sure that qcow2 images in /var won't be considered LVs.
+        if not img.startswith("/dev/"):
+            return False
+
         lvd_comm = copy(self.sudobase)
         lvd_comm.extend(copy(self.lvdisplay))
         lvd_comm.append(img)

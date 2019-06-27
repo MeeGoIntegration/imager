@@ -261,6 +261,11 @@ class ImageJobForm(forms.Form):
         required=False,
         widget=forms.HiddenInput(attrs={'readonly': 'readonly'}),
     )
+    brand = forms.CharField(
+        label="Brand",
+        required=False,
+        widget=forms.HiddenInput(attrs={'readonly': 'readonly'}),
+    )
 
     def __init__(self, *args, **kwargs):
         super(ImageJobForm, self).__init__(*args, **kwargs)
@@ -269,7 +274,7 @@ class ImageJobForm(forms.Form):
             r'^#.*?Suggested(Architecture|ImageType|Features):(.*)$'
         )
         device_re = re.compile(
-            r'^#.*?(DeviceModel|DeviceVariant):(.*)$'
+            r'^#.*?(DeviceModel|DeviceVariant|Brand):(.*)$'
         )
         for template in glob.glob(os.path.join(settings.TEMPLATESDIR, '*.ks')):
             name = os.path.basename(template)

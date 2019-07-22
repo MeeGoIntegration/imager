@@ -61,8 +61,10 @@ def expand_feature(name):
     if features.has_option(name, "repos"):
         for repo in features.get(name, "repos").split(","):
             for section in repo_sections:
+                if isinstance(feat[section], set):
+                    feat[section] = {}
                 if features.has_option(section, repo):
-                    feat[section].add(features.get(section, repo))
+                    feat[section][repo] = features.get(section, repo)
     return dict(feat)
 
 class extraReposForm(forms.Form):

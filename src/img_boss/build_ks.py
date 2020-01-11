@@ -50,6 +50,9 @@
    :image.extra_repos (list):
       OPTIONAL URLs of package repositories that will be added to the kickstart
       file
+   :image.repourl_options (dict)
+      OPTIONAL Additional options for `repo` string in kickstart file
+      (key - repo url; value - dict of options)
    :image.groups (list):
       OPTIONAL Group names to be added to the kickstart file
    :image.packages (list):
@@ -258,7 +261,8 @@ class Moblin_RepoData(F8_RepoData):
     def __init__(self, baseurl="", mirrorlist="", name="", priority=None,
                  includepkgs=[], excludepkgs=[], save=False, proxy=None,
                  proxy_username=None, proxy_password=None, debuginfo=False,
-                 source=False, gpgkey=None, disable=False, ssl_verify="yes"):
+                 source=False, gpgkey=None, disable=False, ssl_verify="yes",
+                 **kwargs):
         F8_RepoData.__init__(self, baseurl=baseurl, mirrorlist=mirrorlist,
                              name=name,  includepkgs=includepkgs,
                              excludepkgs=excludepkgs)
@@ -738,7 +742,8 @@ class PackScript(ksparser.Script):
         return retval
 
 
-def build_kickstart(base_ks, packages=[], groups=[], projects=[]):
+def build_kickstart(base_ks, packages=[], groups=[], projects=[],
+                    project_options=None):
     """Build a kickstart file using the handler class, with custom kickstart,
     packages, groups and projects.
 
@@ -746,6 +751,7 @@ def build_kickstart(base_ks, packages=[], groups=[], projects=[]):
     :param packages: list of packagenames
     :param groups: list of groupnames
     :param projects: list of rpm repository URLs
+    :param project_options: options for each project
 
     :returns: Validated kickstart with any extra packages, groups or repourls
        added
@@ -790,7 +796,13 @@ def build_kickstart(base_ks, packages=[], groups=[], projects=[]):
         name = name.replace(":/", "_")
         name = name.replace("/", "_")
         name = re.sub('@[A-Z]*@', '_', name)
-        repo = Moblin_RepoData(baseurl=prj, name=name, save=True)
+        params = {
+            'baseurl': prj, 'name': name, 'save': True,
+        }
+        if project_options:
+            url_params = project_options.get(prj, {})
+            params.update(url_params)
+        repo = Moblin_RepoData(**params)
         ks.handler.repo.repoList.append(repo)
 
     ks_txt = str(ks.handler)
@@ -928,9 +940,13 @@ class ParticipantHandler(object):
                 kstemplate.write(f.image.kickstart)
             ksfile = kstemplate.name
             remove = ksfile
+
+        project_options = (
+                f.image.repourl_options and f.image.repourl_options.as_dict())
         try:
-            ks = build_kickstart(ksfile, packages=packages, groups=groups,
-                                 projects=projects)
+            ks = build_kickstart(
+                ksfile, packages=packages, groups=groups,
+                projects=projects, project_options=project_options)
             f.image.kickstart = ks
         except (KickstartError, OptionValueError, ValueError), error:
             f.msg.append("Error while handling  Kickstart: %s" % error)

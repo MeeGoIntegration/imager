@@ -48,7 +48,7 @@
 </iframe>
 <script type="text/javascript">
 x=document.getElementById("logframe");
-x.onload = function () { x.contentWindow.scrollTo(0,x.contentWindow.scrollMaxY); }
+x.onload = function () { x.contentWindow.scrollTo(0, x.contentWindow.document.body.scrollHeight); }
 var refTimeoutID = window.setInterval('x=document.getElementById("logframe");x.src=x.src;', 20000);
 </script>
 </div>

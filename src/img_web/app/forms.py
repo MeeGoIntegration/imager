@@ -39,7 +39,8 @@ def list_features():
     features = get_features()
     choices = set()
     for name in features.sections():
-        if name.startswith("repositories"):
+        if (name.startswith("repositories") or
+                name.startswith("repository-options-")):
             continue
         description = name
         if features.has_option(name, "description"):
@@ -58,11 +59,19 @@ def expand_feature(name):
     if features.has_option(name, "packages"):
         feat["packages"].update(features.get(name, "packages").split(','))
 
+    feat['repo_options'] = {}
     if features.has_option(name, "repos"):
+        options_prefix = "repository-options-"
         for repo in features.get(name, "repos").split(","):
+            if features.has_section(options_prefix + repo):
+                feat['repo_options'][repo] = dict(
+                    features.items(options_prefix + repo))
+
             for section in repo_sections:
+                if isinstance(feat[section], set):
+                    feat[section] = {}
                 if features.has_option(section, repo):
-                    feat[section].add(features.get(section, repo))
+                    feat[section][repo] = features.get(section, repo)
     return dict(feat)
 
 class extraReposForm(forms.Form):

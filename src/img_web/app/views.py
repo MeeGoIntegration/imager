@@ -24,7 +24,7 @@ from urllib2 import urlopen, HTTPError
 from django.http import HttpResponseRedirect, HttpResponseForbidden
 from django.template import RequestContext
 from django.core.urlresolvers import reverse
-from django.shortcuts import render_to_response
+from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator, InvalidPage, EmptyPage
 from django.contrib import messages
@@ -36,7 +36,6 @@ from img_web.app.models import ImageJob, Queue, Token, PostProcess
 from django.db import transaction, IntegrityError
 
 @login_required
-@transaction.autocommit
 def submit(request):    
     """
     GET: returns an unbound ImageJobForm
@@ -52,10 +51,10 @@ def submit(request):
         reposformset = extraReposFormset()
         tokensformset = extraTokensFormset()
         ppformset = postProcessFormset()
-        return render_to_response('app/upload.html',
+        return render (request, 'app/upload.html',
 
                                   {'jobform' : jobform, 'reposformset' : reposformset, 'tokensformset' : tokensformset,
-                                   'ppformset' : ppformset}, context_instance=RequestContext(request)
+                                   'ppformset' : ppformset}, context=RequestContext(request).flatten()
                                   )
 
     if request.method == 'POST':
@@ -65,10 +64,10 @@ def submit(request):
         ppformset = postProcessFormset(request.POST)
 
         if not jobform.is_valid() or not reposformset.is_valid() or not ppformset.is_valid():
-            return render_to_response('app/upload.html',
+            return render(request, 'app/upload.html',
                                       {'jobform': jobform, 'reposformset' : reposformset, 'tokensformset' : tokensformset,
                                        'ppformset' : ppformset},
-                                       context_instance=RequestContext(request)
+                                       context=RequestContext(request).flatten()
                                        )
         jobdata = jobform.cleaned_data
         reposdata = reposformset.cleaned_data
@@ -236,25 +235,25 @@ def search(request, tag=None):
         results = []
         if tag:
             results = ImageJob.objects.filter(tags__name__icontains = tag)
-        return render_to_response('app/search.html',
+        return render(request, 'app/search.html',
                                   {'searchform' : form,
                                    'alltags' : alltags, 'results' : results },
-                                  context_instance=RequestContext(request)
+                                  context=RequestContext(request).flatten()
                                   )
 
     if request.method == 'POST':
         form = SearchForm(request.POST)
         if not form.is_valid():
-            return render_to_response('app/search.html',
+            return render(request, 'app/search.html',
                                       {'searchform': form},
-                                       context_instance=RequestContext(request)
+                                       context=RequestContext(request).flatten()
                                        )
         data = form.cleaned_data
         results = ImageJob.objects.filter(tags__name__icontains = data["searchterm"])
-        return render_to_response('app/search.html',
+        return render(request, 'app/search.html',
                                   {'searchform' : form,
                                    'results' : results},
-                                  context_instance=RequestContext(request)
+                                  context=RequestContext(request).flatten()
                                   )
 
 @login_required
@@ -280,13 +279,13 @@ def queue(request, queue_name=None, dofilter=False):
         queue_page = paginator.page(page)
     except (EmptyPage, InvalidPage):
         queue_page = paginator.page(paginator.num_pages)
-    return render_to_response('app/queue.html',
+    return render(request, 'app/queue.html',
                               {'queue' : queue_page,
                                'queues': Queue.objects.all(),
                                'queue_name' : queue_name,
                                'filtered' : dofilter,
                                },
-                              context_instance=RequestContext(request))
+                              context=RequestContext(request).flatten())
 
 @login_required
 def toggle_pin_job(request, msgid):
@@ -313,7 +312,6 @@ def retest_job(request, msgid):
     job = ImageJob.objects.get(image_id__exact=msgid)
     job.status = "DONE"
     job.test_image = True
-    #job.test_result = None
     job.test_options = ",".join(["update", job.test_options])
     job.save()
     messages.add_message(request, messages.INFO, "Image %s was set for testing." % job.image_id)
@@ -384,11 +382,11 @@ def job(request, msgid):
     if request.method == 'POST':
         tagform = TagForm(request.POST)
         if not tagform.is_valid():
-            return render_to_response('app/job_details.html',
+            return render(request, 'app/job_details.html',
                                       {'errors': errors,
                                        'obj': imgjob,
                                        'tagform': tagform},
-                                       context_instance=RequestContext(request))
+                                       context=RequestContext(request).flatten())
         tags = [tag.replace(" ","_") for tag in tagform.cleaned_data['tags']]
         imgjob.tags.set(*tags)
 
@@ -399,13 +397,13 @@ def job(request, msgid):
 
     tagform = TagForm(initial = {'tags' : ",".join([tag.name for tag in imgjob.tags.all()])} )
 
-    return render_to_response('app/job_details.html',
+    return render(request, 'app/job_details.html',
                               {'errors': errors,
                                'obj': imgjob,
                                'tagform': tagform},
-                                context_instance=RequestContext(request))
+                                context=RequestContext(request).flatten())
 
 def index(request):
     """ Index page """
-    return render_to_response('index.html',
-                              context_instance=RequestContext(request))
+    return render(request, 'index.html', context=RequestContext(request).flatten())
+

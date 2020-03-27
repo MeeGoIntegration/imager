@@ -68,7 +68,7 @@
     {% endif %}
 </div>
 {% endif %}
-<form id="uploadform" action="{%url img-app-submit%}" method="post" enctype="multipart/form-data">
+<form id="uploadform" action="{%url 'img-app-submit' %}" method="post" enctype="multipart/form-data">
     {% csrf_token %}
     <fieldset>
         <legend>Basic options</legend>

@@ -25,7 +25,7 @@ from django.core.validators import validate_email
 from taggit.forms import TagField
 from img_web import settings
 from img_web.app.models import ImageType, Arch, BuildService, Token, PostProcess
-from django.utils.encoding import StrAndUnicode, force_unicode, smart_unicode, smart_str
+from django.utils.encoding import force_unicode, smart_unicode, smart_str
 
 from django.utils.html import escape, conditional_escape
 

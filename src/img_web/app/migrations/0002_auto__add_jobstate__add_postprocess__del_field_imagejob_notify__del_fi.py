@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 import datetime
-from south.db import db
-from south.v2 import SchemaMigration
-from django.db import models
+from django import db
+from django.db import migrations, models
 
 
-class Migration(SchemaMigration):
-
+class Migration(migrations.Migration):
+    dependencies = [ ('app', '0001_initial'), ]
+    
     def forwards(self, orm):
         # Adding model 'JobState'
         db.create_table('app_jobstate', (

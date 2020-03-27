@@ -88,20 +88,20 @@ Filter
 {% block sidebar_content %}
 <li>
 {% if filtered %}
-Show <a href="{%url img-app-queue %}">all images</a>
+Show <a href="{%url 'img-app-queue' %}">all images</a>
 {% else%}
-Show <a href="{%url img-app-queue-filter %}">only my images</a>
+Show <a href="{%url 'img-app-queue-filter' %}">only my images</a>
 {% endif %}
 </li>
 <li>
 Show queue: 
 {% for q in queues %}
 {% if q.name not in request.path %}
-<a href="{% url img-app-queue-name queue_name=q.name %}">{{ q.name }} </a>
+<a href="{% url 'img-app-queue-name' queue_name=q.name %}">{{ q.name }} </a>
 {% endif %}
 {% endfor %}
 {% if queue_name %}
-<a href="{% url img-app-queue %}">all </a>
+<a href="{% url 'img-app-queue' %}">all </a>
 {% endif %}
 </li>
 <li>

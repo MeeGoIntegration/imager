@@ -25,24 +25,18 @@ Released   : 20100727
 	<div id="menu">
 		<ul>
 			{% if user.is_authenticated %}
-			<li class="current_page_item"><a href="{%url logout %}">Logout</a></li>
-			<li class="current_page_item"><a href="{%url img-app-queue %}">Queue</a></li>
-			<li class="current_page_item"><a href="{%url img-app-search %}">Search</a></li>
-			<li class="current_page_item"><a href="{%url img-app-submit %}">Submit</a></li>
+			<li class="current_page_item"><a href="{%url 'logout' %}">Logout</a></li>
+			<li class="current_page_item"><a href="{%url 'img-app-queue' %}">Queue</a></li>
+			<li class="current_page_item"><a href="{%url 'img-app-search' %}">Search</a></li>
+			<li class="current_page_item"><a href="{%url 'img-app-submit' %}">Submit</a></li>
 			{% else %}
-			<li class="current_page_item"><a href="{%url login %}">Login</a></li>
+			<li class="current_page_item"><a href="{%url 'login' %}">Login</a></li>
 			{% endif %}
 		</ul>
 	</div>
 	<!-- end #menu -->
 </div>
 <!-- end #header -->
-<!--
-<div id="logo">
-	<h1><a href="{%url index %}">Imager</a></h1>
-	<p><em> Meego image creation service</em></p>
-</div>
--->
 <hr />
 <!-- end #logo -->
 <div id="page">

@@ -138,8 +138,6 @@ MEDIA_URL = ''
 
 STATIC_ROOT = static_media_collect
 
-#STATIC_ROOT = join(PROJECT_DIR, "site_media")
-
 STATIC_URL = '/' + url_prefix + '/site_media/'
 
 # List of callables that know how to import templates from various sources.
@@ -159,22 +157,24 @@ MIDDLEWARE_CLASSES = (
 
 ROOT_URLCONF = 'img_web.urls'
 
-TEMPLATE_DIRS = (
-                 join(PROJECT_DIR,'templates'), 
-    # Put strings here, like "/home/html/django_templates" or "C:/www/django/templates".
-    # Always use forward slashes, even on Windows.
-    # Don't forget to use absolute paths, not relative paths.
-)
-
-TEMPLATE_CONTEXT_PROCESSORS = (
-    "django.contrib.auth.context_processors.auth",
-    "django.core.context_processors.debug",
-    "django.core.context_processors.i18n",
-    "django.core.context_processors.media",
-    "django.core.context_processors.static",
-    "django.contrib.messages.context_processors.messages",
-    "django.core.context_processors.request",
-)
+TEMPLATES = [
+    {
+        'BACKEND': 'django.template.backends.django.DjangoTemplates',
+        'DIRS': [join(PROJECT_DIR,'templates')],
+        'APP_DIRS': True,
+        'OPTIONS': {
+            'context_processors': [
+                "django.contrib.auth.context_processors.auth",
+                "django.template.context_processors.debug",
+                "django.template.context_processors.i18n",
+                "django.template.context_processors.media",
+                "django.template.context_processors.static",
+                "django.template.context_processors.request",
+                "django.contrib.messages.context_processors.messages",
+            ],
+        },
+    },
+]
 
 INSTALLED_APPS = (
     'django.contrib.auth',
@@ -184,7 +184,6 @@ INSTALLED_APPS = (
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django.contrib.admin',
-    'south',
     'django_extensions',
     'taggit',
     'img_web.app',

@@ -7,7 +7,7 @@ from django.contrib import admin
 from django.contrib.auth.views import login, logout_then_login
 admin.autodiscover()
 
-urlpatterns = [
+app_urlpatterns = [
     url(r'^admin/', include(admin.site.urls)),
     url(r'submit/$', views.submit, name='img-app-submit'), 
     url(r'queue/$', views.queue, name='img-app-queue'),
@@ -26,4 +26,4 @@ urlpatterns = [
     url(r'$', views.index, name='index'),
 ]
 
-
+urlpatterns = [url(r'^%s/' % settings.url_prefix, include(app_urlpatterns))] + app_urlpatterns

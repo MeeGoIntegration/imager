@@ -52,10 +52,11 @@ def submit(request):
         tokensformset = extraTokensFormset()
         ppformset = postProcessFormset()
         return render (request, 'app/upload.html',
-
-                                  {'jobform' : jobform, 'reposformset' : reposformset, 'tokensformset' : tokensformset,
-                                   'ppformset' : ppformset}, context=RequestContext(request).flatten()
-                                  )
+                       context={'jobform' : jobform,
+                                'reposformset' : reposformset,
+                                'tokensformset' : tokensformset,
+                                'ppformset' : ppformset}
+        )
 
     if request.method == 'POST':
         jobform = ImageJobForm(request.POST, request.FILES)
@@ -65,10 +66,11 @@ def submit(request):
 
         if not jobform.is_valid() or not reposformset.is_valid() or not ppformset.is_valid():
             return render(request, 'app/upload.html',
-                                      {'jobform': jobform, 'reposformset' : reposformset, 'tokensformset' : tokensformset,
-                                       'ppformset' : ppformset},
-                                       context=RequestContext(request).flatten()
-                                       )
+                          context={'jobform': jobform,
+                                   'reposformset' : reposformset,
+                                   'tokensformset' : tokensformset,
+                                   'ppformset' : ppformset},
+            )
         jobdata = jobform.cleaned_data
         reposdata = reposformset.cleaned_data
         tokensdata = tokensformset.cleaned_data[0]
@@ -236,25 +238,23 @@ def search(request, tag=None):
         if tag:
             results = ImageJob.objects.filter(tags__name__icontains = tag)
         return render(request, 'app/search.html',
-                                  {'searchform' : form,
-                                   'alltags' : alltags, 'results' : results },
-                                  context=RequestContext(request).flatten()
-                                  )
+                      context={'searchform' : form,
+                               'alltags' : alltags,
+                               'results' : results },
+        )
 
     if request.method == 'POST':
         form = SearchForm(request.POST)
         if not form.is_valid():
             return render(request, 'app/search.html',
-                                      {'searchform': form},
-                                       context=RequestContext(request).flatten()
-                                       )
+                          context={'searchform': form},
+            )
         data = form.cleaned_data
         results = ImageJob.objects.filter(tags__name__icontains = data["searchterm"])
         return render(request, 'app/search.html',
-                                  {'searchform' : form,
-                                   'results' : results},
-                                  context=RequestContext(request).flatten()
-                                  )
+                      context={'searchform' : form,
+                               'results' : results},
+        )
 
 @login_required
 def queue(request, queue_name=None, dofilter=False):
@@ -280,12 +280,11 @@ def queue(request, queue_name=None, dofilter=False):
     except (EmptyPage, InvalidPage):
         queue_page = paginator.page(paginator.num_pages)
     return render(request, 'app/queue.html',
-                              {'queue' : queue_page,
-                               'queues': Queue.objects.all(),
-                               'queue_name' : queue_name,
-                               'filtered' : dofilter,
-                               },
-                              context=RequestContext(request).flatten())
+                  context={'queue' : queue_page,
+                           'queues': Queue.objects.all(),
+                           'queue_name' : queue_name,
+                           'filtered' : dofilter}
+    )
 
 @login_required
 def toggle_pin_job(request, msgid):
@@ -383,10 +382,10 @@ def job(request, msgid):
         tagform = TagForm(request.POST)
         if not tagform.is_valid():
             return render(request, 'app/job_details.html',
-                                      {'errors': errors,
-                                       'obj': imgjob,
-                                       'tagform': tagform},
-                                       context=RequestContext(request).flatten())
+                          context={'errors': errors,
+                                   'obj': imgjob,
+                                   'tagform': tagform}
+            )
         tags = [tag.replace(" ","_") for tag in tagform.cleaned_data['tags']]
         imgjob.tags.set(*tags)
 
@@ -398,12 +397,11 @@ def job(request, msgid):
     tagform = TagForm(initial = {'tags' : ",".join([tag.name for tag in imgjob.tags.all()])} )
 
     return render(request, 'app/job_details.html',
-                              {'errors': errors,
-                               'obj': imgjob,
-                               'tagform': tagform},
-                                context=RequestContext(request).flatten())
+                  context={'errors': errors,
+                           'obj': imgjob,
+                           'tagform': tagform}
+    )
 
 def index(request):
     """ Index page """
-    return render(request, 'index.html', context=RequestContext(request).flatten())
-
+    return render(request, 'index.html')

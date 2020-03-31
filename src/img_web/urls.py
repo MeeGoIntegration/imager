@@ -26,4 +26,4 @@ app_urlpatterns = [
     url(r'$', views.index, name='index'),
 ]
 
-urlpatterns = [url(r'^%s/' % settings.url_prefix, include(app_urlpatterns))] + app_urlpatterns
+urlpatterns = [url(r'^%s/' % settings.url_prefix, include(app_urlpatterns))]

@@ -225,7 +225,6 @@ intersphinx_mapping = {'http://docs.python.org/': None}
 # -- http://djangosnippets.org/snippets/2533/ Easy django model docs -----------
 # -- modified to do forms as well ------------
 import inspect
-from django.core.management import setup_environ
 from django.utils.html import strip_tags
 
 def process_docstring(app, what, name, obj, options, lines):

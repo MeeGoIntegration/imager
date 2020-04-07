@@ -1,4 +1,6 @@
 %define svdir %{_sysconfdir}/supervisor/conf.d/
+%define python python%{?__python_ver}
+%define __python /usr/bin/%{python}
 
 Name: img
 Version: 0.67.1
@@ -7,49 +9,56 @@ Release: 1
 Group: Applications/Engineering
 License: GPLv2+
 URL: https://github.com/MeegoIntegration/imager.git
-Source0: %{name}-%{version}.tar.gz
-BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-buildroot
-BuildRequires: python, python-distribute, python-sphinx, python-boss-skynet, python-ruote-amqp, python-django < 1.5, python-mysql, pykickstart, python-django-taggit, python-buildservice
+Source: %{name}-%{version}.tar.gz
+
 BuildArch: noarch
+
+BuildRequires:  python
+BuildRequires:  python-setuptools
+BuildRequires:  python-Django
+BuildRequires:  python-distribute
+BuildRequires:  python-sphinx
+BuildRequires:  python-boss-skynet
+BuildRequires:  python-ruote-amqp
+BuildRequires:  pykickstart
+BuildRequires:  python-django-taggit
+BuildRequires:  python-buildservice
+
+BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-buildroot
+
 Summary: Image creation service for SailfishOS related products
 
 %description
 Image creation service for SailfishOS related products
 
-%define python python%{?__python_ver}
-%define __python /usr/bin/%{python}
-%if ! (0%{?fedora} > 12 || 0%{?rhel} > 5)
-%{!?python_sitelib: %global python_sitelib %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib())")}
-%{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
-%endif
-
 %package -n img-core
-Group: Applications/Engineering
-Requires: python >= 2.5.0, sudo, pykickstart, lvm2
+Requires: python >= 2.5.0
+Requires:  sudo
+Requires:  pykickstart
+Requires:  lvm2
 Requires(pre): pwdutils
 Requires(post): sudo
 Requires(post): eat-host
+
 Summary: Image creation service for SailfishOS related products, core package
 %description -n img-core
 This package provides the core worker logic of imager.
 It builds images using mic optionally in a virtual machine.
 
 %package -n img-web
-Group: Applications/Engineering
 Requires: python >= 2.5.0
 Requires: python-xml
 Requires: python-boss-skynet
-Requires: python-South
-Requires: python-django-extensions
 Requires: python-django-taggit
 Requires(post): python-boss-skynet
-Requires: python-django < 1.5, python-flup, python-mysql
+Requires: python2-Django1
+Requires:  python-flup
+Requires:  python-mysql
 Summary: Image creation service for SailfishOS related products, django web interface
 %description -n img-web
 This package provides a django based web interface for imager that is part of BOSS.
 
 %package -n img-worker
-Group: Applications/Engineering
 Requires: img-core
 Requires: python-xml
 Requires: python-boss-skynet
@@ -60,7 +69,6 @@ This package provides imager participants that plugin into a BOSS system to
 fulfill image building steps of processes
 
 %package -n img-ks
-Group: Applications/Engineering
 Requires: python-xml
 Requires: python-buildservice
 Requires: boss-standard-workflow-common
@@ -72,7 +80,6 @@ This package provides imager participants that plugin into a BOSS system to
 handle kickstarts
 
 %package -n img-make-vdi
-Group: Applications/Engineering
 Requires: python-xml
 Requires: python-buildservice
 Requires: boss-standard-workflow-common
@@ -85,7 +92,6 @@ This package provides imager participants that plugin into a BOSS system to
 handle VirtualBox VDI images
 
 %package -n img-test-vm
-Group: Applications/Engineering
 Requires: img-core
 Requires: python-xml
 Requires: python-buildservice
@@ -153,7 +159,7 @@ fi
 
 %files -n img-core
 %defattr(-,root,root)
-%{_sysconfdir}/imager
+%dir %{_sysconfdir}/imager
 %config(noreplace) %{_sysconfdir}/imager/img.conf
 %{python_sitelib}/img*egg-info
 %{python_sitelib}/img

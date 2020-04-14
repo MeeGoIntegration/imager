@@ -36,6 +36,7 @@ static_media_collect = config.get('web', 'static_media_collect')
 TEMPLATESDIR = config.get('web', 'templates_dir')
 FEATURESDIR = config.get('web', 'features_dir')
 USE_REMOTE_AUTH = config.getboolean('web', 'use_http_remote_user')
+ALLOWED_HOSTS = config.get('web', 'allowed_hosts').split(",")
 
 boss_host = config.get('boss', 'boss_host')
 boss_user = config.get('boss', 'boss_user')
@@ -51,6 +52,7 @@ db_host = config.get('db', 'db_host')
 create_image_process = config.get('processes', 'create_image_process')
 
 DEVICEGROUP = config.get('test', 'devicegroup')
+
 
 USE_LDAP = config.getboolean('ldap', 'use_ldap')
 USE_SEARCH = config.getboolean('ldap', 'use_search')
@@ -184,7 +186,6 @@ INSTALLED_APPS = (
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django.contrib.admin',
-    'django_extensions',
     'taggit',
     'img_web.app',
 )

@@ -153,6 +153,14 @@ fi
 
 %post -n img-web
 if [ $1 -ge 1 ] ; then
+    if [ $1 -eq 2 ]; then
+	# Only support upgrades - installation is done manually
+	cd %{python_sitelib}/img_web
+	export DJANGO_SETTINGS_MODULE=img_web.settings
+	# These fail during the rpmlint test during build :/
+	django-admin collectstatic --noinput || true
+	django-admin migrate --noinput || true
+    fi
     skynet apply || true
     skynet reload update_image_status request_image || true
 fi

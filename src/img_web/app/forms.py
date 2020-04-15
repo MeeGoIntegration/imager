@@ -115,12 +115,15 @@ extraTokensFormset = formset_factory(extraTokensForm)
 class PostProcessForm(forms.Form):
 
     def __init__(self, *args, **kwargs):
-        pp = kwargs["pp"]
-        del(kwargs["pp"])
+        pp = None
+        if "pp" in kwargs:
+            pp = kwargs["pp"]
+            del(kwargs["pp"])
         super(PostProcessForm, self).__init__(*args, **kwargs)
-        self.fields[pp.name] = forms.BooleanField(label=pp.name, initial=pp.default, required=False, help_text=pp.description)
-        if pp.argname:
-            self.fields[pp.argname] = forms.CharField(label=pp.argname, required=False, widget=forms.Textarea(attrs={'rows':'1'}), help_text=pp.description)
+        if pp:
+            self.fields[pp.name] = forms.BooleanField(label=pp.name, initial=pp.default, required=False, help_text=pp.description)
+            if pp.argname:
+                self.fields[pp.argname] = forms.CharField(label=pp.argname, required=False, widget=forms.Textarea(attrs={'rows':'1'}), help_text=pp.description)
 
 
 class BasePostProcessFormset(BaseFormSet):

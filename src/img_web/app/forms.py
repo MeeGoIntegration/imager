@@ -128,20 +128,14 @@ class PostProcessForm(forms.Form):
 
 class BasePostProcessFormset(BaseFormSet):
 
-    def _construct_forms(self):
-        # instantiate all the forms and put them in self.forms
-        self.forms = []
-        ppobjs = PostProcess.objects.filter(active=True)
-        print self.total_form_count()
-        count = 0
-        for i in xrange(self.total_form_count()):
-	    if count >= ppobjs.count():
-                break
-            self.forms.append(self._construct_form(i, pp=ppobjs[count]))
-            count = count + 1
-
-# This has to be done in the view to get new count
-#postProcessFormset = formset_factory(PostProcessForm, formset=BasePostProcessFormset, extra=PostProcess.objects.count())
+    # The BaseFormSet method ignores index. I think it's broken This
+    # assumes form_kwargs is a list with a dict of kwargs per
+    # form. Which I think makes sense.
+    def get_form_kwargs(self, index):
+        try:
+            return self.form_kwargs[index]
+        except LookupError:
+            return {}
 
 class OptionAttrChoiceField(forms.ChoiceField):
 

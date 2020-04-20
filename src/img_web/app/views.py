@@ -42,7 +42,12 @@ def submit(request):
 
     POST: process a user submitted UploadFileForm
     """
-    postProcessFormset = formset_factory(PostProcessForm, formset=BasePostProcessFormset, extra=PostProcess.objects.filter(active=True).count())
+
+    # Construct a factory for PostProcess steps based on PP Objects
+    ppobjects = PostProcess.objects.filter(active=True)
+    postProcessFormset = formset_factory(PostProcessForm,
+                                         formset=BasePostProcessFormset,
+                                         extra=ppobjects.count())
 
     if request.method == 'GET':
         jobform = ImageJobForm(initial = {'devicegroup':settings.DEVICEGROUP,
@@ -50,7 +55,13 @@ def submit(request):
                                )
         reposformset = extraReposFormset()
         tokensformset = extraTokensFormset()
-        ppformset = postProcessFormset()
+        # Each form in the pp formset needs a pp object.
+        # pass a list of {pp: pp} for the formset_factory to use
+        # I think Django is actually broken here as
+        # BaseFormSet.get_form_kwargs(self, index) ignores the index
+        # hence the need for BasePostProcessFormset above
+        form_kwargs = [{'pp': pp} for pp in ppobjects]
+        ppformset = postProcessFormset(form_kwargs=form_kwargs)
         return render (request, 'app/upload.html',
                        context={'jobform' : jobform,
                                 'reposformset' : reposformset,

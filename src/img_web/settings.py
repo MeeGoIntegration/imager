@@ -84,7 +84,6 @@ elif USE_REMOTE_AUTH:
 SECRET_KEY = config.get('web', 'secret_key')
 
 DEBUG = True
-TEMPLATE_DEBUG = DEBUG
 
 ADMINS = (
     # ('Your Name', 'your_email@domain.com'),
@@ -141,13 +140,6 @@ MEDIA_URL = ''
 STATIC_ROOT = static_media_collect
 
 STATIC_URL = '/' + url_prefix + '/site_media/'
-
-# List of callables that know how to import templates from various sources.
-TEMPLATE_LOADERS = (
-    'django.template.loaders.filesystem.Loader',
-    'django.template.loaders.app_directories.Loader',
-#     'django.template.loaders.eggs.Loader',
-)
 
 MIDDLEWARE_CLASSES = (
     'django.middleware.common.CommonMiddleware',

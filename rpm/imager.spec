@@ -71,7 +71,7 @@ fulfill image building steps of processes
 %package -n img-ks
 Requires: python-xml
 Requires: python-buildservice
-Requires: boss-standard-workflow-common
+Requires(pre): boss-standard-workflow-common
 Requires: python-boss-skynet
 Requires(post): python-boss-skynet
 Summary: Image creation service for SailfishOS related products, BOSS participants

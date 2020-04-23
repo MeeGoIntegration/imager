@@ -185,7 +185,6 @@ fi
 %config(noreplace) %{svdir}/request_image.conf
 %config(noreplace) %{svdir}/update_image_status.conf
 %config(noreplace) %{svdir}/update_symlinks.conf
-%config(noreplace) %{svdir}/img_web.conf
 %dir /etc/supervisor
 %dir /etc/supervisor/conf.d
 %dir /usr/share/boss-skynet

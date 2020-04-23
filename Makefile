@@ -22,7 +22,6 @@ install:
 	install -D -m 755 src/scripts/img_host_test.sh        $(DESTDIR)/usr/bin/img_host_test.sh
 	install -D -m 755 src/scripts/img_vm_shutdown         $(DESTDIR)/usr/bin/img_vm_shutdown
 
-	install -D -m 644 conf/supervisor/img_web.conf    $(DESTDIR)/etc/supervisor/conf.d/img_web.conf
 
 
 test_results.txt:

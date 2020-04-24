@@ -89,6 +89,8 @@ import os, time
 import datetime
 
 os.environ['DJANGO_SETTINGS_MODULE'] = 'img_web.settings'
+import django
+django.setup()
 from img_web.app.models import ImageJob, Queue
 from django.contrib.auth.models import User
 from django.db import IntegrityError

@@ -5,9 +5,11 @@ from __future__ import unicode_literals
 from django.db import migrations
 from django.core.serializers import base, python
 from django.core.management import call_command
+from django.contrib.auth.models import User
 
 json_filename = 'initial_data.json'
 my_app_label = "app"
+
 
 # See:
 # https://stackoverflow.com/questions/25960850/loading-initial-data-with-django-1-7-and-data-migrations
@@ -39,11 +41,18 @@ def load_fixture(apps, schema_editor):
     finally:
         # Restore old _get_model() function
         python._get_model = old_get_model
+    # Manually create the cibot user with an unusable password
+    # since this seems to be non-trivial in a fixture
+    user = User.objects.create_superuser("cibot", email=None, password=None)
+    user.save()
 
 
 class Migration(migrations.Migration):
 
     dependencies = [
+        # The 'auth' dependency is required to create a new user with
+        # no 'last_login'
+        ('auth', '0005_alter_user_last_login_null'),
         ('app', '0001_initial'),
     ]
 

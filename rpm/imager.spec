@@ -48,12 +48,12 @@ It builds images using mic optionally in a virtual machine.
 %package -n img-web
 Requires: python >= 2.5.0
 Requires: python-xml
-Requires: python-boss-skynet
 Requires: python-django-taggit
 Requires(post): python-boss-skynet
 Requires: python2-Django1
-Requires:  python-flup
-Requires:  python-mysql
+Requires: python-flup
+Requires: python-mysql
+Requires: img-web-participants
 Summary: Image creation service for SailfishOS related products, django web interface
 %description -n img-web
 This package provides a django based web interface for imager that is part of BOSS.
@@ -67,6 +67,18 @@ Summary: Image creation service for SailfishOS related products, BOSS participan
 %description -n img-worker
 This package provides imager participants that plugin into a BOSS system to 
 fulfill image building steps of processes
+
+%package -n img-web-participants
+Requires: python-xml
+Requires: python-buildservice
+# This is required by pykickstart
+Requires: python-urlgrabber
+Requires: python-boss-skynet
+Requires(post): python-boss-skynet
+Summary: Image creation service for SailfishOS related products, BOSS participants
+%description -n img-web-participants
+This package provides the imager participants that must run alongside img-web
+to provide job status and management via BOSS
 
 %package -n img-ks
 Requires: python-xml
@@ -154,15 +166,17 @@ if [ $1 -ge 1 ] ; then
 fi
 
 %post -n img-web
+if [ $1 -eq 2 ]; then
+    # Only support upgrades - installation is done manually
+    cd %{python_sitelib}/img_web
+    export DJANGO_SETTINGS_MODULE=img_web.settings
+    # These fail during the rpmlint test during build :/
+    django-admin collectstatic --noinput || true
+    django-admin migrate --noinput || true
+fi
+
+%post -n img-web-participants
 if [ $1 -ge 1 ] ; then
-    if [ $1 -eq 2 ]; then
-	# Only support upgrades - installation is done manually
-	cd %{python_sitelib}/img_web
-	export DJANGO_SETTINGS_MODULE=img_web.settings
-	# These fail during the rpmlint test during build :/
-	django-admin collectstatic --noinput || true
-	django-admin migrate --noinput || true
-    fi
     skynet apply || true
     skynet reload update_image_status request_image || true
 fi
@@ -179,6 +193,9 @@ fi
 %defattr(-,root,root,-)
 %{python_sitelib}/img_web
 %{_datadir}/img_web
+
+%files -n img-web-participants
+%defattr(-,root,root,-)
 %{_datadir}/boss-skynet/update_image_status.py
 %{_datadir}/boss-skynet/update_symlinks.py
 %{_datadir}/boss-skynet/request_image.py

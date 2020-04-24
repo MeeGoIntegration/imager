@@ -71,6 +71,8 @@ fulfill image building steps of processes
 %package -n img-ks
 Requires: python-xml
 Requires: python-buildservice
+# This is required by pykickstart
+Requires: python-urlgrabber
 Requires(pre): boss-standard-workflow-common
 Requires: python-boss-skynet
 Requires(post): python-boss-skynet

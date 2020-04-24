@@ -41,6 +41,8 @@ from urllib2 import urlopen, HTTPError
 
 os.environ['DJANGO_SETTINGS_MODULE'] = 'img_web.settings'
 
+import django
+django.setup()
 from img_web.app.models import ImageJob
 from img_web.utils.a2html import plaintext2html
 

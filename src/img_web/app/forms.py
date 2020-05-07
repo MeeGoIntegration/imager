@@ -143,6 +143,8 @@ class OptionAttrChoiceField(forms.ChoiceField):
         "Check to see if the provided value is a valid choice"
         for choice in self.choices:
             k = choice[0]
+            if isinstance(k, (list, tuple)):  # This needs decoding
+                k = k[0]  # so pick the 'value' and discard attrs
             v = choice[1]
             if isinstance(v, (list, tuple)):
                 # This is an optgroup, so look inside the group for options
@@ -156,46 +158,38 @@ class OptionAttrChoiceField(forms.ChoiceField):
 
 
 class OptionAttrSelect(forms.Select):
-
-    def render_option(self, selected_choices, option_value, option_label, option_attrs=None):
-        option_value = force_unicode(option_value)
-        if option_value in selected_choices:
-            selected_html = u' selected="selected"'
-            if not self.allow_multiple_selected:
-                # Only allow for a single selection.
-                selected_choices.remove(option_value)
-        else:
-            selected_html = ''
-
-        attrs = []
-        if option_attrs:
-            for key, val in option_attrs.items():
-                attrs.append('%s="%s"' % (key, val))
-
-        return u'<option value="%s"%s%s>%s</option>' % (
-            escape(option_value), selected_html, " ".join(attrs),
-            conditional_escape(force_unicode(option_label)))
-
-
-    def render_options(self, choices, selected_choices):
-        # Normalize to strings.
-        selected_choices = set(force_unicode(v) for v in selected_choices)
-        output = []
-        for option_iterable in chain(self.choices, choices):
-            option_value = option_iterable[0]
-            option_label = option_iterable[1]
-            if isinstance(option_label, (list, tuple)):
-                output.append(u'<optgroup label="%s">' % escape(force_unicode(option_value)))
-                for option in option_label:
-                    output.append(self.render_option(selected_choices, *option))
-                output.append(u'</optgroup>')
-            else:
-                option_attrs = None
-                if len(option_iterable) > 2:
-                    option_attrs = option_iterable[2]
-                output.append(self.render_option(selected_choices, option_value, option_label, option_attrs=option_attrs))
-        return u'\n'.join(output)
-
+    # This is the mainly standard method called per-option to be
+    # passed to the template value can now be a value or a tuple/list
+    # of (value, dict_of_attrs)
+    # Django 1.11
+    def create_option(self, name, value, label, selected, index,
+                      subindex=None, attrs=None):
+        index = str(index) if subindex is None else "%s_%s" % (index, subindex)
+        if attrs is None:
+            attrs = {}
+        option_attrs = (self.build_attrs(self.attrs, attrs)
+                        if self.option_inherits_attrs else {})
+        # Begin modification
+        # If the value we were passed is a tuple/list then split it
+        # into a value and an attrs dict
+        if isinstance(value, (list, tuple)):
+            option_attrs.update(value[1])  # add to any existing attrs
+            value = value[0]
+        # End modification
+        if selected:
+            option_attrs.update(self.checked_attribute)
+        if 'id' in option_attrs:
+            option_attrs['id'] = self.id_for_label(option_attrs['id'], index)
+        return {
+            'name': name,
+            'value': value,
+            'label': label,
+            'selected': selected,
+            'index': index,
+            'attrs': option_attrs,
+            'type': self.input_type,
+            'template_name': self.option_template_name,
+        }
 
 
 class ImageJobForm(forms.Form):
@@ -266,14 +260,17 @@ class ImageJobForm(forms.Form):
 
     def __init__(self, *args, **kwargs):
         super(ImageJobForm, self).__init__(*args, **kwargs)
-        self.fields['template'].choices = []
+        choices = []
         suggested_re = re.compile(
             r'^#.*?Suggested(Architecture|ImageType|Features):(.*)$'
         )
         device_re = re.compile(
             r'^#.*?(DeviceModel|DeviceVariant|Brand):(.*)$'
         )
-        for template in glob.glob(os.path.join(settings.TEMPLATESDIR, '*.ks')):
+         # find the available ks files and extract the feature
+         # defaults from each file
+         for template in glob.glob(os.path.join(settings.TEMPLATESDIR,
+                                                '*.ks')):
             name = os.path.basename(template)
             templatename = os.path.basename(template)
             attrs = {}
@@ -287,9 +284,12 @@ class ImageJobForm(forms.Form):
                     elif re.match(r'^#.*?DisplayName:.+$', line):
                         name = line.split(":")[1].strip()
 
-            self.fields['template'].choices.append((templatename , name, attrs))
+            # Now pass the features as a tuple for our custom widget
+            # to unpack into attrs
+            choices.append(((templatename, attrs), name))
 
-        self.fields['template'].choices = sorted(self.fields['template'].choices, key=lambda name: name[1])
+        self.fields['template'].choices = sorted(choices, key=lambda
+                                                 name: name[1])
         self.fields['template'].choices.insert(0, ("None", "None"))
         self.fields['architecture'].choices = [(arch.name, arch.name) for arch in Arch.objects.all()]
         self.fields['imagetype'].choices = [(itype.name, itype.name) for itype in ImageType.objects.all()]

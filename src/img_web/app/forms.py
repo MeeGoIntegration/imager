@@ -45,7 +45,7 @@ def list_features():
         if features.has_option(name, "description"):
             description = features.get(name, "description")
         choices.add((name, description))
-    return choices
+    return sorted(choices, key=lambda c: c[1])
 
 def expand_feature(name):
     features = get_features()

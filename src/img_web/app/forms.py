@@ -161,6 +161,17 @@ class BasePostProcessFormset(BaseFormSet):
             return {}
 
 
+# In the ImageJobForm, when a template is selected from the dropdown
+# the features associated with that template are automatically ticked;
+# essentially providing a set of default features per template.  This
+# is done by reading and parsing each of the ks files in the Form and
+# passing the feature data to the dropdown by setting the value of
+# each 'features' ChoiceField choices element to be a tuple instead of
+# a simple value. The create_option method 'decodes' this to the plain
+# value and attrs so the builtin template renders them correctly as
+# data- attrs. Returned data is also validated against just the plain
+# value. JavaScript in the upload.html template then sets these values
+# using the per-option data- attributes
 class OptionAttrChoiceField(forms.ChoiceField):
 
     def valid_value(self, value):

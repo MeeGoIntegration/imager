@@ -59,6 +59,13 @@
     }
   },
   {
+    "model": "app.Arch",
+    "pk": 6,
+    "fields": {
+      "name": "aarch64"
+    }
+  },
+  {
     "model": "app.ImageType",
     "pk": 1,
     "fields": {

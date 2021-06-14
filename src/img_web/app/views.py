@@ -160,8 +160,6 @@ def submit(request):
 
             if token.name == "RNDFLAVOUR":
                 rndpattern = ":/%s" % tokenvalue
-                if tokenvalue == "devel":
-                    rndpattern = ""
                 tokenmap["RNDPATTERN"] = rndpattern
 
             if token.name == "RELEASE":

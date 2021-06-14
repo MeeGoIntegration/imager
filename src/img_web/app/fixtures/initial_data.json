@@ -122,7 +122,7 @@
     "pk": 1,
     "fields": {
       "name": "RELEASE",
-      "default": ""
+      "default": "live"
     }
   },
   {
@@ -140,7 +140,7 @@
     "fields": {
       "default": "devel",
       "name": "RNDFLAVOUR",
-      "description": "ex: devel,testing,release,next (will automatically set RNDPATTERN to <empty>,:/testing,:/release,:/next respectively)"
+      "description": "ex: devel,staging (will automatically set RNDPATTERN to :/devel,:/staging respectively)"
     }
   },
   {

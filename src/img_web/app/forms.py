@@ -27,49 +27,10 @@ from django.core.validators import validate_email
 from taggit.forms import TagField
 from img_web import settings
 from img_web.app.models import ImageType, Arch, BuildService, Token, PostProcess
+from img_web.app.features import list_features, expand_feature
 from django.utils.encoding import force_unicode, smart_unicode, smart_str
 
 from django.utils.html import escape, conditional_escape
-
-
-def get_features():
-    config = ConfigParser.ConfigParser()
-    for feature in glob.glob(os.path.join(settings.FEATURESDIR, '*.feature')):
-        config.read(feature)
-    return config
-
-
-def list_features():
-    features = get_features()
-    choices = set()
-    for name in features.sections():
-        if name.startswith("repositories"):
-            continue
-        description = name
-        if features.has_option(name, "description"):
-            description = features.get(name, "description")
-        choices.add((name, description))
-    return sorted(choices, key=lambda c: c[1])
-
-
-def expand_feature(name):
-    features = get_features()
-    repo_sections = [section for section in features.sections() if
-                     section.startswith("repositories")]
-    feat = defaultdict(set)
-
-    if features.has_option(name, "pattern"):
-        feat["pattern"].add("@%s" % features.get(name, "pattern"))
-
-    if features.has_option(name, "packages"):
-        feat["packages"].update(features.get(name, "packages").split(','))
-
-    if features.has_option(name, "repos"):
-        for repo in features.get(name, "repos").split(","):
-            for section in repo_sections:
-                if features.has_option(section, repo):
-                    feat[section].add(features.get(section, repo))
-    return dict(feat)
 
 
 class extraReposForm(forms.Form):
@@ -306,6 +267,7 @@ class ImageJobForm(forms.Form):
 
         # find the available ks files and extract the feature
         # defaults from each file
+        # See the comment by OptionAttrChoiceField
         for template in glob.glob(os.path.join(settings.TEMPLATESDIR,
                                                '*.ks')):
             name = os.path.basename(template)

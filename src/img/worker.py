@@ -146,6 +146,7 @@ class Commands(object):
                     '-display', 'none', '-no-reboot',
                     '-daemonize', '-m', '1G',
                     '-smp', '2',
+                    '-device', 'virtio-rng-pci',
                     '-kernel', vm_kernel,
                     '-append',
                     'root=/dev/vda panic=1 quiet rw elevator=noop ip=dhcp',

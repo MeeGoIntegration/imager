@@ -66,7 +66,7 @@ def imagejob_save_callback(sender, **kwargs):
     
             launch(process, fields)
 
-        except Exception, error:
+        except Exception as error:
             kwargs['instance'].status = "ERROR"
             kwargs['instance'].error = error
             kwargs['instance'].save()

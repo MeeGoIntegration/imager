@@ -1,4 +1,4 @@
-import ConfigParser
+import configparser
 from collections import defaultdict
 import glob
 import os
@@ -11,7 +11,7 @@ from img_web import settings
 
 # features are just a ConfigParser
 def get_features():
-    config = ConfigParser.ConfigParser()
+    config = configparser.ConfigParser()
     for feature in glob.glob(os.path.join(settings.FEATURESDIR, '*.feature')):
         config.read(feature)
     return config

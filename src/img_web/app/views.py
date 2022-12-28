@@ -19,7 +19,8 @@ import json
 import os
 import time
 import re
-from urllib2 import urlopen, HTTPError
+from urllib.request import urlopen
+from urllib.error import HTTPError
 
 from django.http import HttpResponseRedirect, HttpResponseForbidden
 from django.template import RequestContext
@@ -171,7 +172,7 @@ def submit(request):
 
         tokens_list = []
         extra_repos_tmp = []
-        for token, tokenvalue in tokenmap.items(): 
+        for token, tokenvalue in list(tokenmap.items()): 
             ksname = ksname.replace("@%s@" % token, tokenvalue)
             tokens_list.append("%s:%s" % (token, tokenvalue))
             for repo in extra_repos:
@@ -213,12 +214,12 @@ def submit(request):
                                               time.strftime('%Y%m%d-%H%M%S') )
                 imgjob.save()
                 saved = True
-            except IntegrityError, exc:
-                print exc
-                print "couldn't save %s, retrying" % imgjob.image_id
+            except IntegrityError as exc:
+                print(exc)
+                print("couldn't save %s, retrying" % imgjob.image_id)
                 time.sleep(1)
 
-        print "saved %s" % imgjob.image_id
+        print("saved %s" % imgjob.image_id)
         imgjob.post_processes.add(*list(post_processes))
         
         if jobdata["pinned"]:

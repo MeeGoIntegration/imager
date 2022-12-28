@@ -20,7 +20,7 @@ import re
 import glob
 from itertools import chain
 from collections import defaultdict
-import ConfigParser
+import configparser
 from django import forms
 from django.forms.formsets import BaseFormSet, formset_factory
 from django.core.validators import validate_email

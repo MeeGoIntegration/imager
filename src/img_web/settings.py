@@ -19,8 +19,8 @@ PROJECT_DIR = dirname(__file__)
 
 IMGCONF="/etc/imager/img.conf"
 
-import ConfigParser
-config = ConfigParser.ConfigParser()
+import configparser
+config = configparser.ConfigParser()
 try:
     config.readfp(open(IMGCONF))
 except Exception:

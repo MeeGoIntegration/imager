@@ -22,14 +22,17 @@ IMGCONF="/etc/imager/img.conf"
 import configparser
 config = configparser.ConfigParser()
 try:
-    config.readfp(open(IMGCONF))
+    with open(IMGCONF) as c:
+        config.read_file(c)
 except Exception:
     try:
         # during docs build
-        config.readfp(open("src/img_web/img.conf"))
+        with open("src/img_web/img.conf") as c:
+            config.read_file(c)
     except IOError:
         # when developing it is in cwd
-        config.readfp(open("img.conf"))
+        with open("img.conf") as c:
+            config.read_file(c)
 
 url_prefix = config.get('web', 'url_prefix')
 static_media_collect = config.get('web', 'static_media_collect')

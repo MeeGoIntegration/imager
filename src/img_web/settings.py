@@ -120,6 +120,12 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # system time zone.
 TIME_ZONE = None
 
+# Timezone support is disabled as this is the default pre-5.0 and is
+# how the code is written
+# Setting explicitly as it changes to True in Django 5.0
+# This may need to be reviewed.
+USE_TZ = False
+
 # Language code for this installation. All choices can be found here:
 # http://www.i18nguy.com/unicode/language-identifiers.html
 LANGUAGE_CODE = 'en-us'

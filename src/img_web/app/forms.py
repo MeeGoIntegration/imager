@@ -28,7 +28,7 @@ from taggit.forms import TagField
 from img_web import settings
 from img_web.app.models import ImageType, Arch, BuildService, Token, PostProcess
 from img_web.app.features import list_features, expand_feature
-from django.utils.encoding import force_unicode, smart_unicode, smart_str
+from django.utils.encoding import smart_str
 
 from django.utils.html import escape, conditional_escape
 
@@ -145,10 +145,10 @@ class OptionAttrChoiceField(forms.ChoiceField):
             if isinstance(v, (list, tuple)):
                 # This is an optgroup, so look inside the group for options
                 for k2, v2 in v:
-                    if value == smart_unicode(k2):
+                    if value == smart_str(k2):
                         return True
             else:
-                if value == smart_unicode(k):
+                if value == smart_str(k):
                     return True
         return False
 

@@ -155,8 +155,8 @@ class ImageJob(models.Model):
     image_id = models.CharField(max_length=60, unique=True)
     created = models.DateTimeField(auto_now_add=True)
     done = models.DateTimeField(blank=True, null=True)
-    queue = models.ForeignKey(Queue)
-    user = models.ForeignKey(User)
+    queue = models.ForeignKey(Queue, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
 
     test_result = models.BooleanField(blank=True, default=False)
     test_results_url = models.TextField(blank=True, null=True)

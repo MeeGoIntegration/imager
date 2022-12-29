@@ -122,17 +122,13 @@ def submit(request):
                 repo_url = repo['obs'] + repo['project'].replace(':', ':/') + reponame
                 extra_repos.add(repo_url)
 
-        overlay = set([ x for x in jobdata['overlay'].split(',') if x.strip()])
+        additional_packages = set([ x for x in jobdata['overlay'].split(',') if x.strip()])
         if 'features' in jobdata:
             for feat in jobdata['features']:
-                print feat
-                repos_type = 'repositories-%s' % ks_type
-                if not ks_type or not repos_type in feat:
-                    repos_type = 'repositories'
-
-                extra_repos.update(feat.get(repos_type, set()))
-                overlay.update(feat.get('pattern', ''))
-                overlay.update(feat.get('packages', set()))
+                print(feat)
+                repos, pkgs = get_repos_packages_for_feature(feat, ks_type)
+                extra_repos.update(repos)
+                additional_packages.update(pkgs)
 
         tokenmap = {}
         for token in Token.objects.all():
@@ -186,7 +182,7 @@ def submit(request):
         imgjob.image_type = jobdata['imagetype']
         imgjob.user = request.user
         imgjob.extra_repos = ",".join(extra_repos)
-        imgjob.overlay = ",".join(overlay)
+        imgjob.overlay = ",".join(additional_packages)
         imgjob.queue = Queue.objects.get(name="web")
 
         all_pps = PostProcess.objects.filter(active=True)

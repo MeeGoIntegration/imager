@@ -1,29 +1,34 @@
-from django.conf.urls import include, url
+from django.urls import include, path, re_path
 from django.http import HttpResponse
-from django.shortcuts import render_to_response
 import img_web.settings as settings
 import img_web.app.views as views
 from django.contrib import admin
-from django.contrib.auth.views import login, logout_then_login
+from django.contrib.auth.views import LoginView
 admin.autodiscover()
 
 app_urlpatterns = [
-    url(r'^admin/', include(admin.site.urls)),
-    url(r'submit/$', views.submit, name='img-app-submit'), 
-    url(r'queue/$', views.queue, name='img-app-queue'),
-    url(r'queue/filter/$', views.queue, {'dofilter' : True}, name='img-app-queue-filter'),
-    url(r'queue/filter/(?P<queue_name>\S+?)/$', views.queue, {'dofilter': True}, name='img-app-queue-filter-name'),
-    url(r'queue/(?P<queue_name>\S+?)/$', views.queue, name='img-app-queue-name'),
-    url(r'job/delete/(?P<msgid>\S+)$', views.delete_job, name='img-app-delete-job'),
-    url(r'job/retry/(?P<msgid>\S+)$', views.retry_job, name='img-app-retry-job'),
-    url(r'job/retest/(?P<msgid>\S+)$', views.retest_job, name='img-app-retest-job'),
-    url(r'job/togglepin/(?P<msgid>\S+)$', views.toggle_pin_job, name='img-app-toggle-pin-job'),
-    url(r'job/(?P<msgid>\S+)$', views.job, name='img-app-job'),
-    url(r'search/(?P<tag>\S+)$', views.search, name='img-app-search-tag'),
-    url(r'search/', views.search, name='img-app-search'),
-    url(r'^login/$', login, name='login'),
-    url(r'^logout/$', logout_then_login, name='logout'),
-    url(r'$', views.index, name='index'),
+    path('admin/', admin.site.urls),
+    re_path(r'submit/$', views.submit, name='img-app-submit'),
+    re_path(r'queue/$', views.queue, name='img-app-queue'),
+    re_path(r'queue/filter/$', views.queue, {'dofilter' : True}, name='img-app-queue-filter'),
+    re_path(r'queue/filter/(?P<queue_name>\S+?)/$', views.queue, {'dofilter': True}, name='img-app-queue-filter-name'),
+    re_path(r'queue/(?P<queue_name>\S+?)/$', views.queue, name='img-app-queue-name'),
+    re_path(r'job/delete/(?P<msgid>\S+)$', views.delete_job, name='img-app-delete-job'),
+    re_path(r'job/retry/(?P<msgid>\S+)$', views.retry_job, name='img-app-retry-job'),
+    re_path(r'job/retest/(?P<msgid>\S+)$', views.retest_job, name='img-app-retest-job'),
+    re_path(r'job/togglepin/(?P<msgid>\S+)$', views.toggle_pin_job, name='img-app-toggle-pin-job'),
+    re_path(r'job/(?P<msgid>\S+)$', views.job, name='img-app-job'),
+    re_path(r'search/(?P<tag>\S+)$', views.search, name='img-app-search-tag'),
+    re_path(r'search/', views.search, name='img-app-search'),
+#    re_path(r'^login/$', login, name='login'),
+#    re_path(r'^logout/$', logout_then_login, name='logout'),
+    re_path(r'$', views.index, name='index'),
+    path('login/',
+        LoginView.as_view(
+            template_name='users/login.html'
+        ),
+        name="login"
+    ),
 ]
 
-urlpatterns = [url(r'^%s/' % settings.url_prefix, include(app_urlpatterns))]
+urlpatterns = [re_path(r'^%s/' % settings.url_prefix, include(app_urlpatterns))]

@@ -141,7 +141,7 @@ STATIC_ROOT = static_media_collect
 
 STATIC_URL = '/' + url_prefix + '/site_media/'
 
-MIDDLEWARE_CLASSES = (
+MIDDLEWARE = (
     'django.middleware.common.CommonMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',

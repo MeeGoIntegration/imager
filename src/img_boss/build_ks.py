@@ -122,6 +122,9 @@ except:
 import gettext
 import warnings
 
+from img_web import settings
+from img_web.app.features import expand_feature, get_repos_packages_for_feature
+
 
 def _(x):
     return gettext.ldgettext("pykickstart", x)
@@ -820,6 +823,7 @@ class ParticipantHandler(object):
         self.oscrc = ""
         self.namespace = None
         self.obs = None
+        self.obses = {}
 
     def handle_wi_control(self, ctrl):
         """ job control thread """
@@ -833,12 +837,9 @@ class ParticipantHandler(object):
             if ctrl.config.has_option("obs", "oscrc"):
                 self.oscrc = ctrl.config.get("obs", "oscrc")
 
-    def get_repositories(self, wid, project):
-        if not (wid.fields.ev and wid.fields.ev.namespace):
+    def get_repositories(self, project):
+        if not self.namespace:
             raise RuntimeError("Missing field: ev.namespace")
-        if self.obs is None or self.namespace != wid.fields.ev.namespace:
-            self.namespace = wid.fields.ev.namespace
-            self.obs = BuildService(oscrc=self.oscrc, apiurl=self.namespace)
 
         try:
             repositories = self.obs.getProjectRepositories(project)
@@ -859,7 +860,7 @@ class ParticipantHandler(object):
         for prj in projects:
             if prj in exclude_prjs:
                 continue
-            repositories = self.get_repositories(wid, prj)
+            repositories = self.get_repositories(prj)
             for repo in repositories:
                 repourl = "%s/%s/%s" % (self.reposerver,
                                         prj.replace(":", ":/"),
@@ -881,6 +882,18 @@ class ParticipantHandler(object):
             raise RuntimeError("Missing mandatory field: image.kickstart"
                                " or image.ksfile")
 
+        # If we have a namespace, use the right OBS
+        if (f.ev and f.ev.namespace):
+            self.namespace = f.ev.namespace
+            if self.namespace in self.obses:
+                self.obs = self.obses[self.namespace]
+            else:
+                self.obs = BuildService(oscrc=self.oscrc, apiurl=self.namespace)
+                self.obses[self.namespace] = self.obs
+        else:
+            self.namespace = None
+            self.obs = None
+
         projects = []
 
         if f.image.extra_repos:
@@ -890,7 +903,8 @@ class ParticipantHandler(object):
             if wid.params.repository:
                 repositories = [wid.params.repository]
             else:
-                repositories = self.get_repositories(wid, wid.params.project)
+                repositories = self.get_repositories(wid.params.project)
+            # This fails for dual-OBS
             for repo in repositories:
                 repourl = "%s/%s/%s" % (self.reposerver,
                                         wid.params.project.replace(":", ":/"),

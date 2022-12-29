@@ -211,6 +211,12 @@ class Token(models.Model):
     default = models.CharField(max_length=500, blank=True)
     description = models.TextField(blank=True)
 
+    @classmethod
+    def defaults_as_dict(cls):
+        tokens = {}
+        for token in cls.objects.all():
+            tokens[token.name] = token.default
+        return tokens
 
 class ImageJobAdmin(admin.ModelAdmin):
     list_display = ('image_id', 'user', 'arch', 'image_type', 'status', 'queue')

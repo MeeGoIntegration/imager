@@ -1,6 +1,6 @@
 %define svdir %{_sysconfdir}/supervisor/conf.d/
-%define python python%{?__python_ver}
-%define __python /usr/bin/%{python}
+%define pythons python3
+%{?!python_module:%define python_module() python3-%{**}}
 
 Name: img
 Version: 0.67.1
@@ -13,18 +13,15 @@ Source: %{name}-%{version}.tar.gz
 
 BuildArch: noarch
 
-BuildRequires:  python
-BuildRequires:  python-setuptools
-BuildRequires:  python-Django
-BuildRequires:  python-distribute
-BuildRequires:  python-sphinx
-BuildRequires:  python-boss-skynet
-BuildRequires:  python-ruote-amqp
-BuildRequires:  pykickstart
-BuildRequires:  python-django-taggit
-BuildRequires:  python-buildservice
-
-BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-buildroot
+BuildRequires:  python-rpm-macros
+BuildRequires:  %{python_module setuptools}
+BuildRequires:  %{python_module Django}
+BuildRequires:  %{python_module Sphinx}
+BuildRequires:  %{python_module boss-skynet}
+BuildRequires:  %{python_module ruote-amqp}
+BuildRequires:  %{python_module pykickstart}
+BuildRequires:  %{python_module django-taggit}
+BuildRequires:  %{python_module buildservice}
 
 Summary: Image creation service for SailfishOS related products
 
@@ -32,10 +29,10 @@ Summary: Image creation service for SailfishOS related products
 Image creation service for SailfishOS related products
 
 %package -n img-core
-Requires: python >= 2.5.0
-Requires:  sudo
-Requires:  pykickstart
-Requires:  lvm2
+Requires: python3
+Requires: sudo
+Requires: python3-pykickstart
+Requires: lvm2
 Requires(pre): pwdutils
 Requires(post): sudo
 Requires(post): eat-host
@@ -45,14 +42,12 @@ Summary: Image creation service for SailfishOS related products, core package
 This package provides the core worker logic of imager.
 It builds images using mic optionally in a virtual machine.
 
+
 %package -n img-web
-Requires: python >= 2.5.0
-Requires: python-xml
-Requires: python-django-taggit
-Requires(post): python-boss-skynet
-Requires: python2-Django1
-Requires: python-flup
-Requires: python-mysql
+Requires: python3-django-taggit
+Requires(post): python3-boss-skynet
+Requires: python3-Django
+Requires: python3-mysql
 Requires: img-web-participants
 Summary: Image creation service for SailfishOS related products, django web interface
 %description -n img-web
@@ -60,46 +55,38 @@ This package provides a django based web interface for imager that is part of BO
 
 %package -n img-worker
 Requires: img-core
-Requires: python-xml
-Requires: python-boss-skynet
-Requires(post): python-boss-skynet
+Requires: python3-boss-skynet
+Requires(post): python3-boss-skynet
 Summary: Image creation service for SailfishOS related products, BOSS participants
 %description -n img-worker
 This package provides imager participants that plugin into a BOSS system to 
 fulfill image building steps of processes
 
 %package -n img-web-participants
-Requires: python-xml
-Requires: python-buildservice
-# This is required by pykickstart
-Requires: python-urlgrabber
-Requires: python-boss-skynet
-Requires(post): python-boss-skynet
+Requires: python3-buildservice
+Requires: python3-boss-skynet
+Requires(post): python3-boss-skynet
 Summary: Image creation service for SailfishOS related products, BOSS participants
 %description -n img-web-participants
 This package provides the imager participants that must run alongside img-web
 to provide job status and management via BOSS
 
 %package -n img-ks
-Requires: python-xml
-Requires: python-buildservice
-# This is required by pykickstart
-Requires: python-urlgrabber
+Requires: python3-buildservice
 Requires(pre): boss-standard-workflow-common
-Requires: python-boss-skynet
-Requires(post): python-boss-skynet
+Requires: python3-boss-skynet
+Requires(post): python3-boss-skynet
 Summary: Image creation service for SailfishOS related products, BOSS participants
 %description -n img-ks
 This package provides imager participants that plugin into a BOSS system to
 handle kickstarts
 
 %package -n img-make-vdi
-Requires: python-xml
-Requires: python-buildservice
+Requires: python3-buildservice
 Requires: boss-standard-workflow-common
-Requires: python-boss-skynet
+Requires: python3-boss-skynet
 Requires: virtualbox
-Requires(post): python-boss-skynet
+Requires(post): python3-boss-skynet
 Summary: Image creation service for SailfishOS related products, BOSS participants
 %description -n img-make-vdi
 This package provides imager participants that plugin into a BOSS system to
@@ -107,10 +94,9 @@ handle VirtualBox VDI images
 
 %package -n img-test-vm
 Requires: img-core
-Requires: python-xml
-Requires: python-buildservice
-Requires: python-boss-skynet
-Requires(post): python-boss-skynet
+Requires: python3-buildservice
+Requires: python3-boss-skynet
+Requires(post): python3-boss-skynet
 Summary: Image creation service for SailfishOS related products, BOSS participants
 %description -n img-test-vm
 This package provides imager participant that can test images using VMs

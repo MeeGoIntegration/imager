@@ -3,10 +3,10 @@ COVERAGE := $(shell which python-coverage)
 all: docs retest
 
 docs:
-	python setup.py build_sphinx
+	python3 setup.py build_sphinx
 
 install: 
-	python setup.py install --root=$(DESTDIR) --prefix=$(PREFIX)
+	python3 setup.py install --root=$(DESTDIR) --prefix=$(PREFIX)
 
 	for participant in build_image build_ks make_vdi test_vm_image request_image update_symlinks; \
 	do \

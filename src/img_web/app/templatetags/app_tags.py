@@ -7,5 +7,5 @@ register = template.Library()
 def split(value, sep):
     try:
         return value.split(sep)[0]
-    except:
+    except IndexError:
         return value

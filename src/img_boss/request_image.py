@@ -1,26 +1,29 @@
 #!/usr/bin/python
-#~ Copyright (C) 2010 Nokia Corporation and/or its subsidiary(-ies).
-#~ Contact: Ramez Hanna <ramez.hanna@nokia.com>
-#~ This program is free software: you can redistribute it and/or modify
-#~ it under the terms of the GNU General Public License as published by
-#~ the Free Software Foundation, either version 3 of the License, or
-#~ (at your option) any later version.
+# Copyright (C) 2010 Nokia Corporation and/or its subsidiary(-ies).
+# Contact: Ramez Hanna <ramez.hanna@nokia.com>
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 
-#~ This program is distributed in the hope that it will be useful,
-#~ but WITHOUT ANY WARRANTY; without even the implied warranty of
-#~ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#~ GNU General Public License for more details.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 
-#~ You should have received a copy of the GNU General Public License
-#~ along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 """Records an image job request in the django database of the web UI. Thus
 facilitating tracking and controlling it and later on removing it.
 
 This is useful to allow visibility of non-IMG processes in the IMG queue.
 
-This participant does not block and build_image should be called in the controlling process at some point after request_image.
+This participant does not block and build_image should be called in the
+controlling process at some point after request_image.
 
-Once build_image is done, update_image_status can be called to set a status on the image.
+Once build_image is done, update_image_status can be called to set a status on
+the image.
 
 .. warning::
     The build_ks participant should have run first to provide the name and
@@ -31,12 +34,12 @@ Once build_image is done, update_image_status can be called to set a status on t
 :Parameters:
    :action (string):
       "get_or_create" is the only supported value. If set the participant will
-      try to find an already created image with the parameters specified. When not
-      set or set to any unkown value the backward compatible default is to always
-      create a new job
+      try to find an already created image with the parameters specified. When
+      not set or set to any unkown value the backward compatible default is to
+      always create a new job
    :max_age (integer):
-      In days, if specified along with get_or_create will limit the search to images
-      that are older than max_age days
+      In days, if specified along with get_or_create will limit the search to
+      images that are older than max_age days
 
 :term:`Workitem` fields IN:
 
@@ -80,20 +83,23 @@ Once build_image is done, update_image_status can be called to set a status on t
       Unique ID of this image job
    :image.prefix (string):
       added as another directory layer under which images will be saved
-      Optional. "requests/username" will be used. 
+      Optional. "requests/username" will be used.
    :result (Boolean):
       True if everything was OK, False otherwise
 """
 
-import os, time
+import os
+import time
 import datetime
 
-os.environ['DJANGO_SETTINGS_MODULE'] = 'img_web.settings'
 import django
-django.setup()
 from img_web.app.models import ImageJob, Queue
 from django.contrib.auth.models import User
 from django.db import IntegrityError
+
+os.environ['DJANGO_SETTINGS_MODULE'] = 'img_web.settings'
+django.setup()
+
 
 class ParticipantHandler(object):
 
@@ -112,16 +118,17 @@ class ParticipantHandler(object):
                 self.user = User.objects.get(username__exact=username)
             else:
                 self.user = User.objects.get(id=1)
- 
+
     def handle_wi(self, wid):
         wid.result = False
         f = wid.fields
-        p = wid.params
         if not f.msg:
             f.msg = []
 
-        if (not f.ev or not f.ev.id or not f.image.kickstart
-            or not f.image.image_type or not f.image.arch or not f.image.name):
+        if (
+            not f.ev or not f.ev.id or not f.image.kickstart
+            or not f.image.image_type or not f.image.arch or not f.image.name
+        ):
             f.__error__ = "One of the mandatory fields: ev.id,"\
                           " image.kickstart, image_type, image.arch,"\
                           " or image.name doesn't exist."
@@ -133,12 +140,14 @@ class ParticipantHandler(object):
             qname = f.image.queue
         queue = Queue.objects.get(name=qname)
 
-        image_args = { "queue" : queue, "user" : self.user,
-                       "image_type" : f.image.image_type,
-                       "arch" : f.image.arch,
-                       "kickstart" : f.image.kickstart,
-                       "name" : f.image.name
-                      }
+        image_args = {
+            "queue": queue,
+            "user": self.user,
+            "image_type": f.image.image_type,
+            "arch": f.image.arch,
+            "kickstart": f.image.kickstart,
+            "name": f.image.name,
+        }
         if f.image.extra_opts:
             image_args["extra_opts"] = f.image.extra_opts
         if f.image.tokenmap:
@@ -147,42 +156,52 @@ class ParticipantHandler(object):
         job = None
         if wid.params.action == "get_or_create":
             self.log.info("get_or_create")
-            jobs = ImageJob.objects.filter(**image_args).filter(status__startswith="DONE")
+            jobs = ImageJob.objects.filter(
+                **image_args
+            ).filter(
+                status__startswith="DONE",
+            )
             self.log.info(jobs.count())
-            self.log.info("- %(queue)s - %(image_type)s - %(arch)s - %(name)s - %(user)s - kickstart:\n%(kickstart)s\n\n" % (image_args))
+            self.log.info(
+                "- %(queue)s - %(image_type)s - %(arch)s - %(name)s - "
+                "%(user)s - kickstart:\n%(kickstart)s\n\n" % (image_args)
+            )
             if wid.params.max_age:
-                ts = datetime.datetime.now() - datetime.timedelta(days=int(wid.params.max_age))
+                ts = datetime.datetime.now() - datetime.timedelta(
+                    days=int(wid.params.max_age)
+                )
                 self.log.info(ts)
-                jobs = jobs.exclude(done__lte = ts)
+                jobs = jobs.exclude(done__lte=ts)
             self.log.info(jobs.count())
             if jobs.count():
                 job = jobs[0]
                 f.image.image_url = job.image_url
                 f.image.files_url = job.files_url
                 f.image.logfile_url = job.logfile_url
- 
+
         if not job:
             self.log.info("New job")
             job = ImageJob(**image_args)
             saved = False
             while not saved:
                 try:
-                    job.image_id = "%s-%s" % ( str(f.ev.id),
-                                               time.strftime('%Y%m%d-%H%M%S') )
+                    job.image_id = "%s-%s" % (
+                        str(f.ev.id), time.strftime('%Y%m%d-%H%M%S')
+                    )
                     job.save()
                     saved = True
                     f.image.image_url = ""
-                except IntegrityError, exc:
-                    print exc
-                    print "couldn't save %s, retrying" % job.image_id
+                except IntegrityError as exc:
+                    print(exc)
+                    print("couldn't save %s, retrying" % job.image_id)
                     time.sleep(1)
 
-            print "saved %s" % job.image_id
+            print("saved %s" % job.image_id)
 
         if not f.image.prefix:
             f.image.prefix = "%s/%s" % (job.queue.name,
                                         job.user.username)
-        f.image.image_id = job.image_id 
+        f.image.image_id = job.image_id
 
         self.log.info("Requested image %s" % f.image.image_id)
-        wid.result = True 
+        wid.result = True

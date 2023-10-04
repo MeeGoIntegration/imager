@@ -116,14 +116,11 @@ try:
     from pykickstart.commands.bootloader import F8_Bootloader
     from pykickstart.commands.repo import F8_RepoData, F8_Repo
     from pykickstart.commands.partition import FC4_PartData, FC4_Partition
-except:
+except ImportError:
     raise RuntimeError("Couldn't import pykickstart")
 
 import gettext
 import warnings
-
-from img_web import settings
-from img_web.app.features import expand_feature, get_repos_packages_for_feature
 
 
 def _(x):
@@ -805,7 +802,7 @@ def get_list(value, desc):
     """
     if not value:
         return []
-    if isinstance(value, basestring):
+    if isinstance(value, str):
         try:
             value = json.loads(value)
         except ValueError:
@@ -843,7 +840,7 @@ class ParticipantHandler(object):
 
         try:
             repositories = self.obs.getProjectRepositories(project)
-        except HTTPError, exobj:
+        except HTTPError as exobj:
             if exobj.code == 404:
                 raise RuntimeError("Project %s not found in OBS" % project)
             raise
@@ -888,7 +885,10 @@ class ParticipantHandler(object):
             if self.namespace in self.obses:
                 self.obs = self.obses[self.namespace]
             else:
-                self.obs = BuildService(oscrc=self.oscrc, apiurl=self.namespace)
+                self.obs = BuildService(
+                    oscrc=self.oscrc,
+                    apiurl=self.namespace,
+                )
                 self.obses[self.namespace] = self.obs
         else:
             self.namespace = None
@@ -946,7 +946,7 @@ class ParticipantHandler(object):
             ks = build_kickstart(ksfile, packages=packages, groups=groups,
                                  projects=projects)
             f.image.kickstart = ks
-        except (KickstartError, OptionValueError, ValueError), error:
+        except (KickstartError, OptionValueError, ValueError) as error:
             f.msg.append("Error while handling  Kickstart: %s" % error)
             f.__error__ = str(error)
         else:

@@ -44,19 +44,21 @@ as there is already a process calling this participant.
 
 """
 
-import django
 import json
 import os
 import re
 import time
-os.environ['DJANGO_SETTINGS_MODULE'] = 'img_web.settings'
-# django.setup()  # Not needed for super-early django
 from img_web import settings
 from img_web.app.models import ImageJob, Queue, Token
-from img_web.app.features import list_features, expand_feature
+from img_web.app.features import expand_feature
 from img_web.app.features import get_repos_packages_for_feature
 from django.contrib.auth.models import User
 from django.db import IntegrityError
+import django
+
+os.environ['DJANGO_SETTINGS_MODULE'] = 'img_web.settings'
+django.setup()
+
 
 # def parse_template_ks(ksfilename)->[str, dict]:
 def parse_template_ks(ksfilename):
@@ -96,13 +98,15 @@ def parse_template_ks(ksfilename):
 # https://stackoverflow.com/questions/7204805/how-to-merge-dictionaries-of-dictionaries/7205107#7205107
 def merge(a, b, path=None):
     "merges b into a"
-    if path is None: path = []
+    if path is None:
+        path = []
     for key in b:
         if key in a:
             if isinstance(a[key], dict) and isinstance(b[key], dict):
                 merge(a[key], b[key], path + [str(key)])
             elif a[key] == b[key]:
-                pass # same leaf value
+                # same leaf value
+                pass
             else:
                 raise Exception('Conflict at %s' % '.'.join(path + [str(key)]))
         else:
@@ -133,14 +137,9 @@ class ParticipantHandler:
             f.msg = []
 
         if not (f.image and f.image.template_name):
-        #     missing = [fname for fname in ("image", "image.template_name")
-        #                      if not (f.has_key(fname) and
-        #                              f[fname])]
-             f.__error__ = "One of the mandatory fields doesn't exist."
-             f.msg.append(f.__error__)
-             raise RuntimeError("Missing mandatory field")
-        #     raise RuntimeError("Missing mandatory fields: %s"
-        #                        % ",".join(missing))
+            f.__error__ = "One of the mandatory fields doesn't exist."
+            f.msg.append(f.__error__)
+            raise RuntimeError("Missing mandatory field")
 
         # Get the input data from the fields:
         ksname = f.image.template_name
@@ -160,8 +159,12 @@ class ParticipantHandler:
         if "tokenmap" in overrides:
             # split to a csv of "k:v" and then split each on : and use
             # dict on the list of pairs
-            tmap = dict(map(lambda s:
-                            s.split(":",1), overrides["tokenmap"].split(",")))
+            tmap = dict(
+                map(
+                    lambda s: s.split(":", 1),
+                    overrides["tokenmap"].split(",")
+                )
+            )
             print("tmap")
             print(tmap)
             tokenmap.update(tmap)
@@ -189,8 +192,10 @@ class ParticipantHandler:
                 try:
                     value = default_attrs[attr]
                 except KeyError:
-                    raise MissingAttrException(
-                        "Attribute %s is not in the overrides or ks template" % attr)
+                    raise AttributeError(
+                        "Attribute %s is not in the overrides or ks template" %
+                        attr
+                    )
             # Some of these also cause tokens to be set
             # see code in views.py
             if attr == "architecture":
@@ -213,7 +218,9 @@ class ParticipantHandler:
                     print("Handling feature %s" % ft)
                     if ft != "":
                         feat = expand_feature(ft)
-                        repos, pkgs = get_repos_packages_for_feature(feat, kstype)
+                        repos, pkgs = get_repos_packages_for_feature(
+                            feat, kstype
+                        )
                         extra_repos.update(repos)
                         extra_packages.update(pkgs)
             else:
@@ -243,7 +250,9 @@ class ParticipantHandler:
             ksname = ksname.replace("@%s@" % token, tokenvalue)
             tokens_list.append("%s:%s" % (token, tokenvalue))
             for repo in extra_repos:
-                extra_repos_tmp.append(repo.replace("@%s@" % token, tokenvalue))
+                extra_repos_tmp.append(
+                    repo.replace("@%s@" % token, tokenvalue)
+                )
             extra_repos = extra_repos_tmp[:]
             extra_repos_tmp = []
 
@@ -272,11 +281,10 @@ class ParticipantHandler:
                                              time.strftime('%Y%m%d-%H%M%S'))
                 imgjob.save()
                 saved = True
-            except IntegrityError, exc:
-                print exc
-                print "couldn't save %s, retrying" % imgjob.image_id
+            except IntegrityError as exc:
+                print(exc)
+                print("couldn't save %s, retrying" % imgjob.image_id)
                 time.sleep(1)
-
 
         new_fields = imgjob.to_fields()
 

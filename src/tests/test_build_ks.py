@@ -17,10 +17,11 @@ WI_TEMPLATE = """{
  "participant_name": "fake_participant"
 }"""
 
-REPOSERVER="http://example.com/repo"
-KSSTORE="tests/test_data/ksstore"
-KSFILE="generic.ks"
-IMAGENAME="generic"
+REPOSERVER = "http://example.com/repo"
+KSSTORE = "tests/test_data/ksstore"
+KSFILE = "generic.ks"
+IMAGENAME = "generic"
+
 
 class TestParticipantHandler(unittest.TestCase):
 
@@ -29,9 +30,9 @@ class TestParticipantHandler(unittest.TestCase):
         # that version yet.
         try:
             method(*args, **kwargs)
-        except exc, exobj:
-            if isinstance(rex, basestring):
-               rex = re.compile(rex)
+        except exc as exobj:
+            if isinstance(rex, str):
+                rex = re.compile(rex)
             exstr = str(exobj)
             if not rex.search(exstr):
                 raise AssertionError('"%s" does not match "%s"' %
@@ -57,7 +58,7 @@ class TestParticipantHandler(unittest.TestCase):
         ctrl = WorkItemCtrl('start')
         ctrl.config = SafeConfigParser()
         ctrl.config.read("img_boss/build_ks.conf")
-	self.participant.handle_lifecycle_control(ctrl)
+        self.participant.handle_lifecycle_control(ctrl)
 
     def test_handle_wi(self):
         self.participant.handle_wi(self.wid)
@@ -76,8 +77,10 @@ class TestParticipantHandler(unittest.TestCase):
     def test_missing_ks(self):
         self.wid.fields.image.kickstart = None
         self.wid.fields.image.ksfile = None
-        self.assertRaisesRegexp(RuntimeError, "kickstart",
-                          self.participant.handle_wi, self.wid)
+        self.assertRaisesRegexp(
+            RuntimeError, "kickstart",
+            self.participant.handle_wi, self.wid
+        )
 
     def handle_wi_helper(self, strings):
         """Call handle_wi and check that it was successful and the
@@ -85,8 +88,10 @@ class TestParticipantHandler(unittest.TestCase):
         self.participant.handle_wi(self.wid)
         self.assertTrue(self.wid.result)
         for string in strings:
-            self.assertTrue(string in self.wid.fields.image.kickstart,
-                            "%s not found in kickstart" % string)
+            self.assertTrue(
+                string in self.wid.fields.image.kickstart,
+                "%s not found in kickstart" % string
+            )
 
     def test_extra_repos(self):
         repos = ['http://example.com/extra1', 'http://example.com/extra2']
@@ -94,8 +99,10 @@ class TestParticipantHandler(unittest.TestCase):
         self.handle_wi_helper(repos)
 
         self.wid.fields.image.extra_repos = "not a list"
-        self.assertRaisesRegexp(RuntimeError, "list",
-                          self.participant.handle_wi, self.wid)
+        self.assertRaisesRegexp(
+            RuntimeError, "list",
+            self.participant.handle_wi, self.wid
+        )
 
     def test_packages_field(self):
         packages = ['package1', 'package2', 'package3', 'package4']
@@ -103,8 +110,10 @@ class TestParticipantHandler(unittest.TestCase):
         self.handle_wi_helper(packages)
 
         self.wid.fields.image.packages = "not a list"
-        self.assertRaisesRegexp(RuntimeError, "list",
-                          self.participant.handle_wi, self.wid)
+        self.assertRaisesRegexp(
+            RuntimeError, "list",
+            self.participant.handle_wi, self.wid
+        )
 
     def test_packages_param(self):
         packages = ['package1', 'package2', 'package3', 'package4']
@@ -112,8 +121,10 @@ class TestParticipantHandler(unittest.TestCase):
         self.handle_wi_helper(packages)
 
         self.wid.params.packages = "not a list"
-        self.assertRaisesRegexp(RuntimeError, "list",
-                          self.participant.handle_wi, self.wid)
+        self.assertRaisesRegexp(
+            RuntimeError, "list",
+            self.participant.handle_wi, self.wid
+        )
 
     def test_packages_param_added(self):
         packages1 = ['package1', 'package2']
@@ -129,8 +140,10 @@ class TestParticipantHandler(unittest.TestCase):
         self.handle_wi_helper(packages)
 
         self.wid.fields.arglblargl = "not a list"
-        self.assertRaisesRegexp(RuntimeError, "list",
-                          self.participant.handle_wi, self.wid)
+        self.assertRaisesRegexp(
+            RuntimeError, "list",
+            self.participant.handle_wi, self.wid
+        )
 
         # nonexistent packages_from field should be treated like an empty list
         self.wid.params.packages_from = "nonexistentfield"
@@ -143,8 +156,10 @@ class TestParticipantHandler(unittest.TestCase):
         self.handle_wi_helper(groups)
 
         self.wid.fields.image.groups = "not a list"
-        self.assertRaisesRegexp(RuntimeError, "list",
-                          self.participant.handle_wi, self.wid)
+        self.assertRaisesRegexp(
+            RuntimeError, "list",
+            self.participant.handle_wi, self.wid
+        )
 
     def test_groups_param(self):
         groups = ['group1', 'group2', 'group3', 'group4']
@@ -152,8 +167,10 @@ class TestParticipantHandler(unittest.TestCase):
         self.handle_wi_helper(groups)
 
         self.wid.params.groups = "not a list"
-        self.assertRaisesRegexp(RuntimeError, "list",
-                          self.participant.handle_wi, self.wid)
+        self.assertRaisesRegexp(
+            RuntimeError, "list",
+            self.participant.handle_wi, self.wid
+        )
 
     def test_groups_param_added(self):
         groups1 = ['group1', 'group2']
@@ -169,8 +186,10 @@ class TestParticipantHandler(unittest.TestCase):
         self.handle_wi_helper(groups)
 
         self.wid.fields.arglblargl = "not a list"
-        self.assertRaisesRegexp(RuntimeError, "list",
-                          self.participant.handle_wi, self.wid)
+        self.assertRaisesRegexp(
+            RuntimeError, "list",
+            self.participant.handle_wi, self.wid
+        )
 
         # nonexistent groups_from field should be treated like an empty list
         self.wid.params.groups_from = "nonexistentfield"
@@ -227,5 +246,7 @@ class TestParticipantHandler(unittest.TestCase):
         self.handle_wi_helper(urls)
 
         self.wid.fields.ev.namespace = None
-        self.assertRaisesRegexp(RuntimeError, "namespace",
-                          self.participant.handle_wi, self.wid)
+        self.assertRaisesRegexp(
+            RuntimeError, "namespace",
+            self.participant.handle_wi, self.wid
+        )

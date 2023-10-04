@@ -1,27 +1,27 @@
 #!/usr/bin/python
-#~ Copyright (C) 2010 Nokia Corporation and/or its subsidiary(-ies).
-#~ Contact: Ramez Hanna <ramez.hanna@nokia.com>
-#~ This program is free software: you can redistribute it and/or modify
-#~ it under the terms of the GNU General Public License as published by
-#~ the Free Software Foundation, either version 3 of the License, or
-#~ (at your option) any later version.
+# Copyright (C) 2010 Nokia Corporation and/or its subsidiary(-ies).
+# Contact: Ramez Hanna <ramez.hanna@nokia.com>
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 
-#~ This program is distributed in the hope that it will be useful,
-#~ but WITHOUT ANY WARRANTY; without even the implied warranty of
-#~ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#~ GNU General Public License for more details.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 
-#~ You should have received a copy of the GNU General Public License
-#~ along with this program.  If not, see <http://www.gnu.org/licenses/>.
-"""builds images from kickstart files using MIC2 image creation tools. 
-Supports either KVM or normal MIC2 operation. KVM operations offer more 
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+"""builds images from kickstart files using MIC2 image creation tools.
+Supports either KVM or normal MIC2 operation. KVM operations offer more
 flexibility and cleaner building.
 
 .. warning ::
 
-   * The build_ks participant should be used to read and validate kickstart 
+   * The build_ks participant should be used to read and validate kickstart
      files, and subsequently fills the image.kickstart field.
-   * The image_id field is expected to be unique, as provided by the 
+   * The image_id field is expected to be unique, as provided by the
      request_image participant which records it in a django database
 
 
@@ -36,7 +36,7 @@ flexibility and cleaner building.
       Unique ID of this image job
    :image.prefix (string):
       added as another directory layer under which images will be saved
-      Optional. If not provided "requests" will be used. 
+      Optional. If not provided "requests" will be used.
    :image.image_type (string):
       Format of image as supported by mic2. ex: livecd, raw, etc..
       Check the available formats in mic2 --help
@@ -70,7 +70,8 @@ flexibility and cleaner building.
 from img.common import worker_config
 from img.worker import ImageWorker
 from RuoteAMQP.workitem import DictAttrProxy as dap
-from RuoteAMQP import Launcher 
+from RuoteAMQP import Launcher
+
 
 class ParticipantHandler(object):
     """Participant class as defined by the SkyNET API"""
@@ -79,13 +80,13 @@ class ParticipantHandler(object):
         self.worker_config = None
         self.launcher = None
         self.process = \
-        """Ruote.process_definition 'create_image_ondemand' do
-             sequence do
-               set :f => 'debug_dump', :value => 'true'
-               update_image_status :status => '%s'
-             end
-           end
-        """
+            """Ruote.process_definition 'create_image_ondemand' do
+                 sequence do
+                   set :f => 'debug_dump', :value => 'true'
+                   update_image_status :status => '%s'
+                 end
+               end
+            """
 
     def handle_wi_control(self, ctrl):
         """ job control thread """
@@ -95,20 +96,16 @@ class ParticipantHandler(object):
         """ participant control thread """
         if ctrl.message == "start":
             self.worker_config = dap(worker_config(config=ctrl.config))
-            self.launcher = Launcher(amqp_host = ctrl.config.get("boss",
-                                                                 "amqp_host"),
-                                     amqp_user = ctrl.config.get("boss",
-                                                                 "amqp_user"),
-                                     amqp_pass = ctrl.config.get("boss",
-                                                                 "amqp_pwd"),
-                                     amqp_vhost = ctrl.config.get("boss",
-                                                                  "amqp_vhost")
-                                     )
- 
+            self.launcher = Launcher(
+                amqp_host=ctrl.config.get("boss", "amqp_host"),
+                amqp_user=ctrl.config.get("boss", "amqp_user"),
+                amqp_pass=ctrl.config.get("boss", "amqp_pwd"),
+                amqp_vhost=ctrl.config.get("boss", "amqp_vhost")
+            )
 
     def push_img_status(self, status, fields):
         """ function to push status by launching a process, ?utility """
-        fields.update({"priority" : "high"})
+        fields.update({"priority": "high"})
         self.launcher.launch(self.process % status, fields)
 
     def handle_wi(self, wid):
@@ -128,29 +125,35 @@ class ParticipantHandler(object):
         else:
             # old API, flat workitem
             args_dict = {
-                          "kickstart" : f.kickstart,
-                          "image_id" : f.image_id,
-                          "image_type" : f.image_type,
-                          "name" : f.name,
-                          "arch" : f.arch,
-                          "prefix" : f.prefix,
-                          "extra_opts" : f.extra_opts
-                         }
+                "kickstart": f.kickstart,
+                "image_id": f.image_id,
+                "image_type": f.image_type,
+                "name": f.name,
+                "arch": f.arch,
+                "prefix": f.prefix,
+                "extra_opts": f.extra_opts
+            }
             f.image = args_dict
 
         jargs = dap(args_dict)
 
-        if (not jargs.image_id or not jargs.kickstart or not jargs.image_type
-            or not jargs.name or not jargs.arch):
-            missing = [fname for fname in ("image_id", "kickstart",
-                                           "image_type", "name", "arch")
-                             if not (args_dict.has_key(fname) and
-                                     args_dict[fname])]
-            f.__error__ = "One of the mandatory fields: id, kickstart, type,"\
-                          " name and arch in the image namespace doesn't exist."
+        if (
+            not jargs.image_id or not jargs.kickstart or not jargs.image_type
+            or not jargs.name or not jargs.arch
+        ):
+            missing = [
+                fname for fname
+                in ("image_id", "kickstart", "image_type", "name", "arch")
+                if not args_dict.get(fname)
+            ]
+            f.__error__ = (
+                "One of the mandatory fields: id, kickstart, type,"
+                " name and arch in the image namespace doesn't exist."
+            )
             f.msg.append(f.__error__)
-            raise RuntimeError("Missing mandatory fields: %s"
-                               % ",".join(missing))
+            raise RuntimeError(
+                "Missing mandatory fields: %s" % ",".join(missing)
+            )
 
         if jargs.extra_opts:
             if not isinstance(jargs.extra_opts, list):
@@ -163,15 +166,22 @@ class ParticipantHandler(object):
         if self.worker_config.extra_opts:
             jargs.extra_opts.extend(self.worker_config.extra_opts)
 
-        if (jargs.image_type == "fs" and (self.worker_config.fs_pack is not None)):
-            jargs.extra_opts.append("--pack-to=%s" % self.worker_config.fs_pack)
+        if (
+            jargs.image_type == "fs" and
+            self.worker_config.fs_pack is not None
+        ):
+            jargs.extra_opts.append(
+                "--pack-to=%s" % self.worker_config.fs_pack
+            )
 
         if not jargs.prefix or jargs.prefix == "":
             jargs.prefix = "requests"
 
         try:
-            worker = ImageWorker(config=self.worker_config,
-                                 job_args=jargs)
+            worker = ImageWorker(
+                config=self.worker_config,
+                job_args=jargs,
+            )
 
             results = worker.get_results()
 
@@ -196,18 +206,21 @@ class ParticipantHandler(object):
             msg = "Image %s build for arch %s" % (f.image.name, f.image.arch)
 
             if f.image.result:
-                msg = "%s succeeded \nfiles: %s \nimage: %s \nlog %s" % (msg, \
-                      f.image.files_url, f.image.image_url,f.image.logfile_url)
+                msg = "%s succeeded \nfiles: %s \nimage: %s \nlog %s" % (
+                    msg, f.image.files_url, f.image.image_url,
+                    f.image.logfile_url,
+                )
             else:
-                msg = "%s failed \nlog %s\nerror %s" % (msg, f.image.image_log,
-                                                        f.image.error)
+                msg = "%s failed \nlog %s\nerror %s" % (
+                    msg, f.image.image_log, f.image.error,
+                )
                 f.__error__ = 'Image build FAILED: %s' % f.image.error
                 f.msg.append(f.__error__)
 
             f.msg.append(msg)
 
             wid.result = f.image.result
-        except Exception, error:
+        except Exception as error:
             f.__error__ = 'Image build FAILED: %s' % error
             f.msg.append(f.__error__)
             raise
@@ -216,4 +229,3 @@ class ParticipantHandler(object):
                 self.push_img_status("DONE", f.as_dict())
             else:
                 self.push_img_status("ERROR", f.as_dict())
-

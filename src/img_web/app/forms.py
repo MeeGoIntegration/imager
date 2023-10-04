@@ -18,34 +18,37 @@
 import os
 import re
 import glob
-from itertools import chain
-from collections import defaultdict
-import configparser
 from django import forms
 from django.forms.formsets import BaseFormSet, formset_factory
-from django.core.validators import validate_email
 from taggit.forms import TagField
 from img_web import settings
-from img_web.app.models import ImageType, Arch, BuildService, Token, PostProcess
+from img_web.app.models import ImageType, Arch, BuildService, Token
 from img_web.app.features import list_features, expand_feature
 from django.utils.encoding import smart_str
-
-from django.utils.html import escape, conditional_escape
 
 
 class extraReposForm(forms.Form):
 
-    obs = forms.ChoiceField(label="OBS", choices=[("None", "None")],
-                            help_text="Extra OBS instances from which "
-                            "packages may be downloaded from.")
-    project = forms.CharField(label="Project", required=False,
-                              max_length=500,
-                              help_text="Project name in which"
-                              " the repository lives. For example: home:user")
-    repo = forms.CharField(label="Repository", required=False,
-                           max_length=500, help_text="Repository "
-                           "name in which the packages live. For "
-                           "example: latest_i486")
+    obs = forms.ChoiceField(
+        label="OBS",
+        choices=[("None", "None")],
+        help_text="Extra OBS instances from which packages may be downloaded "
+                  "from.",
+    )
+    project = forms.CharField(
+        label="Project",
+        required=False,
+        max_length=500,
+        help_text="Project name in which the repository lives. "
+                  "For example: home:user",
+    )
+    repo = forms.CharField(
+        label="Repository",
+        required=False,
+        max_length=500,
+        help_text="Repository name in which the packages live. "
+                  "For example: latest_i486",
+    )
 
     def __init__(self, *args, **kwargs):
         super(extraReposForm, self).__init__(*args, **kwargs)
@@ -68,8 +71,10 @@ class extraReposForm(forms.Form):
             cleaned_data['project'] = cleaned_data['project'].strip()
 
         if cleaned_data['obs'] and not cleaned_data['repo']:
-            raise forms.ValidationError("You chose an extra OBS without "
-                                        "adding a corresponding repository.")
+            raise forms.ValidationError(
+                "You chose an extra OBS without adding a corresponding "
+                "repository."
+            )
         return cleaned_data
 
 
@@ -82,10 +87,12 @@ class extraTokensForm(forms.Form):
         super(extraTokensForm, self).__init__(*args, **kwargs)
         for token in Token.objects.all():
             self.fields[token.name] = \
-                forms.CharField(label=token.name,
-                                initial=token.default,
-                                required=False,
-                                help_text=token.description)
+                forms.CharField(
+                    label=token.name,
+                    initial=token.default,
+                    required=False,
+                    help_text=token.description,
+                )
 
 
 extraTokensFormset = formset_factory(extraTokensForm)
@@ -94,20 +101,19 @@ extraTokensFormset = formset_factory(extraTokensForm)
 class PostProcessForm(forms.Form):
 
     def __init__(self, *args, **kwargs):
-        pp = None
-        if "pp" in kwargs:
-            pp = kwargs["pp"]
-            del(kwargs["pp"])
+        pp = kwargs.pop("pp", None)
         super(PostProcessForm, self).__init__(*args, **kwargs)
         if pp:
-            self.fields[pp.name] = \
-                forms.BooleanField(label=pp.name, initial=pp.default,
-                                   required=False, help_text=pp.description)
+            self.fields[pp.name] = forms.BooleanField(
+                label=pp.name, initial=pp.default,
+                required=False, help_text=pp.description,
+            )
             if pp.argname:
-                self.fields[pp.argname] = \
-                    forms.CharField(label=pp.argname, required=False,
-                                    widget=forms.Textarea(attrs={'rows': '1'}),
-                                    help_text=pp.description)
+                self.fields[pp.argname] = forms.CharField(
+                    label=pp.argname, required=False,
+                    widget=forms.Textarea(attrs={'rows': '1'}),
+                    help_text=pp.description,
+                )
 
 
 class BasePostProcessFormset(BaseFormSet):
@@ -268,8 +274,9 @@ class ImageJobForm(forms.Form):
         # find the available ks files and extract the feature
         # defaults from each file
         # See the comment by OptionAttrChoiceField
-        for template in glob.glob(os.path.join(settings.TEMPLATESDIR,
-                                               '*.ks')):
+        for template in glob.glob(
+            os.path.join(settings.TEMPLATESDIR, '*.ks')
+        ):
             name = os.path.basename(template)
             templatename = os.path.basename(template)
             attrs = {}
@@ -301,16 +308,22 @@ class ImageJobForm(forms.Form):
         if cleaned_data['template'] == "None":
             cleaned_data['template'] = None
 
-        if (('ksfile' in cleaned_data and 'template' in cleaned_data)
+        if (
+            ('ksfile' in cleaned_data and 'template' in cleaned_data)
             and
-            (cleaned_data['ksfile'] and cleaned_data['template'])):
-            raise forms.ValidationError("Please choose template or upload"
-                                        " a kickstart, not both!")
-        elif (('ksfile' not in cleaned_data and 'template' not in cleaned_data)
-              and
-              (cleaned_data['ksfile'] and cleaned_data['template'])):
-            raise forms.ValidationError("Please choose either a template or"
-                                        "upload a kickstart file.")
+            (cleaned_data['ksfile'] and cleaned_data['template'])
+        ):
+            raise forms.ValidationError(
+                "Please choose template or upload a kickstart, not both!"
+            )
+        elif (
+            ('ksfile' not in cleaned_data and 'template' not in cleaned_data)
+            and
+            (cleaned_data['ksfile'] and cleaned_data['template'])
+        ):
+            raise forms.ValidationError(
+                "Please choose either a template or upload a kickstart file."
+            )
         return cleaned_data
 
 

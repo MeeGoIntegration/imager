@@ -1,17 +1,17 @@
 #!/usr/bin/python
-#~ Copyright (C) 2013 David Greaves <david@dgreaves.com>
-#~ This program is free software: you can redistribute it and/or modify
-#~ it under the terms of the GNU General Public License as published by
-#~ the Free Software Foundation, either version 3 of the License, or
-#~ (at your option) any later version.
+# Copyright (C) 2013 David Greaves <david@dgreaves.com>
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 
-#~ This program is distributed in the hope that it will be useful,
-#~ but WITHOUT ANY WARRANTY; without even the implied warranty of
-#~ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#~ GNU General Public License for more details.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 
-#~ You should have received a copy of the GNU General Public License
-#~ along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """Converts mic raw image to VDI format.
 
 .. warning ::
@@ -40,11 +40,10 @@
 """
 
 from RuoteAMQP.workitem import DictAttrProxy as dap
-from RuoteAMQP import Launcher 
 
 import os.path
 import subprocess
-import shutil
+
 
 class ParticipantHandler(object):
     """Participant class as defined by the SkyNET API"""
@@ -76,26 +75,31 @@ class ParticipantHandler(object):
         if not f.image.image_type == "raw":
             return False, "Image type is not raw"
 
-        raw = os.path.abspath(f.image.image_url.replace(self.config.base_url,
-                                                        self.config.base_dir))
+        raw = os.path.abspath(
+            f.image.image_url.replace(
+                self.config.base_url, self.config.base_dir
+            )
+        )
         if not os.path.isfile(raw):
             return False, "Image file %s not present at %s\n" % (
                 f.image.image_url, raw)
 
         if not raw.endswith(".raw"):
             try:
-                orig=raw
+                orig = raw
                 # Try to uncompress
                 if raw.endswith(".gz"):
                     self.log.debug("gunzip %s\n" % raw)
                     subprocess.check_output(["gunzip", raw])
                     raw = raw[0:-3]
                 if raw.endswith(".tar.bz2"):
-                    self.log.debug("extracting: tar xv -C %s -f %s\n" % (os.path.dirname(raw), raw))
-                    new_raw = subprocess.check_output(["tar", "xv",
-                                                       "-C", os.path.dirname(raw),
-                                                       "-f", raw]
-                                                       ).rstrip('\n')
+                    self.log.debug(
+                        "extracting: tar xv -C %s -f %s\n",
+                        os.path.dirname(raw), raw,
+                    )
+                    new_raw = subprocess.check_output(
+                        ["tar", "xv", "-C", os.path.dirname(raw), "-f", raw]
+                    ).rstrip('\n')
                     subprocess.check_output(["rm", raw])
                     raw = raw[0:-8] + ".raw"
                     os.rename(os.path.join(os.path.dirname(raw), new_raw),
@@ -104,15 +108,22 @@ class ParticipantHandler(object):
                     self.log.debug("bunzip2 %s\n" % raw)
                     subprocess.check_output(["bunzip2", raw])
                     raw = raw[0:-4]
-            except subprocess.CalledProcessError,e:
-                return False, "Failed whilst trying to uncompress %s.\n%s\n" % (raw, e.output)
+            except subprocess.CalledProcessError as e:
+                return (
+                    False,
+                    "Failed whilst trying to uncompress %s.\n%s\n" % (
+                        raw, e.output
+                    ),
+                )
             if not raw.endswith(".raw") and not os.path.isfile(raw):
-                return False, "Failed to convert %s to a .raw called %s" % (orig, raw)
+                return (
+                    False,
+                    "Failed to convert %s to a .raw called %s" % (orig, raw),
+                )
             self.log.info("Unpacked raw file to %s" % raw)
         try:
             vdi = raw[0:-3]+"VDI"
-            command = [ "VBoxManage", "convertfromraw",
-                        raw, vdi]
+            command = ["VBoxManage", "convertfromraw", raw, vdi]
             if f.vboxmanage and f.vboxmanage.format:
                 command.append("--format=%s" % f.vboxmanage.format)
             else:
@@ -126,14 +137,14 @@ class ParticipantHandler(object):
             subprocess.check_call(["chmod", "0664", vdi])
             subprocess.check_call(["bzip2", "--fast", vdi])
             subprocess.check_call(["chown", "-R", "img", os.path.dirname(raw)])
-        except subprocess.CalledProcessError,e:
+        except subprocess.CalledProcessError as e:
             return False, "Running convertfromraw failed:\n%s" % e.output
 
         # Cleanup
-        for key in ["image_type","image_url"]:
+        for key in ["image_type", "image_url"]:
             try:
                 del f.image.as_dict()[key]
-            except:
+            except IndexError:
                 pass
         os.remove(raw)
 

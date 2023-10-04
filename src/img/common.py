@@ -5,7 +5,10 @@ Common Imager functions
 import os
 import ConfigParser
 import subprocess as sub
-import random, socket, time
+import random
+import socket
+import time
+
 
 def worker_config(config=None, conffile="/etc/imager/img.conf"):
     """Utility function which parses the either given or  imager configuration
@@ -38,6 +41,7 @@ def worker_config(config=None, conffile="/etc/imager/img.conf"):
 
     return conf
 
+
 def tester_config(config=None, conffile="/etc/imager/img.conf"):
     """Utility function which parses the either given or  imager configuration
         file and passes a dictionary proxy containing the configuration keys
@@ -54,7 +58,12 @@ def tester_config(config=None, conffile="/etc/imager/img.conf"):
 
     section = "tester"
     conf = {}
-    for item in ["base_dir", "vm_kernel", "timeout", "vm_priv_ssh_key", "vm_pub_ssh_key", "vg_name", "vm_wait", "testtools_repourl", "test_script", "host_test_script", "test_user", "device_ip", "host_test_package_manager", "package_manager"]:
+    for item in [
+            "base_dir", "vm_kernel", "timeout", "vm_priv_ssh_key",
+            "vm_pub_ssh_key", "vg_name", "vm_wait", "testtools_repourl",
+            "test_script", "host_test_script", "test_user", "device_ip",
+            "host_test_package_manager", "package_manager",
+    ]:
         conf[item] = config.get(section, item)
 
     for item in ["use_base_img", "host_based_testing"]:
@@ -62,32 +71,43 @@ def tester_config(config=None, conffile="/etc/imager/img.conf"):
 
     return conf
 
+
 def getport():
-    """Gets a random port for the KVM virtual machine communtication, target 
+    """Gets a random port for the KVM virtual machine communtication, target
     always being the SSH port.
 
     :returns: random port number between 49152 and 65535
     """
     return random.randint(49152, 65535)
 
+
 def getmac():
     """Gets a random mac address for the KVM virtual machine communtication.
 
     :returns: random mac address
     """
-    return 'DE:AD:BE:EF:%0.2X:%0.2X' % (random.randint(0, 32), random.randint(0, 32))
+    return 'DE:AD:BE:EF:%0.2X:%0.2X' % (
+        random.randint(0, 32), random.randint(0, 32)
+    )
+
 
 def fork(logfile, command, env=[]):
     with open(logfile, 'a+b') as logf:
         for e, v in env:
             os.environ[e] = v
-        x = sub.check_call(command, shell=False, stdout=logf, 
-                          stderr=logf, stdin=sub.PIPE)
+        x = sub.check_call(
+            command,
+            shell=False,
+            stdout=logf,
+            stderr=logf,
+            stdin=sub.PIPE,
+        )
         logf.flush()
         for e, v in env:
             if e in os.environ:
-                del(os.environ[e])
-	return x
+                del os.environ[e]
+    return x
+
 
 def wait_for_vm_up(host, port, timeout):
     time.sleep(10)
@@ -98,25 +118,25 @@ def wait_for_vm_up(host, port, timeout):
         try:
             retries = retries + 1
             s.connect((host, port))
-        except:
+        except Exception:
             time.sleep(1)
         else:
             return True
     return False
 
+
 def wait_for_vm_down(command, timeout):
     retries = 0
     while retries < timeout:
-        print retries
+        print(retries)
         retries = retries + 1
         comm = ['pgrep', '-f']
         comm.extend([" ".join(command)])
         try:
             retcode = sub.check_call(comm)
-            print retcode
-        except sub.CalledProcessError, err:
+            print(retcode)
+        except sub.CalledProcessError:
             return True
         else:
             time.sleep(1)
     raise RuntimeError("VM not down after %s" % timeout)
-

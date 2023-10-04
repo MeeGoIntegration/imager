@@ -1,37 +1,30 @@
 #!/usr/bin/python
-#~ This program is free software: you can redistribute it and/or modify
-#~ it under the terms of the GNU General Public License as published by
-#~ the Free Software Foundation, either version 3 of the License, or
-#~ (at your option) any later version.
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 
-#~ This program is distributed in the hope that it will be useful,
-#~ but WITHOUT ANY WARRANTY; without even the implied warranty of
-#~ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#~ GNU General Public License for more details.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 
-#~ You should have received a copy of the GNU General Public License
-#~ along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import os, sys
+import os
 import pipes
 import hashlib
 import subprocess as sub
 from multiprocessing import Process, TimeoutError
-import time, datetime
-import random
+import time
+import datetime
 from copy import copy
 import pycurl
 
-# We should ignore SIGPIPE when using pycurl.NOSIGNAL - see
-# the libcurl tutorial for more info.
-#try:
-#    import signal
-#    from signal import SIGPIPE, SIG_IGN
-#    signal.signal(signal.SIGPIPE, signal.SIG_IGN)
-#except ImportError:
-#    pass
 
 from img.common import getmac, getport, fork, wait_for_vm_up, wait_for_vm_down
+
 
 class Commands(object):
     """Commands object for running various image building commands"""
@@ -40,9 +33,9 @@ class Commands(object):
                  vgname=None, ssh_key=None,
                  timeout=3600, vm_kernel=None,
                  usb_port="0", usb_pwr="0", device_ip="127.0.0.1"):
-        """Constructor, creates the object with necessary parameters to run 
+        """Constructor, creates the object with necessary parameters to run
         commands
-        
+
         :param log_filename: Filename to pipe the output to.
         :param timeout: integer value used to set an alarm signal that
            interrupts any command that runs for too long
@@ -64,83 +57,66 @@ class Commands(object):
 
         self.device_ip = device_ip
 
-        self.sudobase = [
-                     'sudo', '-n'
-                   ]
+        self.sudobase = ['sudo', '-n']
 
-        self.killkvmbase = [
-                     'pkill', '-f'
-                   ]
+        self.killkvmbase = ['pkill', '-f']
 
-        self.mkfsbase = [ 'mkfs', '-t' ]
+        self.mkfsbase = ['mkfs', '-t']
 
-        self.overlaybase = [
-                        '/usr/bin/qemu-img', 'create', '-f', 'qcow2', '-b'
-                      ]
+        self.overlaybase = ['/usr/bin/qemu-img', 'create', '-f', 'qcow2', '-b']
 
-        self.lvcreate = [
-                        '/sbin/lvcreate', '-L', '10G', '-n'
-                      ]
+        self.lvcreate = ['/sbin/lvcreate', '-L', '10G', '-n']
 
-        self.lvmsnapshot = [
-                        '/sbin/lvcreate', '-s', '-l', '100%ORIGIN', '-n'
-                      ]
+        self.lvmsnapshot = ['/sbin/lvcreate', '-s', '-l', '100%ORIGIN', '-n']
 
-        self.lvdisplay = [
-                        '/sbin/lvdisplay', '-c'
-                      ]
+        self.lvdisplay = ['/sbin/lvdisplay', '-c']
 
-        self.lvremove = [
-                        '/sbin/lvremove', '-f'
-                      ]
+        self.lvremove = ['/sbin/lvremove', '-f']
 
-        self.sopts = [ 
-                  '-i%s' % ssh_key,
-                  '-o', 'ConnectTimeout=60',
-                  '-o', 'ConnectionAttempts=60',
-                  '-o', 'UserKnownHostsFile=/dev/null',
-                  '-o', 'StrictHostKeyChecking=no',
-                  '-o', 'PasswordAuthentication=no'
-                ]
+        self.sopts = [
+            '-i%s' % ssh_key,
+            '-o', 'ConnectTimeout=60',
+            '-o', 'ConnectionAttempts=60',
+            '-o', 'UserKnownHostsFile=/dev/null',
+            '-o', 'StrictHostKeyChecking=no',
+            '-o', 'PasswordAuthentication=no'
+        ]
 
-        self.sshbase = [ 
-                    '/usr/bin/ssh', 
-                    '-p%s' % self.port,
-                    self.device_ip
-                  ]
+        self.sshbase = [
+            '/usr/bin/ssh',
+            '-p%s' % self.port,
+            self.device_ip
+        ]
 
-        self.scpbase = [ 
-                    '/usr/bin/scp',
-                    '-P%s' % self.port,
-                    '-r'
-                  ]
+        self.scpbase = [
+            '/usr/bin/scp',
+            '-P%s' % self.port,
+            '-r'
+        ]
 
-        self.kvm_env = [("QEMU_AUDIO_DRV","none")]
+        self.kvm_env = [("QEMU_AUDIO_DRV", "none")]
 
         self.kvmbase = [
-                    '/usr/bin/qemu-kvm',
-                    '-nographic', '-no-reboot',
-                    '-daemonize', '-m', '1G',
-                    '-soundhw', 'hda',
-                    '-usb', '-usbdevice', 'tablet',
-                    '-kernel', vm_kernel,
-                    '-append',
-                    'root=/dev/vda panic=1 quiet rw elevator=noop ip=dhcp video=vesafb:mtrr:3 vga=0x314 vt.global_cursor_default=0',
-                    '-net', 'nic,model=virtio,macaddr=%s' % self.mac, 
-                    '-net', 'user,hostfwd=tcp:%s:%s-:22' % (self.device_ip, self.port)
-                ]
-
-        self.kvmbase.extend([
-                    '-drive', 'index=0,if=virtio,media=disk,cache=writeback,' \
-                              'file=@KVMIMAGEFILE@'
-                  ])
+            '/usr/bin/qemu-kvm',
+            '-nographic', '-no-reboot',
+            '-daemonize', '-m', '1G',
+            '-soundhw', 'hda',
+            '-usb', '-usbdevice', 'tablet',
+            '-kernel', vm_kernel,
+            '-append', 'root=/dev/vda panic=1 quiet rw elevator=noop ip=dhcp '
+                       'video=vesafb:mtrr:3 vga=0x314 '
+                       'vt.global_cursor_default=0',
+            '-net', 'nic,model=virtio,macaddr=%s' % self.mac,
+            '-net', 'user,hostfwd=tcp:%s:%s-:22' % (self.device_ip, self.port),
+            '-drive', 'index=0,if=virtio,media=disk,cache=writeback,'
+                      'file=@KVMIMAGEFILE@',
+        ]
 
         self.kvm_comm = None
 
     def run(self, command, env=[], ignore_error=False):
-        """Method to run an arbitrary command and pipe the log output to a file.
-        Uses subprocess.check_call to properly execute and catch if any errors
-        occur.
+        """Method to run an arbitrary command and pipe the log output to a
+        file.
 
         :param command: Arbitary command to run
         """
@@ -153,15 +129,22 @@ class Commands(object):
         proc.join(self.timeout)
         if proc.is_alive():
             with open(self._logf, 'a+b') as logf:
-                logf.write("\n%s : Command still running after %s seconds" %
-                          (datetime.datetime.now(), self.timeout))
+                logf.write(
+                    "\n%s : Command still running after %s seconds" % (
+                        datetime.datetime.now(), self.timeout
+                    )
+                )
                 logf.flush()
 
             proc.terminate()
-            raise TimeoutError("Command was still running after %s "\
-                               "seconds" % self.timeout)
+            raise TimeoutError(
+                "Command was still running after %s seconds" % self.timeout
+            )
         if not proc.exitcode == 0 and not ignore_error:
-           raise sub.CalledProcessError(int(proc.exitcode), "Command returned non 0 exit code %s " % proc.exitcode)
+            raise sub.CalledProcessError(
+                int(proc.exitcode),
+                "Command returned non 0 exit code %s " % proc.exitcode
+            )
 
     def scpto(self, source="", dest=""):
         """Generic ssh copy file method, from KVM to host.
@@ -189,7 +172,7 @@ class Commands(object):
 
     def ssh(self, command, user="root", ignore_error=False):
         """Execute an arbitrary command in the KVM guest.
-        
+
         :param command: Arbitary command to run over ssh inside kvm
         """
         ssh_comm = copy(self.sshbase)
@@ -200,7 +183,7 @@ class Commands(object):
             self.run(ssh_comm)
         except sub.CalledProcessError:
             if ignore_error:
-                print "SSH command raised error and ignore_error was False"
+                print("SSH command raised error and ignore_error was False")
                 return False
             else:
                 raise
@@ -226,7 +209,7 @@ class Commands(object):
     def overlaycreate(self, overlay_img_tmp, baseimg, overlay_suffix):
         """Create an overlay image based on a base image, usually a minimal OS
         with ssh-key access and capable of running MIC.
-        
+
         :param overlay_img_tmp: directory for temporary overlay images
         :param baseimg: path to base image (qcow2 file or LV device node)
         :param overlay_suffix: suffix to make overlay name unique
@@ -248,7 +231,7 @@ class Commands(object):
 
     def mklv(self, lvname):
         """Create an lv.
-        
+
         :param lvname: name of lv to create
 
         :returns: path to the new created lv
@@ -264,11 +247,11 @@ class Commands(object):
         mkfs_comm.extend(copy(self.mkfsbase))
         mkfs_comm.extend([fstype, partition])
         self.run(mkfs_comm)
-        
+
     def mount(self, target, partition):
         mount_comm = copy(self.sudobase)
         mount_comm.extend(["/bin/mount", partition, target])
-        print mount_comm
+        print(mount_comm)
         self.run(mount_comm)
 
     def umount(self, partition):
@@ -280,7 +263,7 @@ class Commands(object):
     def runkvm(self, overlayimg):
         """Run KVM using the created overlay image.
 
-        :param overlayimg: path to qcow2 overlay based on the configured 
+        :param overlayimg: path to qcow2 overlay based on the configured
            minimal KVM image
         """
         kvm_comm = copy(self.kvmbase)
@@ -309,8 +292,8 @@ class Commands(object):
             os.remove(overlayimg)
 
     def download_extract(self, url, xdir):
-        print url
-        print xdir
+        print(url)
+        print(xdir)
         unc = None
         if url.endswith("gz"):
             unc = "z"
@@ -319,9 +302,12 @@ class Commands(object):
         else:
             raise RuntimeError("unsupported compression in url")
 
-        cmd = ['sudo', '-n', '/bin/tar', '-p', '--numeric-owner', '-C', xdir, '-%sx' % unc]
+        cmd = [
+            'sudo', '-n', '/bin/tar', '-p', '--numeric-owner',
+            '-C', xdir, '-%sx' % unc
+        ]
         tarpipe = sub.Popen(cmd, stdin=sub.PIPE)
-        
+
         try:
             c = pycurl.Curl()
             c.setopt(pycurl.FOLLOWLOCATION, 1)
@@ -340,15 +326,18 @@ class Commands(object):
             result = False
             c.perform()
             httpcode = c.getinfo(pycurl.HTTP_CODE)
-        except pycurl.error, err:
-            print "Failed: ", err
+        except pycurl.error as err:
+            print("Failed: ", err)
             result = False
         else:
             if httpcode == 200:
-                print "Success:", c.filename, c.url, c.getinfo(pycurl.EFFECTIVE_URL)
+                print(
+                    "Success:", c.filename, c.url,
+                    c.getinfo(pycurl.EFFECTIVE_URL)
+                )
                 result = True
             else:
-                print "Failed: ", c.filename, c.url
+                print("Failed: ", c.filename, c.url)
                 result = False
         finally:
             c.fp.close()
@@ -359,17 +348,20 @@ class Commands(object):
 
         return result
 
+
 class ImageTester(object):
     """Tester class that does vm based testing"""
 
-    def __init__(self, config=None, job_args=None, test_packages={}, test_id=0):
+    def __init__(
+        self, config=None, job_args=None, test_packages={}, test_id=0,
+    ):
         """Initialize the tester using a config and job args.
 
         :param config: Worker config in a hash proxy object
         :param job_args: hash proxy object describing the image job
         :param test_packages: space seprated test package names
         :param test_id: test run ID
-        
+
         """
 
         self.result = False
@@ -382,102 +374,126 @@ class ImageTester(object):
         self.test_user = config["test_user"]
         self.test_packages = test_packages
         self.vm_pub_ssh_key = config["vm_pub_ssh_key"]
-        self.vm_wait =  config["vm_wait"]
-        image_id = "".join(c for c in job_args['image_id'] if c.isalnum() or c in ['_','-']).rstrip()
+        self.vm_wait = config["vm_wait"]
+        image_id = "".join(
+            c for c in job_args['image_id'] if c.isalnum() or c in ['_', '-']
+        ).rstrip()
 
         self.extra_repos = job_args.get("extra_repos", [])
 
-        if not "outdir" in job_args:
-            job_args["outdir"] = os.path.join(config["base_dir"], job_args["prefix"],
-                                              image_id)
+        if "outdir" not in job_args:
+            job_args["outdir"] = os.path.join(
+                config["base_dir"], job_args["prefix"], image_id
+            )
 
         self.results_dir = os.path.join(job_args["outdir"], "results") + "/"
 
         self.results_url = "%s/%s" % (job_args["files_url"], "results")
 
-        self.logfile_name = os.path.join(job_args["outdir"],
-                                         "%s.test.log" % job_args["name"])
+        self.logfile_name = os.path.join(
+            job_args["outdir"], "%s.test.log" % job_args["name"]
+        )
 
         self.test_options = job_args.get("test_options", [])
         self.img_url = job_args["image_url"]
-        self.img_file = os.path.join(job_args["outdir"], os.path.basename(job_args["image_url"]))
+        self.img_file = os.path.join(
+            job_args["outdir"], os.path.basename(job_args["image_url"])
+        )
         self.img_type = job_args["image_type"]
         self.test_id = test_id
 
-        print self.logfile_name
-        #setup commands object
-        self.commands = Commands(logfn=self.logfile_name,
-                                 vgname=config["vg_name"],
-                                 timeout=int(config["timeout"]),
-                                 ssh_key=config["vm_priv_ssh_key"],
-                                 vm_kernel=config["vm_kernel"],
-                                 device_ip=config["device_ip"]
-                                 )
+        print(self.logfile_name)
+        # setup commands object
+        self.commands = Commands(
+            logfn=self.logfile_name,
+            vgname=config["vg_name"],
+            timeout=int(config["timeout"]),
+            ssh_key=config["vm_priv_ssh_key"],
+            vm_kernel=config["vm_kernel"],
+            device_ip=config["device_ip"],
+        )
 
         self.commands.run(['mkdir', '-p', self.results_dir])
 
     def create_vm(self):
         if self.img_type == "fs":
-            print "create empty lvm"
-            lvname = self.commands.mklv(hashlib.md5(self.img_url + str(time.time())).hexdigest())
+            print("create empty lvm")
+            lvname = self.commands.mklv(
+                hashlib.md5(self.img_url + str(time.time())).hexdigest()
+            )
             self.vmdisk = lvname
-            print lvname
-            print "format partition"
+            print(lvname)
+            print("format partition")
             self.commands.mkfs(lvname, "ext3")
-            print "formatting done"
+            print("formatting done")
             try:
                 target = "/var/tmp/%s" % os.path.basename(lvname)
-                print target
+                print(target)
                 os.mkdir(target)
-                print "mount"
+                print("mount")
                 self.commands.mount(target, lvname)
-                print "download image and extract it"
+                print("download image and extract it")
                 count = 1
                 result = False
                 while count < 3 and not result:
-                    print self.img_url
-                    print target
-                    result = self.commands.download_extract(str(self.img_url), str(target))
+                    print(self.img_url)
+                    print(target)
+                    result = self.commands.download_extract(
+                        str(self.img_url), str(target)
+                    )
                     count = count + 1
-                #copy auth ssh key
-                self.commands.run(['sudo', '-n', 'mkdir', '-p', "%s/root/.ssh/" % target])
-                self.commands.run(['sudo', '-n', 'cp', self.vm_pub_ssh_key, "%s/root/.ssh/authorized_keys" % target])
-                self.commands.run(['sudo', '-n', 'chown', '-R', 'root:root', "%s/root/.ssh/" % target])
-                self.commands.run(['sudo', '-n', 'chmod', '-R', 'o+rwx,g-rwx,o-rwx', "%s/root/.ssh/" % target])
+                # copy auth ssh key
+                self.commands.run([
+                    'sudo', '-n', 'mkdir', '-p', "%s/root/.ssh/" % target
+                ])
+                self.commands.run([
+                    'sudo', '-n', 'cp', self.vm_pub_ssh_key,
+                    "%s/root/.ssh/authorized_keys" % target,
+                ])
+                self.commands.run([
+                    'sudo', '-n', 'chown', '-R', 'root:root',
+                    "%s/root/.ssh/" % target,
+                ])
+                self.commands.run([
+                    'sudo', '-n', 'chmod', '-R', 'o+rwx,g-rwx,o-rwx',
+                    "%s/root/.ssh/" % target,
+                ])
 
             finally:
                 try:
-                    print "umount"
+                    print("umount")
                     self.commands.umount(lvname)
                 finally:
-                    print "rmdir"
+                    print("rmdir")
                     os.rmdir(target)
         else:
             raise RuntimeError("unspported image type %s" % self.img_type)
 
         if not self.vmdisk:
             raise RuntimeError("something went wrong while setting up vm disk")
-    
-    def boot_vm(self):
 
-        print "runkvm"
+    def boot_vm(self):
+        print("runkvm")
         self.commands.runkvm(self.vmdisk)
         self.kvm_run = True
 
     def wait_for_vm(self):
-
-        print "vm_wait"
-        wait_for_vm_up(self.commands.device_ip, self.commands.port, self.vm_wait)
+        print("vm_wait")
+        wait_for_vm_up(
+            self.commands.device_ip, self.commands.port, self.vm_wait
+        )
 
     def setup_vm(self):
         if os.path.exists('/etc/sysconfig/proxy'):
-             print "inserting /etc/sysconfig/proxy"
-             self.commands.scpto(source='/etc/sysconfig/proxy',
-                            dest='/etc/sysconfig/')
+            print("inserting /etc/sysconfig/proxy")
+            self.commands.scpto(
+                source='/etc/sysconfig/proxy',
+                dest='/etc/sysconfig/',
+            )
 
     def update_vm(self):
         for repo in self.extra_repos:
-            reponame = repo.replace('/','_').replace(':','_')
+            reponame = repo.replace('/', '_').replace(':', '_')
             addrepo_comm = ['ssu', 'ar']
             addrepo_comm.extend([reponame, '%s' % repo])
             self.commands.ssh(addrepo_comm)
@@ -486,27 +502,34 @@ class ImageTester(object):
             ref_comm = ['zypper', '-vvv', '-n', 'ref', '-f']
             update_comm = ['zypper', '-n', 'up', '--force-resolution']
         if self.package_manager == 'pkcon':
-            ref_comm = ['pkcon', '-v', '-p', '--noninteractive', 'refresh', 'force']
+            ref_comm = [
+                'pkcon', '-v', '-p', '--noninteractive', 'refresh', 'force'
+            ]
             update_comm = ['pkcon', '-v', '-p', '--noninteractive', 'update']
         self.commands.ssh(ref_comm)
 
         if "update" in self.test_options:
-            print "updating vm (depending on enabled repos or ssu)"
+            print("updating vm (depending on enabled repos or ssu)")
             self.commands.ssh(update_comm)
 
     def install_tests(self):
         if self.test_packages:
-            print "adding test tools repo"
+            print("adding test tools repo")
             if self.testtools_repourl:
-                addrepo_comm = ['ssu', 'ar']
-                addrepo_comm.extend(['testtools', '%s' % self.testtools_repourl])
+                addrepo_comm = [
+                    'ssu', 'ar', 'testtools', '%s' % self.testtools_repourl
+                ]
                 self.commands.ssh(addrepo_comm)
 
             if self.package_manager == 'zypper':
                 ref_comm = ['zypper', '-n', 'ref']
             if self.package_manager == 'pkcon':
-                ref_comm = ['pkcon', '-v', '-p', '--noninteractive', 'refresh', 'force']
-                install_comm = ['pkcon', '-v', '-p', '--noninteractive', 'install']
+                ref_comm = [
+                    'pkcon', '-v', '-p', '--noninteractive', 'refresh', 'force'
+                ]
+                install_comm = [
+                    'pkcon', '-v', '-p', '--noninteractive', 'install'
+                ]
             self.commands.ssh(ref_comm)
             packages = []
             patterns = []
@@ -517,25 +540,35 @@ class ImageTester(object):
                         patterns.append(name[1:])
                     if self.package_manager == 'pkcon':
                         patterns.append('pattern:' + name[1:])
-                elif self.host_based_testing_enabled and name.endswith('-host-tests'):
+                elif (
+                    self.host_based_testing_enabled and
+                    name.endswith('-host-tests')
+                ):
                     host_test_packages.append(name)
                 else:
                     packages.append(name)
             if packages:
-                print "installing test packages"
+                print("installing test packages")
                 if self.package_manager == 'zypper':
-                    install_comm = ['zypper', '-vv', 'in', '-y', '-f', '--force-resolution']
+                    install_comm = [
+                        'zypper', '-vv', 'in', '-y', '-f', '--force-resolution'
+                    ]
                 install_comm.extend(packages)
                 self.commands.ssh(install_comm)
             if patterns:
-                print "installing test patterns"
+                print("installing test patterns")
                 if self.package_manager == 'zypper':
-                    install_comm = ['zypper', '-vv', 'in', '-y', '-f', '--force-resolution', '-t', 'pattern']
+                    install_comm = [
+                        'zypper', '-vv', 'in', '-y', '-f',
+                        '--force-resolution', '-t', 'pattern'
+                    ]
                 install_comm.extend(patterns)
                 self.commands.ssh(install_comm)
             if self.host_based_testing_enabled and host_test_packages:
-                print "updating host packages reposity cache"
-                update_comm = ['sudo', '-n', self.host_test_package_manager, '-v']
+                print("updating host packages reposity cache")
+                update_comm = [
+                    'sudo', '-n', self.host_test_package_manager, '-v'
+                ]
                 if self.host_test_package_manager == 'yum':
                     update_comm.append('-y')
                     update_comm.append('makecache')
@@ -543,25 +576,31 @@ class ImageTester(object):
                     update_comm.append('-n')
                     update_comm.append('ref')
                 self.commands.run(update_comm)
-                print "installing testrunner-lite on host"
-                testrunner_comm = ['sudo', '-n', self.host_test_package_manager, '-v', 'install', '-y', 'testrunner-lite']
+                print("installing testrunner-lite on host")
+                testrunner_comm = [
+                    'sudo', '-n', self.host_test_package_manager, '-v',
+                    'install', '-y', 'testrunner-lite',
+                ]
                 self.commands.run(testrunner_comm)
-                print "installing host test packages"
-                install_comm = ['sudo', '-n', self.host_test_package_manager, '-v', 'install', '-y']
+                print("installing host test packages")
+                install_comm = [
+                    'sudo', '-n', self.host_test_package_manager, '-v',
+                    'install', '-y',
+                ]
                 install_comm.extend(host_test_packages)
                 self.commands.run(install_comm)
 
     def run_tests(self):
 
-        print "Check host based test packages"
+        print("Check host based test packages")
         host_test_packages = []
         for name in self.test_packages.keys():
             if name.endswith('-host-tests'):
                 host_test_packages.append(name)
         try:
-            print "running test script"
+            print("running test script")
             if self.host_based_testing_enabled and host_test_packages:
-                print "running host based test packages"
+                print("running host based test packages")
                 test_comm = [self.host_test_script]
                 test_comm.append(self.commands.device_ip)
                 test_comm.append(self.commands.port)
@@ -571,26 +610,32 @@ class ImageTester(object):
                 test_comm.extend(host_test_packages)
                 self.commands.run(test_comm)
             else:
-                print "inserting test script"
-                self.commands.scpto(self.test_script, '/var/tmp/test_script.sh') 
+                print("inserting test script")
+                self.commands.scpto(
+                    self.test_script, '/var/tmp/test_script.sh'
+                )
                 self.commands.ssh(['chmod', '+x', '/var/tmp/test_script.sh'])
                 test_comm = ['/var/tmp/test_script.sh']
                 test_comm.extend(self.test_packages.keys())
-                self.result = self.commands.ssh(test_comm, user=self.test_user, ignore_error=True)
-                print "Test result is %s" % self.result
-        except:
-            raise
+                self.result = self.commands.ssh(
+                    test_comm, user=self.test_user, ignore_error=True,
+                )
+                print("Test result is %s" % self.result)
         finally:
             try:
                 if self.host_based_testing_enabled and host_test_packages:
-                    print "trying to get host based test results"
-                    self.commands.run(['sh', '-c', "cp -v /tmp/" + self.test_id + "/results/* " + self.results_dir])
+                    print("trying to get host based test results")
+                    self.commands.run([
+                        'sh', '-c',
+                        "cp -v /tmp/" + self.test_id + "/results/* " +
+                        self.results_dir
+                    ])
                     self.commands.run(['rm', '-rf', "/tmp/" + self.test_id])
                 else:
-                    print "trying to get any test results"
+                    print("trying to get any test results")
                     self.commands.scpfrom("/tmp/results/*", self.results_dir)
                     self.commands.ssh(['sh', '-c', 'rm -rf /tmp/results/*'])
-            except:
+            except Exception:
                 pass
 
     def shutdown_vm(self):
@@ -599,9 +644,11 @@ class ImageTester(object):
             if self.kvm_run:
                 self.commands.ssh(['sync'])
                 if os.path.exists('/usr/bin/img_vm_shutdown'):
-                    print "inserting shutdown script"
-                    self.commands.scpto(source='/usr/bin/img_vm_shutdown',
-                                   dest='/var/tmp/die')
+                    print("inserting shutdown script")
+                    self.commands.scpto(
+                        source='/usr/bin/img_vm_shutdown',
+                        dest='/var/tmp/die',
+                    )
                     self.commands.ssh(['chmod', '+x', '/var/tmp/die'])
 
                     self.commands.ssh(['/var/tmp/die'])
@@ -610,21 +657,21 @@ class ImageTester(object):
 
                 wait_for_vm_down(self.commands.kvm_comm, self.vm_wait)
 
-        except (sub.CalledProcessError, TimeoutError), err:
+        except (sub.CalledProcessError, TimeoutError) as err:
             try:
                 if self.kvm_run:
-                    print "error %s trying to kill kvm" % err
+                    print("error %s trying to kill kvm" % err)
                     self.commands.killkvm()
-            except (sub.CalledProcessError, TimeoutError), err:
-                print "error %s" % err
+            except (sub.CalledProcessError, TimeoutError) as err:
+                print("error %s" % err)
 
     def cleanup(self):
         if self.vmdisk:
             try:
                 self.commands.removeoverlay(self.vmdisk)
                 self.commands.run(['mv', self.logfile_name, self.results_dir])
-            except (sub.CalledProcessError, TimeoutError), err:
-                print "error %s" % err
+            except (sub.CalledProcessError, TimeoutError) as err:
+                print("error %s" % err)
 
     def test(self):
         """Test the image"""
@@ -652,13 +699,12 @@ class ImageTester(object):
 
             self.run_tests()
 
-        except (sub.CalledProcessError, TimeoutError), err:
-            print "error %s" % err
+        except (sub.CalledProcessError, TimeoutError) as err:
+            print("error %s" % err)
             self.error = str(err)
             self.result = False
-        except Exception, err:
-            print "error %s" % err
-        
+        except Exception as err:
+            print("error %s" % err)
         finally:
 
             self.shutdown_vm()
@@ -670,10 +716,8 @@ class ImageTester(object):
 
         :returns: results dictionary
         """
-        results = {
-                    "result"     : self.result,
-                    "results_dir": self.results_dir,
-                    "results_url": self.results_url
-                  }
-
-        return results
+        return {
+            "result": self.result,
+            "results_dir": self.results_dir,
+            "results_url": self.results_url,
+        }

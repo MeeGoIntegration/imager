@@ -1,25 +1,26 @@
-#~ Copyright (C) 2010 Nokia Corporation and/or its subsidiary(-ies).
-#~ Contact: Ramez Hanna <ramez.hanna@nokia.com>
-#~ This program is free software: you can redistribute it and/or modify
-#~ it under the terms of the GNU General Public License as published by
-#~ the Free Software Foundation, either version 3 of the License, or
-#~ (at your option) any later version.
+# Copyright (C) 2010 Nokia Corporation and/or its subsidiary(-ies).
+# Contact: Ramez Hanna <ramez.hanna@nokia.com>
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 
-#~ This program is distributed in the hope that it will be useful,
-#~ but WITHOUT ANY WARRANTY; without even the implied warranty of
-#~ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#~ GNU General Public License for more details.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 
-#~ You should have received a copy of the GNU General Public License
-#~ along with this program.  If not, see <http://www.gnu.org/licenses/>
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>
 
 # Django settings for img project.
-from os.path import abspath, dirname, join
+from os.path import dirname, join
+import configparser
+
 PROJECT_DIR = dirname(__file__)
 
-IMGCONF="/etc/imager/img.conf"
+IMGCONF = "/etc/imager/img.conf"
 
-import configparser
 config = configparser.ConfigParser()
 try:
     with open(IMGCONF) as c:
@@ -60,25 +61,31 @@ DEVICEGROUP = config.get('test', 'devicegroup')
 USE_LDAP = config.getboolean('ldap', 'use_ldap')
 USE_SEARCH = config.getboolean('ldap', 'use_search')
 if USE_LDAP:
+    import ldap
+    from django_auth_ldap.config import LDAPSearch
+    import logging
 
-  import ldap
-  from django_auth_ldap.config import LDAPSearch
-  import logging
-  
-  LDAP_SERVER = config.get('ldap', 'ldap_server')
-  ldap_verify_cert = config.getboolean('ldap', 'verify_certificate')
+    LDAP_SERVER = config.get('ldap', 'ldap_server')
+    ldap_verify_cert = config.getboolean('ldap', 'verify_certificate')
 
-  if USE_SEARCH:
-    AUTH_LDAP_USER_SEARCH = LDAPSearch( config.get('ldap', 'ldap_base_dn', raw=True),
-                                        ldap.SCOPE_SUBTREE,
-                                        config.get('ldap', 'ldap_filter', raw=True))
-  else:
-    AUTH_LDAP_USER_DN_TEMPLATE = config.get('ldap', 'ldap_dn_template', raw=True)
-  
-  mail_attr = config.get('ldap', 'ldap_mail_attr', raw=True)
-  fname_attr = config.get('ldap', 'ldap_fname_attr', raw=True)
-  lname_attr = config.get('ldap', 'ldap_lname_attr', raw=True)
-  AUTH_LDAP_USER_ATTR_MAP = {"first_name" : fname_attr, "last_name" : lname_attr, "email":mail_attr}
+    if USE_SEARCH:
+        AUTH_LDAP_USER_SEARCH = LDAPSearch(
+            config.get('ldap', 'ldap_base_dn', raw=True),
+            ldap.SCOPE_SUBTREE,
+            config.get('ldap', 'ldap_filter', raw=True)
+        )
+    else:
+        AUTH_LDAP_USER_DN_TEMPLATE = config.get(
+            'ldap', 'ldap_dn_template', raw=True)
+
+    mail_attr = config.get('ldap', 'ldap_mail_attr', raw=True)
+    fname_attr = config.get('ldap', 'ldap_fname_attr', raw=True)
+    lname_attr = config.get('ldap', 'ldap_lname_attr', raw=True)
+    AUTH_LDAP_USER_ATTR_MAP = {
+        "first_name": fname_attr,
+        "last_name": lname_attr,
+        "email": mail_attr,
+    }
 elif USE_REMOTE_AUTH:
     AUTHENTICATION_BACKENDS = (
         'django.contrib.auth.backends.RemoteUserBackend',
@@ -94,19 +101,19 @@ ADMINS = (
 
 MANAGERS = ADMINS
 DATABASES = {
-            'default': {
-                'ENGINE' : 'django.db.backends.' + db_engine,
-                'NAME' : db_name,
-                'USER' : db_user,
-                'PASSWORD' : db_pass,
-                'HOST' : db_host,
-                'PORT' : '',
-                }
-            }
+    'default': {
+        'ENGINE': 'django.db.backends.' + db_engine,
+        'NAME': db_name,
+        'USER': db_user,
+        'PASSWORD': db_pass,
+        'HOST': db_host,
+        'PORT': '',
+    }
+}
 
 DATABASE_OPTIONS = {
-            "autocommit": True,
-            }
+    "autocommit": True,
+}
 
 # Django 3.2 needs the auto primary key to be defined
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
@@ -162,7 +169,7 @@ ROOT_URLCONF = 'img_web.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [join(PROJECT_DIR,'templates')],
+        'DIRS': [join(PROJECT_DIR, 'templates')],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -192,25 +199,25 @@ INSTALLED_APPS = (
 
 FORCE_SCRIPT_NAME = ''
 
-LOGIN_URL='/' + url_prefix + "/login/"
-LOGIN_REDIRECT_URL='/' + url_prefix + "/"
+LOGIN_URL = '/' + url_prefix + "/login/"
+LOGIN_REDIRECT_URL = '/' + url_prefix + "/"
 
 if USE_LDAP:
+    logger = logging.getLogger('django_auth_ldap')
+    logger.addHandler(logging.StreamHandler())
+    logger.setLevel(logging.DEBUG)
 
-  logger = logging.getLogger('django_auth_ldap')
-  logger.addHandler(logging.StreamHandler())
-  logger.setLevel(logging.DEBUG)
+    AUTH_LDAP_SERVER_URI = LDAP_SERVER
+    if not ldap_verify_cert:
+        AUTH_LDAP_GLOBAL_OPTIONS = {
+            ldap.OPT_X_TLS_REQUIRE_CERT: ldap.OPT_X_TLS_NEVER
+        }
 
-  AUTH_LDAP_SERVER_URI = LDAP_SERVER
-  if not ldap_verify_cert :
-      AUTH_LDAP_GLOBAL_OPTIONS = {
-      ldap.OPT_X_TLS_REQUIRE_CERT : ldap.OPT_X_TLS_NEVER
-      }
-
-  AUTHENTICATION_BACKENDS = (
-    'django_auth_ldap.backend.LDAPBackend',
-    'django.contrib.auth.backends.ModelBackend',
-  )
+    AUTHENTICATION_BACKENDS = (
+        'django_auth_ldap.backend.LDAPBackend',
+        'django.contrib.auth.backends.ModelBackend',
+    )
 elif USE_REMOTE_AUTH:
-  MIDDLEWARE_CLASSES += ( 'django.contrib.auth.middleware.RemoteUserMiddleware',)
-
+    MIDDLEWARE += (
+        'django.contrib.auth.middleware.RemoteUserMiddleware',
+    )

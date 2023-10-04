@@ -2,31 +2,56 @@
 import re
 import cgi
 
-colorcodes =   {'bold':{True:'\033[1m',False:'\033[22m'},
-                'cyan':{True:'\033[36m',False:'\033[39m'},
-                'blue':{True:'\033[34m',False:'\033[39m'},
-                'red':{True:'\033[31m',False:'\033[39m'},
-                'magenta':{True:'\033[35m',False:'\033[39m'},
-                'green':{True:'\033[32m',False:'\033[39m'},
-                'underline':{True:'\033[4m',False:'\033[24m'}}
+colorcodes = {
+    'bold': {True: '\033[1m', False: '\033[22m'},
+    'cyan': {True: '\033[36m', False: '\033[39m'},
+    'blue': {True: '\033[34m', False: '\033[39m'},
+    'red': {True: '\033[31m', False: '\033[39m'},
+    'magenta': {True: '\033[35m', False: '\033[39m'},
+    'green': {True: '\033[32m', False: '\033[39m'},
+    'underline': {True: '\033[4m', False: '\033[24m'},
+}
+
 
 def recolor(color, text):
-    regexp = "(?:%s)(.*?)(?:%s)" % (colorcodes[color][True], colorcodes[color][False])
+    regexp = "(?:%s)(.*?)(?:%s)" % (
+        colorcodes[color][True], colorcodes[color][False]
+    )
     regexp = regexp.replace('[', r'\[')
-    return re.sub(regexp, r'''<span style="color: %s">\1</span>''' % color, text)
+    return re.sub(
+        regexp,
+        r'''<span style="color: %s">\1</span>''' % color,
+        text,
+    )
+
 
 def bold(text):
-    regexp = "(?:%s)(.*?)(?:%s)" % (colorcodes['bold'][True], colorcodes['bold'][False])
+    regexp = "(?:%s)(.*?)(?:%s)" % (
+        colorcodes['bold'][True], colorcodes['bold'][False]
+    )
     regexp = regexp.replace('[', r'\[')
-    return re.sub(regexp, r'<span style="font-weight:bold">\1</span>', text)
+    return re.sub(
+        regexp,
+        r'<span style="font-weight:bold">\1</span>',
+        text,
+    )
+
 
 def underline(text):
-    regexp = "(?:%s)(.*?)(?:%s)" % (colorcodes['underline'][True], colorcodes['underline'][False])
+    regexp = "(?:%s)(.*?)(?:%s)" % (
+        colorcodes['underline'][True], colorcodes['underline'][False]
+    )
     regexp = regexp.replace('[', r'\[')
-    return re.sub(regexp, r'<span style="text-decoration: underline">\1</span>', text)
+    return re.sub(
+        regexp,
+        r'<span style="text-decoration: underline">\1</span>',
+        text,
+    )
+
 
 def removebells(text):
     return text.replace('\07', '')
+
 
 def removebackspaces(text):
     backspace_or_eol = r'(.\010)|(\033\[K)'
@@ -35,11 +60,22 @@ def removebackspaces(text):
         text, n = re.subn(backspace_or_eol, '', text, 1)
     return text
 
+
 template = '''\
 %s
 '''
 
-re_string = re.compile(r'(?P<htmlchars>[<&>])|(?P<space>^[ \t]+)|(?P<lineend>\r\n|\r|\n)|(?P<protocal>(^|\s)((http|ftp)://.*?))(\s|$)', re.S|re.M|re.I)
+
+re_string = re.compile(
+    r'(?P<htmlchars>[<&>])|'
+    r'(?P<space>^[ \t]+)|'
+    r'(?P<lineend>\r\n|\r|\n)|'
+    r'(?P<protocal>(^|\s)((http|ftp)://.*?))'
+    r'(\s|$)',
+    re.S | re.M | re.I
+)
+
+
 def plaintext2html(text, tabstop=4):
     def do_sub(m):
         c = m.groupdict()
@@ -52,7 +88,7 @@ def plaintext2html(text, tabstop=4):
             t = t.replace(' ', '&nbsp;')
             return t
         elif c['space'] == '\t':
-            return ' '*tabstop;
+            return ' '*tabstop
         else:
             url = m.group('protocal')
             if url.startswith(' '):
@@ -81,10 +117,9 @@ def plaintext2html(text, tabstop=4):
 if __name__ == '__main__':
     import sys
     if len(sys.argv) > 1:
-        f=open(sys.argv[1])
+        f = open(sys.argv[1])
     else:
-        f=sys.stdin
-    text=f.read()
+        f = sys.stdin
+    text = f.read()
     f.close()
-    print plaintext2html(text)
-
+    print(plaintext2html(text))

@@ -1,6 +1,6 @@
 #!/usr/bin/python
-"""Private participant used by imager to catch status update processes pushed by
-the build_image participants
+"""Private participant used by imager to catch status update processes pushed
+by the build_image participants
 
 .. warning ::
 
@@ -21,7 +21,7 @@ the build_image participants
       Copied to the database when the job enters "DONE" state
    :image.test_result (string):
       Copied to the database when the job enters "DONE, TESTED" state
-      
+
 :term:`Workitem` params IN
 
 :Parameters:
@@ -37,14 +37,13 @@ the build_image participants
 
 import os
 from datetime import datetime
-from urllib2 import urlopen, HTTPError
-
-os.environ['DJANGO_SETTINGS_MODULE'] = 'img_web.settings'
 
 import django
-django.setup()
 from img_web.app.models import ImageJob
-from img_web.utils.a2html import plaintext2html
+
+os.environ['DJANGO_SETTINGS_MODULE'] = 'img_web.settings'
+django.setup()
+
 
 def get_or_none(model, **kwargs):
     try:
@@ -52,21 +51,17 @@ def get_or_none(model, **kwargs):
     except model.DoesNotExist:
         return None
 
+
 class ParticipantHandler(object):
 
     """ Participant class as defined by the SkyNET API """
 
-    #def __init__(self):
-    #    self.obs = None
-
     def handle_wi_control(self, ctrl):
         """ job control thread """
         pass
-    
+
     def handle_lifecycle_control(self, ctrl):
         """ participant control thread """
-        #if ctrl.message == "start":
-        #    if ctrl.config.has_option("obs", "oscrc"):
         pass
 
     def handle_wi(self, wid):
@@ -76,17 +71,19 @@ class ParticipantHandler(object):
         wid.result = False
         if not wid.fields.msg:
             wid.fields.msg = []
-        
+
         if not wid.fields.image.image_id:
-            wid.fields.__error__ = "Mandatory field: image.image.id "\
-                                   "does not exist."
+            wid.fields.__error__ = \
+                "Mandatory field: image.image.id does not exist."
             wid.fields.msg.append(wid.fields.__error__)
             raise RuntimeError("Missing mandatory field: image.image.id")
 
         job = get_or_none(ImageJob, image_id__exact=wid.fields.image.image_id)
         if job:
-            self.log.info("Matched %s job with %s" % (job.image_id,
-                                              wid.fields.image.image_id))
+            self.log.info(
+                "Matched %s job with %s",
+                job.image_id, wid.fields.image.image_id
+            )
             if wid.params.status:
                 job.status = wid.params.status
                 if wid.params.status == "ERROR" and wid.fields.__error__:
@@ -99,7 +96,7 @@ class ParticipantHandler(object):
                     job.files_url = wid.fields.image.files_url
                     job.image_url = wid.fields.image.image_url
                 if wid.params.status == "DONE, TESTED":
-                    if not wid.fields.image.test_result is None:
+                    if wid.fields.image.test_result is not None:
                         job.test_result = wid.fields.image.test_result
 
             if job.status == "BUILDING":
@@ -109,6 +106,6 @@ class ParticipantHandler(object):
             job.save()
             wid.result = True
         else:
-            wid.fields.__error__ = "No %s job found" % wid.fields.image.image_id
+            wid.fields.__error__ = \
+                "No %s job found" % wid.fields.image.image_id
             wid.fields.msg.append(wid.fields.__error__)
-

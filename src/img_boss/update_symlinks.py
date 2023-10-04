@@ -1,5 +1,6 @@
 #!/usr/bin/python
-""" Updates symlinks to repositories for image building to stay in sync with build paths
+"""Updates symlinks to repositories for image building to stay in sync with
+build paths.
 
 
 :term:`Workitem` fields IN:
@@ -22,7 +23,7 @@
 """
 import os
 from boss.obs import BuildServiceParticipant
-from osc import core
+
 
 class ParticipantHandler(BuildServiceParticipant):
     """Participant class as defined by the SkyNET API."""
@@ -61,7 +62,7 @@ class ParticipantHandler(BuildServiceParticipant):
 
         while depth > 0:
             release_id = None
-            platform = None 
+            platform = None
             platform, release_id, next_project = self._get_plat_rel(project)
 
             self._update_symlink(platform, release_id, symlink)
@@ -77,9 +78,11 @@ class ParticipantHandler(BuildServiceParticipant):
         release_path = os.path.join(self.prefix, platform, release_id)
 
         if not os.path.isdir(release_path):
-            raise RuntimeError("Release %s doesn't exist at %s" % (release_id, release_path))
+            raise RuntimeError(
+                "Release %s doesn't exist at %s" % (release_id, release_path)
+            )
 
-        print "creating symlink %s -> %s" % (symlink_path, release_id)
+        print("creating symlink %s -> %s" % (symlink_path, release_id))
         old_umask = os.umask(000)
         try:
             if os.path.lexists(symlink_path):
@@ -104,6 +107,8 @@ class ParticipantHandler(BuildServiceParticipant):
             break
 
         if not release_id:
-            raise RuntimeError("Couldn't determine release ID for %s %s" % (platform, symlink))
+            raise RuntimeError(
+                "Couldn't determine release ID for %s" % start_project
+            )
 
         return platform, release_id, next_project

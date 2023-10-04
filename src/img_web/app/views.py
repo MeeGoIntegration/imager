@@ -1,17 +1,17 @@
-#~ Copyright (C) 2010 Nokia Corporation and/or its subsidiary(-ies).
-#~ Contact: Ramez Hanna <ramez.hanna@nokia.com>
-#~ This program is free software: you can redistribute it and/or modify
-#~ it under the terms of the GNU General Public License as published by
-#~ the Free Software Foundation, either version 3 of the License, or
-#~ (at your option) any later version.
+# Copyright (C) 2010 Nokia Corporation and/or its subsidiary(-ies).
+# Contact: Ramez Hanna <ramez.hanna@nokia.com>
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 
-#~ This program is distributed in the hope that it will be useful,
-#~ but WITHOUT ANY WARRANTY; without even the implied warranty of
-#~ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#~ GNU General Public License for more details.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 
-#~ You should have received a copy of the GNU General Public License
-#~ along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 """ imager views """
 
@@ -19,11 +19,8 @@ import json
 import os
 import time
 import re
-from urllib.request import urlopen
-from urllib.error import HTTPError
 
-from django.http import HttpResponseRedirect, HttpResponseForbidden
-from django.template import RequestContext
+from django.http import HttpResponseRedirect
 from django.urls import reverse
 from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
@@ -32,12 +29,17 @@ from django.contrib import messages
 from django.forms.formsets import formset_factory
 
 import img_web.settings as settings
-from img_web.app.forms import ImageJobForm, extraReposFormset, extraTokensFormset, TagForm, SearchForm, BasePostProcessFormset, PostProcessForm
+from img_web.app.forms import (
+    ImageJobForm, extraReposFormset, extraTokensFormset, TagForm, SearchForm,
+    BasePostProcessFormset, PostProcessForm,
+)
 from img_web.app.models import ImageJob, Queue, Token, PostProcess
-from django.db import transaction, IntegrityError
+from img_web.app.features import get_repos_packages_for_feature
+from django.db import IntegrityError
+
 
 @login_required
-def submit(request):    
+def submit(request):
     """
     GET: returns an unbound ImageJobForm
 
@@ -51,9 +53,12 @@ def submit(request):
                                          extra=ppobjects.count())
 
     if request.method == 'GET':
-        jobform = ImageJobForm(initial = {'devicegroup':settings.DEVICEGROUP,
-                               'email':request.user.email}
-                               )
+        jobform = ImageJobForm(
+            initial={
+                'devicegroup': settings.DEVICEGROUP,
+                'email': request.user.email,
+            }
+        )
         reposformset = extraReposFormset()
         tokensformset = extraTokensFormset()
         # Each form in the pp formset needs a pp object.
@@ -63,11 +68,14 @@ def submit(request):
         # hence the need for BasePostProcessFormset above
         form_kwargs = [{'pp': pp} for pp in ppobjects]
         ppformset = postProcessFormset(form_kwargs=form_kwargs)
-        return render (request, 'app/upload.html',
-                       context={'jobform' : jobform,
-                                'reposformset' : reposformset,
-                                'tokensformset' : tokensformset,
-                                'ppformset' : ppformset}
+        return render(
+            request, 'app/upload.html',
+            context={
+                'jobform': jobform,
+                'reposformset': reposformset,
+                'tokensformset': tokensformset,
+                'ppformset': ppformset,
+            }
         )
 
     if request.method == 'POST':
@@ -76,12 +84,19 @@ def submit(request):
         tokensformset = extraTokensFormset(request.POST)
         ppformset = postProcessFormset(request.POST)
 
-        if not jobform.is_valid() or not reposformset.is_valid() or not ppformset.is_valid():
-            return render(request, 'app/upload.html',
-                          context={'jobform': jobform,
-                                   'reposformset' : reposformset,
-                                   'tokensformset' : tokensformset,
-                                   'ppformset' : ppformset},
+        if (
+            not jobform.is_valid() or
+            not reposformset.is_valid() or
+            not ppformset.is_valid()
+        ):
+            return render(
+                request, 'app/upload.html',
+                context={
+                    'jobform': jobform,
+                    'reposformset': reposformset,
+                    'tokensformset': tokensformset,
+                    'ppformset': ppformset,
+                },
             )
         jobdata = jobform.cleaned_data
         reposdata = reposformset.cleaned_data
@@ -101,7 +116,7 @@ def submit(request):
 
         elif 'ksfile' in jobdata and jobdata['ksfile']:
             ksname = jobdata['ksfile'].name
-            ks =  jobdata['ksfile'].readlines()
+            ks = jobdata['ksfile'].readlines()
 
         imgjob.kickstart = "".join(ks)
 
@@ -119,10 +134,16 @@ def submit(request):
                 reponame = repo['repo']
                 if not reponame.startswith('/'):
                     reponame = "/%s" % reponame
-                repo_url = repo['obs'] + repo['project'].replace(':', ':/') + reponame
+                repo_url = "".join(
+                    repo['obs'],
+                    repo['project'].replace(':', ':/'),
+                    reponame
+                )
                 extra_repos.add(repo_url)
 
-        additional_packages = set([ x for x in jobdata['overlay'].split(',') if x.strip()])
+        additional_packages = set(
+            x for x in jobdata['overlay'].split(',') if x.strip()
+        )
         if 'features' in jobdata:
             for feat in jobdata['features']:
                 print(feat)
@@ -168,11 +189,13 @@ def submit(request):
 
         tokens_list = []
         extra_repos_tmp = []
-        for token, tokenvalue in list(tokenmap.items()): 
+        for token, tokenvalue in list(tokenmap.items()):
             ksname = ksname.replace("@%s@" % token, tokenvalue)
             tokens_list.append("%s:%s" % (token, tokenvalue))
             for repo in extra_repos:
-                extra_repos_tmp.append(repo.replace("@%s@" % token, tokenvalue))
+                extra_repos_tmp.append(
+                    repo.replace("@%s@" % token, tokenvalue)
+                )
             extra_repos = extra_repos_tmp[:]
             extra_repos_tmp = []
 
@@ -206,8 +229,9 @@ def submit(request):
         saved = False
         while not saved:
             try:
-                imgjob.image_id = "%s-%s" % ( request.user.id,
-                                              time.strftime('%Y%m%d-%H%M%S') )
+                imgjob.image_id = "%s-%s" % (
+                    request.user.id, time.strftime('%Y%m%d-%H%M%S')
+                )
                 imgjob.save()
                 saved = True
             except IntegrityError as exc:
@@ -217,13 +241,15 @@ def submit(request):
 
         print("saved %s" % imgjob.image_id)
         imgjob.post_processes.add(*list(post_processes))
-        
+
         if jobdata["pinned"]:
             imgjob.tags.add("pinned")
         if jobdata["tags"]:
-            tags = [tag.replace(" ","_") for tag in jobdata["tags"].split(",")]
+            tags = [
+                tag.replace(" ", "_") for tag in jobdata["tags"].split(",")
+            ]
             imgjob.tags.add(*tags)
-        
+
         return HttpResponseRedirect(reverse('img-app-queue'))
 
 
@@ -234,35 +260,47 @@ def search(request, tag=None):
 
     POST: process a user submitted SearchForm
     """
-    
+
     if request.method == 'GET':
-        form = SearchForm(initial={"searchterm":tag})
+        form = SearchForm(initial={"searchterm": tag})
         alltags = []
         for x in ImageJob.tags.all():
-            if len(ImageJob.objects.filter(tags__name__icontains = x.name)):
+            if len(ImageJob.objects.filter(tags__name__icontains=x.name)):
                 alltags.append(x.name)
 
         results = []
         if tag:
-            results = ImageJob.objects.filter(tags__name__icontains = tag)
-        return render(request, 'app/search.html',
-                      context={'searchform' : form,
-                               'alltags' : alltags,
-                               'results' : results },
+            results = ImageJob.objects.filter(tags__name__icontains=tag)
+        return render(
+            request, 'app/search.html',
+            context={
+                'searchform': form,
+                'alltags': alltags,
+                'results': results,
+            },
         )
 
     if request.method == 'POST':
         form = SearchForm(request.POST)
         if not form.is_valid():
-            return render(request, 'app/search.html',
-                          context={'searchform': form},
+            return render(
+                request, 'app/search.html',
+                context={
+                    'searchform': form,
+                },
             )
         data = form.cleaned_data
-        results = ImageJob.objects.filter(tags__name__icontains = data["searchterm"])
-        return render(request, 'app/search.html',
-                      context={'searchform' : form,
-                               'results' : results},
+        results = ImageJob.objects.filter(
+            tags__name__icontains=data["searchterm"],
         )
+        return render(
+            request, 'app/search.html',
+            context={
+                'searchform': form,
+                'results': results,
+            },
+        )
+
 
 @login_required
 def queue(request, queue_name=None, dofilter=False):
@@ -274,9 +312,9 @@ def queue(request, queue_name=None, dofilter=False):
     """
     imgjobs = ImageJob.objects.all().order_by('created').reverse()
     if dofilter:
-        imgjobs = imgjobs.filter(user = request.user)
+        imgjobs = imgjobs.filter(user=request.user)
     if queue_name:
-        imgjobs = imgjobs.filter(queue__name = queue_name)
+        imgjobs = imgjobs.filter(queue__name=queue_name)
 
     paginator = Paginator(imgjobs, 30)
     try:
@@ -287,12 +325,16 @@ def queue(request, queue_name=None, dofilter=False):
         queue_page = paginator.page(page)
     except (EmptyPage, InvalidPage):
         queue_page = paginator.page(paginator.num_pages)
-    return render(request, 'app/queue.html',
-                  context={'queue' : queue_page,
-                           'queues': Queue.objects.all(),
-                           'queue_name' : queue_name,
-                           'filtered' : dofilter}
+    return render(
+        request, 'app/queue.html',
+        context={
+            'queue': queue_page,
+            'queues': Queue.objects.all(),
+            'queue_name': queue_name,
+            'filtered': dofilter,
+        }
     )
+
 
 @login_required
 def toggle_pin_job(request, msgid):
@@ -303,13 +345,21 @@ def toggle_pin_job(request, msgid):
     imgjob = ImageJob.objects.get(image_id__exact=msgid)
     if imgjob.pinned:
         imgjob.tags.remove("pinned")
-        messages.add_message(request, messages.INFO, "Image %s unpinned." % imgjob.image_id)
+        messages.add_message(
+            request, messages.INFO,
+            "Image %s unpinned." % imgjob.image_id,
+        )
     else:
         imgjob.tags.add("pinned")
-        messages.add_message(request, messages.INFO, "Image %s pinned." % imgjob.image_id)
-        
-    return HttpResponseRedirect(request.META.get('HTTP_REFERER',
-                                reverse('img-app-queue')))
+        messages.add_message(
+            request, messages.INFO,
+            "Image %s pinned." % imgjob.image_id,
+        )
+    return HttpResponseRedirect(
+        request.META.get('HTTP_REFERER', reverse('img-app-queue'))
+    )
+
+
 @login_required
 def retest_job(request, msgid):
     """ Request retest of an ImageJob
@@ -321,9 +371,12 @@ def retest_job(request, msgid):
     job.test_image = True
     job.test_options = ",".join(["update", job.test_options])
     job.save()
-    messages.add_message(request, messages.INFO, "Image %s was set for testing." % job.image_id)
-        
+    messages.add_message(
+        request, messages.INFO,
+        "Image %s was set for testing." % job.image_id,
+    )
     return HttpResponseRedirect(reverse('img-app-queue'))
+
 
 @login_required
 def retry_job(request, msgid):
@@ -334,8 +387,9 @@ def retry_job(request, msgid):
     oldjob = ImageJob.objects.get(image_id__exact=msgid)
 
     imgjob = ImageJob()
-    imgjob.image_id = "%s-%s" % ( request.user.id, 
-                                  time.strftime('%Y%m%d-%H%M%S') )
+    imgjob.image_id = "%s-%s" % (
+        request.user.id, time.strftime('%Y%m%d-%H%M%S')
+    )
     imgjob.user = request.user
     imgjob.image_type = oldjob.image_type
     imgjob.overlay = oldjob.overlay
@@ -347,10 +401,13 @@ def retry_job(request, msgid):
     imgjob.queue = oldjob.queue
 
     imgjob.save()
-    messages.add_message(request, messages.INFO, "Image resubmitted with new id %s." % imgjob.image_id)
-        
+    messages.add_message(
+        request, messages.INFO,
+        "Image resubmitted with new id %s." % imgjob.image_id,
+    )
     return HttpResponseRedirect(reverse('img-app-queue'))
-    
+
+
 @login_required
 def delete_job(request, msgid):
     """ Request deletion of an ImageJob
@@ -360,21 +417,34 @@ def delete_job(request, msgid):
     imgjob = ImageJob.objects.get(image_id__exact=msgid)
     url = request.META.get('HTTP_REFERER', reverse('img-app-queue'))
 
-    if request.user != imgjob.user and ( not request.user.is_staff \
-       or not request.user.is_superuser ):
-        messages.add_message(request, messages.ERROR, "Sorry, only admins are allowed to delete other people's images.")
+    if (
+        request.user != imgjob.user and
+        not (request.user.is_staff or request.user.is_superuser)
+    ):
+        messages.add_message(
+            request, messages.ERROR,
+            "Sorry, only admins are allowed to delete other people's images.",
+        )
         return HttpResponseRedirect(url)
+
     if imgjob.pinned:
-        messages.add_message(request, messages.ERROR, "Sorry, image is pinned and cannot be deleted.")
+        messages.add_message(
+            request, messages.ERROR,
+            "Sorry, image is pinned and cannot be deleted.",
+        )
         return HttpResponseRedirect(url)
 
     else:
         imgjob.delete()
-        messages.add_message(request, messages.INFO, "Image %s deleted." % imgjob.image_id)
+        messages.add_message(
+            request, messages.INFO,
+            "Image %s deleted." % imgjob.image_id,
+        )
         if "queue" not in url:
             url = reverse('img-app-queue')
 
     return HttpResponseRedirect(url)
+
 
 @login_required
 def job(request, msgid):
@@ -389,26 +459,39 @@ def job(request, msgid):
     if request.method == 'POST':
         tagform = TagForm(request.POST)
         if not tagform.is_valid():
-            return render(request, 'app/job_details.html',
-                          context={'errors': errors,
-                                   'obj': imgjob,
-                                   'tagform': tagform}
+            return render(
+                request, 'app/job_details.html',
+                context={
+                    'errors': errors,
+                    'obj': imgjob,
+                    'tagform': tagform,
+                }
             )
-        tags = [tag.replace(" ","_") for tag in tagform.cleaned_data['tags']]
+        tags = [
+            tag.replace(" ", "_") for tag in tagform.cleaned_data['tags']
+        ]
         imgjob.tags.set(*tags)
 
     if imgjob.status == "IN QUEUE":
-        errors = { 'Error' : ["Job still in queue"] }
+        errors = {'Error': ["Job still in queue"]}
     elif imgjob.error and imgjob.error != "":
-        errors = { 'Error' : [imgjob.error] }
+        errors = {'Error': [imgjob.error]}
 
-    tagform = TagForm(initial = {'tags' : ",".join([tag.name for tag in imgjob.tags.all()])} )
-
-    return render(request, 'app/job_details.html',
-                  context={'errors': errors,
-                           'obj': imgjob,
-                           'tagform': tagform}
+    tagform = TagForm(
+        initial={
+            'tags': ",".join([tag.name for tag in imgjob.tags.all()])
+        }
     )
+
+    return render(
+        request, 'app/job_details.html',
+        context={
+            'errors': errors,
+            'obj': imgjob,
+            'tagform': tagform,
+        }
+    )
+
 
 def index(request):
     """ Index page """

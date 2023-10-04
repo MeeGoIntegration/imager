@@ -3,7 +3,7 @@ Common Imager functions
 """
 
 import os
-import ConfigParser
+import configparser
 import subprocess as sub
 import random
 import socket
@@ -21,7 +21,7 @@ def worker_config(config=None, conffile="/etc/imager/img.conf"):
     :returns: configuration dict
     """
     if not config:
-        config = ConfigParser.ConfigParser()
+        config = configparser.ConfigParser()
     config.read(conffile)
 
     section = "worker"
@@ -53,7 +53,7 @@ def tester_config(config=None, conffile="/etc/imager/img.conf"):
     :returns: configuration dict
     """
     if not config:
-        config = ConfigParser.ConfigParser()
+        config = configparser.ConfigParser()
     config.read(conffile)
 
     section = "tester"

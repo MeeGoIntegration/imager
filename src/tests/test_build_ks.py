@@ -2,7 +2,7 @@ import json
 import re
 import os
 import unittest
-from ConfigParser import SafeConfigParser
+from configparser import SafeConfigParser
 from mock import Mock
 
 from RuoteAMQP import Workitem

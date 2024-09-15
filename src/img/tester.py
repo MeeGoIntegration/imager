@@ -511,28 +511,44 @@ class ImageTester(object):
             packages = []
             patterns = []
             host_test_packages = []
-            for name in self.test_packages.keys():
+            pre_check = []
+            skip_already_installed = (
+                'rpm -qi {package} ||'
+            )
+            for name in self.test_packages:
                 if name.startswith('@'):
                     if self.package_manager == 'zypper':
                         patterns.append(name[1:])
                     if self.package_manager == 'pkcon':
                         patterns.append('pattern:' + name[1:])
+
+                    pre_check.extend(
+                        skip_already_installed.format(package=name[1:]).split())
+
                 elif self.host_based_testing_enabled and name.endswith('-host-tests'):
+                    pre_check.extend(
+                        skip_already_installed.format(package=name).split())
+
                     host_test_packages.append(name)
+
                 else:
+                    pre_check.extend(
+                        skip_already_installed.format(package=name).split())
                     packages.append(name)
+
             if packages:
                 print "installing test packages"
                 if self.package_manager == 'zypper':
                     install_comm = ['zypper', '-vv', 'in', '-y', '-f', '--force-resolution']
                 install_comm.extend(packages)
-                self.commands.ssh(install_comm)
+                self.commands.ssh(pre_check+install_comm)
             if patterns:
                 print "installing test patterns"
                 if self.package_manager == 'zypper':
                     install_comm = ['zypper', '-vv', 'in', '-y', '-f', '--force-resolution', '-t', 'pattern']
                 install_comm.extend(patterns)
                 self.commands.ssh(install_comm)
+
             if self.host_based_testing_enabled and host_test_packages:
                 print "updating host packages reposity cache"
                 update_comm = ['sudo', '-n', self.host_test_package_manager, '-v']

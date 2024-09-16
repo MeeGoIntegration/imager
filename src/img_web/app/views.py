@@ -92,10 +92,24 @@ def submit(request):
 
         imgjob.kickstart = "".join(ks)
 
+        vars_re = re.compile(r'^# Var@([\S]+)@([\S]+):(.*)$')
+        features_vars = {}
+
         for line in ks:
-            if re.match(r'^#.*?KickstartType:.+$', line):
-                ks_type = line.split(":", 1)[1].strip()
+            if not line.startswith('#'):
                 break
+
+            vars_match = vars_re.match(line)
+            if vars_match:
+                feature = vars_match.group(1)
+                var = vars_match.group(2)
+                val = vars_match.group(3).strip()
+                if feature in features_vars:
+                    features_vars[feature][var] = val
+                else:
+                    features_vars[feature] = {var: val}
+            elif re.match(r'^#.*?KickstartType:.+$', line):
+                ks_type = line.split(":", 1)[1].strip()
 
         if ksname.endswith('.ks'):
             ksname = ksname[0:-3]
@@ -117,7 +131,13 @@ def submit(request):
                 if not ks_type or not repos_type in feat:
                     repos_type = 'repositories'
 
-                extra_repos.update(feat.get(repos_type, set()))
+                feat_repos = feat.get(repos_type, dict())
+                for name, url in feat_repos.items():
+                    if name in features_vars:
+                        for var, val in features_vars[name].items():
+                            url = url.replace('@%s@' % var, val)
+                    extra_repos.add(url)
+
                 overlay.update(feat.get('pattern', ''))
                 overlay.update(feat.get('packages', set()))
 

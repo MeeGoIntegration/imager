@@ -134,7 +134,8 @@ class ImageJob(models.Model):
                           "arch" : self.arch,
                           "prefix" : "%s/%s" % (self.queue.name,
                                                 self.user.username),
-                          "result" : self.status
+                          "result" : self.status,
+                          "repourl_options": getattr(self, 'repourl_options', {}),
                           }
                 }
 

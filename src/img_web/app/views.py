@@ -92,32 +92,54 @@ def submit(request):
 
         imgjob.kickstart = "".join(ks)
 
+        vars_re = re.compile(r'^# Var@([\S]+)@([\S]+):(.*)$')
+        features_vars = {}
+
         for line in ks:
-            if re.match(r'^#.*?KickstartType:.+$', line):
-                ks_type = line.split(":", 1)[1].strip()
+            if not line.startswith('#'):
                 break
+
+            vars_match = vars_re.match(line)
+            if vars_match:
+                feature = vars_match.group(1)
+                var = vars_match.group(2)
+                val = vars_match.group(3).strip()
+                if feature in features_vars:
+                    features_vars[feature][var] = val
+                else:
+                    features_vars[feature] = {var: val}
+            elif re.match(r'^#.*?KickstartType:.+$', line):
+                ks_type = line.split(":", 1)[1].strip()
 
         if ksname.endswith('.ks'):
             ksname = ksname[0:-3]
 
-        extra_repos = set()
+        extra_repos_data = {}
         for repo in reposdata:
             if repo.get('obs', None):
                 reponame = repo['repo']
                 if not reponame.startswith('/'):
                     reponame = "/%s" % reponame
                 repo_url = repo['obs'] + repo['project'].replace(':', ':/') + reponame
-                extra_repos.add(repo_url)
+                extra_repos_data[reponame] = repo_url
 
+        repo_options = {}
         overlay = set([ x for x in jobdata['overlay'].split(',') if x.strip()])
         if 'features' in jobdata:
             for feat in jobdata['features']:
                 print feat
+                repo_options.update(feat.get('repo_options', {}))
                 repos_type = 'repositories-%s' % ks_type
                 if not ks_type or not repos_type in feat:
                     repos_type = 'repositories'
 
-                extra_repos.update(feat.get(repos_type, set()))
+                feat_repos = feat.get(repos_type, dict())
+                for name, url in feat_repos.items():
+                    if name in features_vars:
+                        for var, val in features_vars[name].items():
+                            url = url.replace('@%s@' % var, val)
+                    extra_repos_data[name] = url
+
                 overlay.update(feat.get('pattern', ''))
                 overlay.update(feat.get('packages', set()))
 
@@ -157,16 +179,22 @@ def submit(request):
         if brandtoken:
             tokenmap['BRAND'] = brandtoken
 
-        tokens_list = []
-        extra_repos_tmp = []
-        for token, tokenvalue in tokenmap.items(): 
-            ksname = ksname.replace("@%s@" % token, tokenvalue)
-            tokens_list.append("%s:%s" % (token, tokenvalue))
-            for repo in extra_repos:
-                extra_repos_tmp.append(repo.replace("@%s@" % token, tokenvalue))
-            extra_repos = extra_repos_tmp[:]
-            extra_repos_tmp = []
+        tokens_list = set()
+        extra_repos = set()
+        repourl_options = {}
 
+        for repo_name, repo_url_tmpl in extra_repos_data.items():
+            repo_url = repo_url_tmpl
+            for token, tokenvalue in tokenmap.items():
+                ksname = ksname.replace("@%s@" % token, tokenvalue)
+                tokens_list.add("%s:%s" % (token, tokenvalue))
+                repo_url = repo_url_tmpl.replace("@%s@" % token, tokenvalue)
+            extra_repos.add(repo_url)
+            cur_repo_options = repo_options.get(repo_name)
+            if cur_repo_options:
+                repourl_options[repo_url] = cur_repo_options
+
+        imgjob.repourl_options = repourl_options
         imgjob.name = ksname
         imgjob.arch = jobdata['architecture']
         imgjob.tokenmap = ",".join(tokens_list)

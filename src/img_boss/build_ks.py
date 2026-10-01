@@ -407,12 +407,15 @@ class MeeGo_PartData(FC4_PartData):
         FC4_PartData.__init__(self, *args, **kwargs)
         self.deleteRemovedAttrs()
         self.align = kwargs.get("align", None)
+        self.mkfsopts = kwargs.get("mkfsopts", "")
 
     def _getArgsAsStr(self):
         retval = FC4_PartData._getArgsAsStr(self)
 
         if self.align:
             retval += " --align"
+        if self.mkfsopts:
+            retval += " --mkfsoptions=\"%s\"" % self.mkfsopts
 
         return retval
 
@@ -427,6 +430,16 @@ class MeeGo_Partition(FC4_Partition):
         # the partition is aligned to start from 8096 byte boundary.
         op.add_option("--align", type="int", action="store", dest="align",
                       default=None)
+        op.add_option("--mkfsoptions", dest="mkfsopts", help="""
+                      Specifies additional parameters to be passed to the
+                      program that makes a filesystem on this partition. This
+                      is similar to ``--fsprofile`` but works for all
+                      filesystems, not just the ones that support the profile
+                      concept. No processing is done on the list of arguments,
+                      so they must be supplied in a format that can be passed
+                      directly to the mkfs program. This means multiple
+                      options should be comma-separated or surrounded by
+                      double quotes, depending on the filesystem.""")
         return op
 #################################################################
 #
